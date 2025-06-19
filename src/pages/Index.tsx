@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,18 +5,33 @@ import { MapPin, Clock, Shield, Users } from "lucide-react";
 import LoginForm from "@/components/auth/LoginForm";
 import Dashboard from "@/components/Dashboard";
 
+interface StudentData {
+  id: string;
+  name: string;
+  registeredRoutes: string[];
+}
+
 const Index = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [studentData, setStudentData] = useState<StudentData | null>(null);
   const [showLogin, setShowLogin] = useState(false);
 
-  if (isLoggedIn) {
-    return <Dashboard onLogout={() => setIsLoggedIn(false)} />;
+  const handleLogin = (data: StudentData) => {
+    setStudentData(data);
+  };
+
+  const handleLogout = () => {
+    setStudentData(null);
+    setShowLogin(false);
+  };
+
+  if (studentData) {
+    return <Dashboard studentData={studentData} onLogout={handleLogout} />;
   }
 
   if (showLogin) {
     return (
       <LoginForm 
-        onLogin={() => setIsLoggedIn(true)} 
+        onLogin={handleLogin} 
         onBack={() => setShowLogin(false)} 
       />
     );
@@ -89,7 +103,7 @@ const Index = () => {
             </CardHeader>
             <CardContent>
               <CardDescription className="text-center text-gray-600">
-                Only verified students with paid fees can access tracking
+                Only verified students with paid fees can access their registered routes
               </CardDescription>
             </CardContent>
           </Card>
@@ -99,11 +113,11 @@ const Index = () => {
               <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users className="w-6 h-6 text-orange-600" />
               </div>
-              <CardTitle className="text-lg font-semibold text-gray-900">Student Focused</CardTitle>
+              <CardTitle className="text-lg font-semibold text-gray-900">Route-Specific Access</CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription className="text-center text-gray-600">
-                Designed specifically for college students and their needs
+                Access only the bus routes you've registered and paid for this semester
               </CardDescription>
             </CardContent>
           </Card>
@@ -120,21 +134,21 @@ const Index = () => {
                 1
               </div>
               <h3 className="text-xl font-semibold mb-2">Login with Student ID</h3>
-              <p className="text-gray-600">Authenticate using your college credentials</p>
+              <p className="text-gray-600">Authenticate using your college credentials to verify your bus registrations</p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-green-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
                 2
               </div>
-              <h3 className="text-xl font-semibold mb-2">Select Your Bus Route</h3>
-              <p className="text-gray-600">Choose from your available paid bus routes</p>
+              <h3 className="text-xl font-semibold mb-2">Access Your Routes</h3>
+              <p className="text-gray-600">View only the bus routes you've registered and paid for this semester</p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-purple-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">
                 3
               </div>
-              <h3 className="text-xl font-semibold mb-2">Track in Real-Time</h3>
-              <p className="text-gray-600">See live location and arrival estimates</p>
+              <h3 className="text-xl font-semibold mb-2">Track Securely</h3>
+              <p className="text-gray-600">See live location and arrival estimates for your authorized buses only</p>
             </div>
           </div>
         </div>

@@ -8,7 +8,7 @@ import { ArrowLeft, Bus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface LoginFormProps {
-  onLogin: () => void;
+  onLogin: (studentData: { id: string; name: string; registeredRoutes: string[] }) => void;
   onBack: () => void;
 }
 
@@ -18,22 +18,47 @@ const LoginForm = ({ onLogin, onBack }: LoginFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  // Mock student database with registered routes
+  const mockStudentDatabase = {
+    "STU001": {
+      name: "John Doe",
+      registeredRoutes: ["bus-1", "bus-2"], // Main Campus & Hostel Express
+      password: "password123"
+    },
+    "STU002": {
+      name: "Jane Smith", 
+      registeredRoutes: ["bus-2", "bus-3"], // Hostel Express & City Center
+      password: "password123"
+    },
+    "STU003": {
+      name: "Mike Johnson",
+      registeredRoutes: ["bus-1"], // Main Campus only
+      password: "password123"
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate authentication
+    // Simulate authentication with route access validation
     setTimeout(() => {
-      if (studentId && password) {
+      const student = mockStudentDatabase[studentId as keyof typeof mockStudentDatabase];
+      
+      if (student && student.password === password) {
         toast({
           title: "Login Successful",
-          description: "Welcome to Bus Tracker!",
+          description: `Welcome ${student.name}! Access granted to ${student.registeredRoutes.length} route(s).`,
         });
-        onLogin();
+        onLogin({
+          id: studentId,
+          name: student.name,
+          registeredRoutes: student.registeredRoutes
+        });
       } else {
         toast({
           title: "Login Failed",
-          description: "Please enter valid credentials",
+          description: "Invalid credentials or no active bus registration found",
           variant: "destructive",
         });
       }
@@ -62,7 +87,7 @@ const LoginForm = ({ onLogin, onBack }: LoginFormProps) => {
               Student Login
             </CardTitle>
             <CardDescription className="text-gray-600">
-              Enter your college credentials to access bus tracking
+              Enter your college credentials to access your registered bus routes
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -76,7 +101,7 @@ const LoginForm = ({ onLogin, onBack }: LoginFormProps) => {
                   type="text"
                   value={studentId}
                   onChange={(e) => setStudentId(e.target.value)}
-                  placeholder="Enter your student ID"
+                  placeholder="Enter your student ID (try STU001, STU002, or STU003)"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
@@ -91,7 +116,7 @@ const LoginForm = ({ onLogin, onBack }: LoginFormProps) => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password"
+                  placeholder="Enter your password (use: password123)"
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 />
@@ -102,7 +127,7 @@ const LoginForm = ({ onLogin, onBack }: LoginFormProps) => {
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
                 disabled={isLoading}
               >
-                {isLoading ? "Logging in..." : "Login"}
+                {isLoading ? "Verifying Access..." : "Login"}
               </Button>
             </form>
 
@@ -111,6 +136,11 @@ const LoginForm = ({ onLogin, onBack }: LoginFormProps) => {
                 Don't have access?{" "}
                 <span className="text-blue-600 font-medium">Contact your college administration</span>
               </p>
+              <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs text-gray-500">
+                  Demo accounts: STU001, STU002, STU003 | Password: password123
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
