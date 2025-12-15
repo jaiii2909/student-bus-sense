@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Bus } from "lucide-react";
+import { ArrowLeft, Bus, Lock, User, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface LoginFormProps {
@@ -22,17 +21,17 @@ const LoginForm = ({ onLogin, onBack }: LoginFormProps) => {
   const mockStudentDatabase = {
     "STU001": {
       name: "John Doe",
-      registeredRoutes: ["bus-1", "bus-2"], // Main Campus & Hostel Express
+      registeredRoutes: ["bus-1", "bus-2"],
       password: "password123"
     },
     "STU002": {
       name: "Jane Smith", 
-      registeredRoutes: ["bus-2", "bus-3"], // Hostel Express & City Center
+      registeredRoutes: ["bus-2", "bus-3"],
       password: "password123"
     },
     "STU003": {
       name: "Mike Johnson",
-      registeredRoutes: ["bus-1"], // Main Campus only
+      registeredRoutes: ["bus-1"],
       password: "password123"
     }
   };
@@ -41,14 +40,13 @@ const LoginForm = ({ onLogin, onBack }: LoginFormProps) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate authentication with route access validation
     setTimeout(() => {
       const student = mockStudentDatabase[studentId as keyof typeof mockStudentDatabase];
       
       if (student && student.password === password) {
         toast({
-          title: "Login Successful",
-          description: `Welcome ${student.name}! Access granted to ${student.registeredRoutes.length} route(s).`,
+          title: "Welcome aboard! 🚌",
+          description: `Hi ${student.name}! Access granted to ${student.registeredRoutes.length} route(s).`,
         });
         onLogin({
           id: studentId,
@@ -57,7 +55,7 @@ const LoginForm = ({ onLogin, onBack }: LoginFormProps) => {
         });
       } else {
         toast({
-          title: "Login Failed",
+          title: "Authentication Failed",
           description: "Invalid credentials or no active bus registration found",
           variant: "destructive",
         });
@@ -67,79 +65,123 @@ const LoginForm = ({ onLogin, onBack }: LoginFormProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center p-4">
+      {/* Decorative background elements */}
+      <div className="absolute inset-0 bg-gradient-hero pointer-events-none" />
+      <div className="decorative-circle w-96 h-96 bg-primary/20 top-[-10%] right-[-10%]" />
+      <div className="decorative-circle w-80 h-80 bg-secondary/20 bottom-[10%] left-[-5%]" />
+      
+      <div className="w-full max-w-md relative z-10 animate-fade-in">
         <Button
           variant="ghost"
           onClick={onBack}
-          className="mb-6 text-gray-600 hover:text-gray-900"
+          className="mb-6 text-muted-foreground hover:text-foreground transition-smooth"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Home
         </Button>
 
-        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
-          <CardHeader className="text-center space-y-4">
-            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto">
-              <Bus className="w-8 h-8 text-white" />
+        <Card className="shadow-elevated border-0 glass overflow-hidden">
+          {/* Gradient header bar */}
+          <div className="h-2 bg-gradient-primary" />
+          
+          <CardHeader className="text-center space-y-4 pt-8">
+            <div className="w-20 h-20 bg-gradient-primary rounded-2xl flex items-center justify-center mx-auto shadow-glow animate-bounce-subtle">
+              <Bus className="w-10 h-10 text-primary-foreground" />
             </div>
-            <CardTitle className="text-2xl font-bold text-gray-900">
-              Student Login
-            </CardTitle>
-            <CardDescription className="text-gray-600">
-              Enter your college credentials to access your registered bus routes
-            </CardDescription>
+            <div>
+              <CardTitle className="text-2xl font-bold text-card-foreground">
+                Student Login
+              </CardTitle>
+              <CardDescription className="text-muted-foreground mt-2">
+                Enter your credentials to access your bus routes
+              </CardDescription>
+            </div>
           </CardHeader>
-          <CardContent>
+          
+          <CardContent className="pb-8">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="studentId" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="studentId" className="text-sm font-medium text-card-foreground">
                   Student ID
                 </Label>
-                <Input
-                  id="studentId"
-                  type="text"
-                  value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
-                  placeholder="Enter your student ID (try STU001, STU002, or STU003)"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    id="studentId"
+                    type="text"
+                    value={studentId}
+                    onChange={(e) => setStudentId(e.target.value)}
+                    placeholder="Enter your student ID"
+                    className="pl-10 py-6 border-border/50 bg-background/50 rounded-xl focus:ring-2 focus:ring-primary/50 transition-smooth"
+                    required
+                  />
+                </div>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                <Label htmlFor="password" className="text-sm font-medium text-card-foreground">
                   Password
                 </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password (use: password123)"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="pl-10 py-6 border-border/50 bg-background/50 rounded-xl focus:ring-2 focus:ring-primary/50 transition-smooth"
+                    required
+                  />
+                </div>
               </div>
 
               <Button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                className="w-full bg-gradient-primary hover:opacity-90 text-primary-foreground py-6 text-lg font-semibold rounded-xl shadow-glow-sm transition-smooth"
                 disabled={isLoading}
               >
-                {isLoading ? "Verifying Access..." : "Login"}
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                    Verifying...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    Login
+                    <Sparkles className="w-5 h-5" />
+                  </span>
+                )}
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
+            <div className="mt-8 text-center">
+              <p className="text-sm text-muted-foreground">
                 Don't have access?{" "}
-                <span className="text-blue-600 font-medium">Contact your college administration</span>
+                <span className="text-primary font-medium cursor-pointer hover:underline">Contact administration</span>
               </p>
-              <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                <p className="text-xs text-gray-500">
-                  Demo accounts: STU001, STU002, STU003 | Password: password123
+              
+              <div className="mt-6 p-4 bg-muted/50 rounded-xl border border-border/50">
+                <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center justify-center gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  Demo Accounts
                 </p>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  {["STU001", "STU002", "STU003"].map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => {
+                        setStudentId(id);
+                        setPassword("password123");
+                      }}
+                      className="px-2 py-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-smooth font-medium"
+                    >
+                      {id}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </CardContent>
