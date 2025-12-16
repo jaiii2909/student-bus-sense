@@ -37,15 +37,25 @@ const Index = () => {
     );
   }
 
+ 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      {/* Hero Section */}
+    <div 
+      className="min-h-screen"  
+      style={{ 
+        backgroundImage: 'url(/background.png)', 
+        backgroundSize: 'cover', 
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+
+    {/* Hero Section */}
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6 animate-fade-in">
-            College Bus <span className="text-blue-600">Tracker</span>
+          <h1 className="text-5xl font-bold mb-6 animate-fade-in">
+            <span className="text-black">College</span> <span className="text-white">Bus</span> <span className="text-black">Tracker</span>
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-800 mb-8 max-w-2xl mx-auto">
             Track your college bus in real-time, get accurate arrival estimates, and never miss your ride again.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

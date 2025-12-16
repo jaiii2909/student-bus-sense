@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { LogOut, MapPin, Clock, Bus, Navigation, Shield } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import BusMap from "./tracking/BusMap";
 
 interface StudentData {
@@ -19,6 +20,7 @@ interface DashboardProps {
 
 const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
   const [selectedBus, setSelectedBus] = useState<string | null>(null);
+  const [selectedRoute, setSelectedRoute] = useState<string | null>(studentData.registeredRoutes[0] || null);
 
   // All available buses in the system
   const allBuses = [
@@ -52,9 +54,13 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
   ];
 
   // Filter buses based on student's registered routes
-  const studentBuses = allBuses.filter(bus => 
-    studentData.registeredRoutes.includes(bus.id)
+  const availableBuses = allBuses.filter(bus => 
+    studentData.registeredRoutes.some(route => bus.route.includes(route))
   );
+
+  const routes = [...new Set(availableBuses.map(bus => bus.route))];
+
+  const filteredBuses = selectedRoute ? availableBuses.filter(bus => bus.route === selectedRoute) : [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
@@ -93,7 +99,20 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
               </Badge>
             </div>
             
-            {studentBuses.length === 0 ? (
+            <div className="mb-4">
+              <Select value={selectedRoute || ""} onValueChange={setSelectedRoute}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select a route" />
+                </SelectTrigger>
+                <SelectContent>
+                  {routes.map(route => (
+                    <SelectItem key={route} value={route}>{route}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {filteredBuses.length === 0 ? (
               <Card className="text-center p-6">
                 <CardContent>
                   <Shield className="w-12 h-12 text-gray-300 mx-auto mb-4" />
@@ -104,7 +123,7 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
                 </CardContent>
               </Card>
             ) : (
-              studentBuses.map((bus) => (
+              filteredBuses.map((bus) => (
                 <Card 
                   key={bus.id}
                   className={`cursor-pointer transition-all duration-300 hover:shadow-lg border-2 ${
@@ -159,7 +178,7 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
               ))
             )}
 
-            {studentBuses.length > 0 && (
+            {filteredBuses.length > 0 && (
               <Card className="bg-blue-50 border-blue-200">
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-2 text-sm text-blue-800">
@@ -183,14 +202,14 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
                 </CardTitle>
                 <CardDescription>
                   {selectedBus 
-                    ? `Tracking ${studentBuses.find(b => b.id === selectedBus)?.number}` 
-                    : studentBuses.length > 0 
+                    ? `Tracking ${filteredBuses.find(b => b.id === selectedBus)?.number}` 
+                    : filteredBuses.length > 0 
                       ? 'Select a bus to view its live location'
                       : 'Register for bus services to start tracking'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="h-full p-0">
-                <BusMap selectedBusId={selectedBus} buses={studentBuses} />
+                <BusMap selectedBusId={selectedBus} buses={availableBuses} />
               </CardContent>
             </Card>
           </div>
