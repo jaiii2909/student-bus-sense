@@ -1,5 +1,6 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,153 +20,35 @@ interface DashboardProps {
 }
 
 const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
-  const [selectedBus, setSelectedBus] = useState<string | null>(null);
-  const [selectedRoute, setSelectedRoute] = useState<string | null>(studentData.registeredRoutes[0] || null);
+ const [selectedBus, setSelectedBus] = useState<string | null>(
+  () => localStorage.getItem("selectedBus") || null
+);
+const [selectedRoute, setSelectedRoute] = useState<string | null>(
+  () => localStorage.getItem("selectedRoute") || studentData.registeredRoutes[0] || null
+);
 
-  // All available buses in the system
-  const allBuses = [
-    // Rajroohpur buses
-    {
-      id: "R1",
-      route: "Rajroohpur",
-      number: "R1",
-      status: "active",
-      currentLocation: "Near Library",
-      estimatedArrival: "5 mins",
-      nextStop: "Engineering Block",
-    },
-    {
-      id: "R2", 
-      route: "Rajroohpur",
-      number: "R2",
-      status: "active",
-      currentLocation: "Sports Complex",
-      estimatedArrival: "12 mins",
-      nextStop: "Hostel Block A",
-    },
-    {
-      id: "R3",
-      route: "Rajroohpur",
-      number: "R3",
-      status: "active",
-      currentLocation: "Market Area",
-      estimatedArrival: "8 mins",
-      nextStop: "Main Gate",
-    },
-    {
-      id: "R4",
-      route: "Rajroohpur",
-      number: "R4",
-      status: "inactive",
-      currentLocation: "Depot",
-      estimatedArrival: "Not running",
-      nextStop: "Service break",
-    },
-    {
-      id: "R5",
-      route: "Rajroohpur",
-      number: "R5",
-      status: "active",
-      currentLocation: "City Center",
-      estimatedArrival: "15 mins",
-      nextStop: "Bus Stand",
-    },
-    // Kareli buses
-    {
-      id: "K1",
-      route: "Kareli",
-      number: "K1",
-      status: "active",
-      currentLocation: "Near Hospital",
-      estimatedArrival: "7 mins",
-      nextStop: "School",
-    },
-    {
-      id: "K2", 
-      route: "Kareli",
-      number: "K2",
-      status: "active",
-      currentLocation: "Park",
-      estimatedArrival: "10 mins",
-      nextStop: "Mall",
-    },
-    {
-      id: "K3",
-      route: "Kareli",
-      number: "K3",
-      status: "active",
-      currentLocation: "Station",
-      estimatedArrival: "6 mins",
-      nextStop: "Office Area",
-    },
-    {
-      id: "K4",
-      route: "Kareli",
-      number: "K4",
-      status: "inactive",
-      currentLocation: "Depot",
-      estimatedArrival: "Not running",
-      nextStop: "Service break",
-    },
-    {
-      id: "K5",
-      route: "Kareli",
-      number: "K5",
-      status: "active",
-      currentLocation: "Residential Area",
-      estimatedArrival: "18 mins",
-      nextStop: "Highway",
-    },
-    // Dhoomanganj buses
-    {
-      id: "D1",
-      route: "Dhoomanganj",
-      number: "D1",
-      status: "active",
-      currentLocation: "Near Temple",
-      estimatedArrival: "9 mins",
-      nextStop: "Market",
-    },
-    {
-      id: "D2", 
-      route: "Dhoomanganj",
-      number: "D2",
-      status: "active",
-      currentLocation: "Lake Side",
-      estimatedArrival: "14 mins",
-      nextStop: "Restaurant",
-    },
-    {
-      id: "D3",
-      route: "Dhoomanganj",
-      number: "D3",
-      status: "active",
-      currentLocation: "Garden",
-      estimatedArrival: "11 mins",
-      nextStop: "Playground",
-    },
-    {
-      id: "D4",
-      route: "Dhoomanganj",
-      number: "D4",
-      status: "inactive",
-      currentLocation: "Depot",
-      estimatedArrival: "Not running",
-      nextStop: "Service break",
-    },
-    {
-      id: "D5",
-      route: "Dhoomanganj",
-      number: "D5",
-      status: "active",
-      currentLocation: "Industrial Area",
-      estimatedArrival: "20 mins",
-      nextStop: "Factory",
-    },
-  ];
+
+  const [buses, setBuses] = useState([]);
+
+  useEffect(() => {
+    axios.get('/api/buses')
+      .then(res => setBuses(res.data))
+      .catch(err => console.error('Error fetching buses:', err));
+  }, []);
+
+
+  const handleLogout = () => {
+  localStorage.removeItem("selectedBus");
+  localStorage.removeItem("selectedRoute");
+  // any other cleanup
+  onLogout();
+};
+
+
+  // All available buses in the system (now fetched from API)
 
   // Filter buses based on student's registered routes
-  const availableBuses = allBuses.filter(bus => 
+  const availableBuses = buses.filter(bus => 
     studentData.registeredRoutes.includes(bus.route)
   );
 
@@ -189,7 +72,7 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
           </div>
           <Button 
             variant="outline" 
-            onClick={onLogout}
+            onClick={handleLogout}
             className="flex items-center space-x-2"
           >
             <LogOut className="w-4 h-4" />
@@ -211,7 +94,11 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
             </div>
             
             <div className="mb-4">
-              <Select value={selectedRoute || ""} onValueChange={setSelectedRoute}>
+              <Select value={selectedRoute || ""} onValueChange={(val) => {
+                 setSelectedRoute(val);
+                 localStorage.setItem("selectedRoute", val);
+    }}>
+
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a route" />
                 </SelectTrigger>
@@ -242,7 +129,13 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
                       ? 'border-blue-500 shadow-lg' 
                       : 'border-transparent hover:border-blue-200'
                   } ${bus.status === 'inactive' ? 'opacity-60' : ''}`}
-                  onClick={() => bus.status === 'active' && setSelectedBus(bus.id)}
+                  onClick={() => {
+                    if (bus.status === 'active') {
+                     setSelectedBus(bus.id);
+                     localStorage.setItem("selectedBus", bus.id);
+                    }
+                }}
+
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
@@ -268,22 +161,25 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
                   </CardHeader>
                   
                   {bus.status === 'active' && (
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        <MapPin className="w-4 h-4" />
-                        <span>{bus.currentLocation}</span>
+                   <CardContent className="space-y-3">
+                     <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium">Bus ID: {bus.id}</p>
+                        <p className="text-xs text-gray-500">
+                          Route: {bus.route}
+                        </p>
+                     </div>
+
+                    <div>
+                      {bus.sharing === false ? (
+                      <span className="text-red-600 font-semibold">Location Sharing Stopped</span>
+                      ) : (
+                      <span className="text-green-600 font-semibold">Active</span>
+                      )}
                       </div>
-                      
-                      <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        <Clock className="w-4 h-4" />
-                        <span>ETA: {bus.estimatedArrival}</span>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        <Navigation className="w-4 h-4" />
-                        <span>Next: {bus.nextStop}</span>
-                      </div>
-                    </CardContent>
+                    </div>
+                  </CardContent>
+
                   )}
                 </Card>
               ))
@@ -320,7 +216,7 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="h-full p-0">
-                <BusMap selectedBusId={selectedBus} buses={availableBuses} />
+                <BusMap selectedBusId={selectedBus} buses={buses} />
               </CardContent>
             </Card>
           </div>

@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,49 +18,26 @@ const LoginForm = ({ onLogin, onBack }: LoginFormProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  // Mock student database with registered routes
-  const mockStudentDatabase = {
-    "STU001": {
-      name: "John Doe",
-      registeredRoutes: ["Rajroohpur", "Kareli","Dhoomanganj"], // Rajroohpur & Kareli
-    },
-    "STU002": {
-      name: "Jane Smith", 
-      registeredRoutes: ["Kareli", "Dhoomanganj","Rajroohpur"], // Kareli & Dhoomanganj
-    },
-    "STU003": {
-      name: "Mike Johnson",
-      registeredRoutes: ["Rajroohpur","Kareli","Dhoomanganj"], // Rajroohpur only
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate authentication with route access validation
-    setTimeout(() => {
-      const student = mockStudentDatabase[studentId as keyof typeof mockStudentDatabase];
-      
-      if (student) {
-        toast({
-          title: "Login Successful",
-          description: `Welcome ${student.name}! Access granted to ${student.registeredRoutes.length} route(s).`,
-        });
-        onLogin({
-          id: studentId,
-          name: student.name,
-          registeredRoutes: student.registeredRoutes
-        });
-      } else {
-        toast({
-          title: "Login Failed",
-          description: "Invalid Student ID. Please check your ID and try again.",
-          variant: "destructive",
-        });
-      }
+    try {
+      const response = await axios.post('/api/login', { studentId });
+      toast({
+        title: "Login Successful",
+        description: `Welcome ${response.data.name}! Access granted to ${response.data.registeredRoutes.length} route(s).`,
+      });
+      onLogin(response.data);
+    } catch (error) {
+      toast({
+        title: "Login Failed",
+        description: "Invalid student ID. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
