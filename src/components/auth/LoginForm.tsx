@@ -14,7 +14,6 @@ interface LoginFormProps {
 
 const LoginForm = ({ onLogin, onBack }: LoginFormProps) => {
   const [studentId, setStudentId] = useState("");
-  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -22,18 +21,15 @@ const LoginForm = ({ onLogin, onBack }: LoginFormProps) => {
   const mockStudentDatabase = {
     "STU001": {
       name: "John Doe",
-      registeredRoutes: ["bus-1", "bus-2"], // Main Campus & Hostel Express
-      password: "password123"
+      registeredRoutes: ["Rajroohpur", "Kareli","Dhoomanganj"], // Rajroohpur & Kareli
     },
     "STU002": {
       name: "Jane Smith", 
-      registeredRoutes: ["bus-2", "bus-3"], // Hostel Express & City Center
-      password: "password123"
+      registeredRoutes: ["Kareli", "Dhoomanganj","Rajroohpur"], // Kareli & Dhoomanganj
     },
     "STU003": {
       name: "Mike Johnson",
-      registeredRoutes: ["bus-1"], // Main Campus only
-      password: "password123"
+      registeredRoutes: ["Rajroohpur","Kareli","Dhoomanganj"], // Rajroohpur only
     }
   };
 
@@ -45,7 +41,7 @@ const LoginForm = ({ onLogin, onBack }: LoginFormProps) => {
     setTimeout(() => {
       const student = mockStudentDatabase[studentId as keyof typeof mockStudentDatabase];
       
-      if (student && student.password === password) {
+      if (student) {
         toast({
           title: "Login Successful",
           description: `Welcome ${student.name}! Access granted to ${student.registeredRoutes.length} route(s).`,
@@ -58,7 +54,7 @@ const LoginForm = ({ onLogin, onBack }: LoginFormProps) => {
       } else {
         toast({
           title: "Login Failed",
-          description: "Invalid credentials or no active bus registration found",
+          description: "Invalid Student ID. Please check your ID and try again.",
           variant: "destructive",
         });
       }
@@ -106,21 +102,6 @@ const LoginForm = ({ onLogin, onBack }: LoginFormProps) => {
                   required
                 />
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                  Password
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter your password (use: password123)"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
 
               <Button
                 type="submit"
@@ -136,11 +117,7 @@ const LoginForm = ({ onLogin, onBack }: LoginFormProps) => {
                 Don't have access?{" "}
                 <span className="text-blue-600 font-medium">Contact your college administration</span>
               </p>
-              <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                <p className="text-xs text-gray-500">
-                  Demo accounts: STU001, STU002, STU003 | Password: password123
-                </p>
-              </div>
+
             </div>
           </CardContent>
         </Card>
