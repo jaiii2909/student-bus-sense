@@ -170,13 +170,7 @@ const [selectedRoute, setSelectedRoute] = useState<string | null>(
                         </p>
                      </div>
 
-                    <div>
-                      {bus.sharing === false ? (
-                      <span className="text-red-600 font-semibold">Location Sharing Stopped</span>
-                      ) : (
-                      <span className="text-green-600 font-semibold">Active</span>
-                      )}
-                      </div>
+                  
                     </div>
                   </CardContent>
 
