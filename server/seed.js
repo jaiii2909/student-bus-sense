@@ -12,8 +12,16 @@
             
             // Sample buses
             const buses = [
-                { id: 'R1', route: 'Rajroohpur', number: 'R1', status: 'active', currentLocation: 'Near Library', estimatedArrival: '5 mins', nextStop: 'Engineering Block', coordinates: { lat: 25.4558, lng: 81.8663 }, heading: 45 }
-                // Add more buses...
+             { id: 'R1', route: 'Rajroohpur', number: 'R1',
+               status: 'active',
+               coordinates: { lat: 25.4558, lng: 81.8663 }, heading: 45 },
+             { id: 'D1', route: 'Dhoomanganj', number: 'D1',
+               status: 'active',
+               coordinates: { lat: 25.4360, lng: 81.8470 }, heading: 90 },
+             { id: 'K2', route: 'Kareli', number: 'K2',
+               status: 'active',
+               coordinates: { lat: 25.4400, lng: 81.8500 } }
+             // …more…
             ];
             await Bus.insertMany(buses);
             

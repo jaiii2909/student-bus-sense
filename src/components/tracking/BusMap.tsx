@@ -3,17 +3,17 @@ import { useState, useEffect } from "react";
 import { io } from "socket.io-client";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { MapPin, Clock, Navigation2 } from "lucide-react";
+import { MapPin } from "lucide-react";
 import MapView from "../MapView";
 
+// note: Bus objects coming from the server include coordinates & (optionally) heading
 interface Bus {
   id: string;
   route: string;
   number: string;
   status: string;
-  currentLocation: string;
-  estimatedArrival: string;
-  nextStop: string;
+  coordinates: { lat: number; lng: number };
+  heading?: number;
 }
 
 interface BusMapProps {
@@ -30,19 +30,24 @@ const BusMap = ({ selectedBusId, buses }: BusMapProps) => {
       position: bus.coordinates,
       title: bus.id
     })));
+  }, [buses]);
 
-    // Connect to socket for real-time updates
-    const socket = io('http://localhost:5001');
+  useEffect(() => {
+    // Socket connection should be persistent, not re-created on buses change
+    const socket = io();
 
     socket.on('busUpdates', (updatedBuses) => {
-      setMarkers(updatedBuses.map(bus => ({
+      console.debug('received busUpdates', updatedBuses);
+      setMarkers(updatedBuses.filter(bus => bus.status === 'active').map(bus => ({
         position: bus.coordinates,
         title: bus.id
       })));
     });
 
-    return () => socket.disconnect();
-  }, [buses]);
+    return () => {
+      socket.disconnect();
+    };
+  }, []); // Empty dependency array - socket only sets up once on mount
 
   const selectedBus = buses.find(bus => bus.id === selectedBusId);
 
@@ -87,22 +92,9 @@ const BusMap = ({ selectedBusId, buses }: BusMapProps) => {
               <Badge className="bg-green-100 text-green-800">Live</Badge>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-              <div className="flex items-center space-x-2">
-                <MapPin className="w-4 h-4 text-gray-500" />
-                <span className="text-gray-700">{selectedBus.currentLocation}</span>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Clock className="w-4 h-4 text-gray-500" />
-                <span className="text-gray-700">ETA: {selectedBus.estimatedArrival}</span>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Navigation2 className="w-4 h-4 text-gray-500" />
-                <span className="text-gray-700">Next: {selectedBus.nextStop}</span>
-              </div>
-            </div>
+            {/* additional info could go here if needed in the future */}
+
+            {/* currently we only display the bus number and live badge */}
           </div>
         </Card>
       )}

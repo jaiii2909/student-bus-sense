@@ -13,6 +13,7 @@ interface StudentData {
 }
 
 const Index = () => {
+  const navigate = useNavigate();
   const [studentData, setStudentData] = useState<StudentData | null>(null);
   const [showLogin, setShowLogin] = useState(false);
 
@@ -61,7 +62,7 @@ const Index = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
-              onClick={() => setShowLogin(true)}
+              onClick={() => navigate("/role-selection")}
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
             >
               Track Your Bus

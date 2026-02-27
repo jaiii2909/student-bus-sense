@@ -20,12 +20,18 @@ interface DashboardProps {
 }
 
 const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
- const [selectedBus, setSelectedBus] = useState<string | null>(
-  () => localStorage.getItem("selectedBus") || null
-);
-const [selectedRoute, setSelectedRoute] = useState<string | null>(
-  () => localStorage.getItem("selectedRoute") || studentData.registeredRoutes[0] || null
-);
+  const [selectedBus, setSelectedBus] = useState<string | null>(
+    () => {
+      const saved = localStorage.getItem("selectedBus");
+      return saved ? saved : null;
+    }
+  );
+  const [selectedRoute, setSelectedRoute] = useState<string | null>(
+    () => {
+      const saved = localStorage.getItem("selectedRoute");
+      return saved || null;
+    }
+  );
 
 
   const [buses, setBuses] = useState([]);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,34 +18,56 @@ const ROUTES = [
     buses: ["R1"]
   },
   {
-    name: "City Center",
-    buses: ["C1", "C2"]
+    name: "Dhoomanganj",
+    buses: ["D1", "D2"]
+  },
+  {
+    name: "Kareli",
+    buses: ["K1", "K2"]
   }
 ];
 
 const Driver = () => {
-  /* ---------------- EXISTING STATES ---------------- */
+  /* Persist to localStorage so state survives page refresh */
   const [isSharing, setIsSharing] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{
     lat: number;
     lng: number;
   } | null>(null);
-  const [busId, setBusId] = useState<string>("");
+  const [busId, setBusId] = useState<string>(
+    () => localStorage.getItem("driverBusId") || ""
+  );
+  const [selectedRoute, setSelectedRoute] = useState<string>(
+    () => localStorage.getItem("driverRoute") || ""
+  );
+  const [availableBuses, setAvailableBuses] = useState<string[]>([]);
   const [watchId, setWatchId] = useState<number | null>(null);
 
-  /* ---------------- NEW STATES ---------------- */
-  const [selectedRoute, setSelectedRoute] = useState<string>("");
-  const [availableBuses, setAvailableBuses] = useState<string[]>([]);
+  /* Restore available buses on mount if route is persisted */
+  useEffect(() => {
+    if (selectedRoute) {
+      const route = ROUTES.find(r => r.name === selectedRoute);
+      setAvailableBuses(route ? route.buses : []);
+    }
+  }, []);
 
   /* ---------------- ROUTE HANDLER ---------------- */
   const handleRouteChange = (routeName: string) => {
     setSelectedRoute(routeName);
+    localStorage.setItem("driverRoute", routeName);
 
     const route = ROUTES.find(r => r.name === routeName);
     setAvailableBuses(route ? route.buses : []);
 
     // Reset bus when route changes
     setBusId("");
+    localStorage.removeItem("driverBusId");
+  };
+
+  /* Handle bus selection with persistence */
+  const handleBusChange = (busIdValue: string) => {
+    setBusId(busIdValue);
+    localStorage.setItem("driverBusId", busIdValue);
   };
 
   /* ---------------- START SHARING (UNCHANGED LOGIC) ---------------- */
@@ -63,12 +85,17 @@ const Driver = () => {
         setCurrentLocation({ lat: latitude, lng: longitude });
 
         try {
-          await axios.post(`/api/buses/${busId}/location`, {
+          await axios.post(`http://localhost:5001/api/buses/${busId}/location`, {
             lat: latitude,
             lng: longitude
           });
-        } catch (error) {
-          console.error("Error sending location:", error);
+        } catch (error: any) {
+          // log response body if available to help debug 404 vs other errors
+          if (error.response) {
+            console.error("Error sending location (response):", error.response.data);
+          } else {
+            console.error("Error sending location:", error);
+          }
         }
       },
       (error) => {
@@ -96,7 +123,6 @@ const Driver = () => {
     setCurrentLocation(null);
   };
 
-  /* ---------------- UI ---------------- */
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4">
       <div className="container mx-auto max-w-md">
@@ -144,7 +170,7 @@ const Driver = () => {
                 <select
                   className="w-full border rounded-md p-2"
                   value={busId}
-                  onChange={(e) => setBusId(e.target.value)}
+                  onChange={(e) => handleBusChange(e.target.value)}
                   disabled={isSharing}
                 >
                   <option value="">-- Select Bus --</option>

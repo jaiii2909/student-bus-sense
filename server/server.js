@@ -56,8 +56,9 @@
     const { busId } = req.params;
     const { lat, lng } = req.body;
     try {
+      // perform case‑insensitive lookup so frontend casing doesn't matter
       const bus = await Bus.findOneAndUpdate(
-        { id: busId },
+        { id: { $regex: new RegExp(`^${busId}$`, 'i') } },
         { coordinates: { lat, lng } },
         { new: true }
       );
@@ -80,7 +81,7 @@ app.post('/api/buses/:busId/stop', async (req, res) => {
   const { busId } = req.params;
   try {
     const bus = await Bus.findOneAndUpdate(
-      { id: busId },
+      { id: { $regex: new RegExp(`^${busId}$`, 'i') } },
       { sharing: false }, // new field to indicate driver stopped sharing
       { new: true }
     );
