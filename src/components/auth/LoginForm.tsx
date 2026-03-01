@@ -8,31 +8,60 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Bus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+type Role = 'student' | 'admin' | 'driver';
+
 interface LoginFormProps {
-  onLogin: (studentData: { id: string; name: string; registeredRoutes: string[] }) => void;
+  role: Role;
+  onLogin: (data: any) => void; // for students returns student data, otherwise just success
   onBack: () => void;
 }
 
-const LoginForm = ({ onLogin, onBack }: LoginFormProps) => {
+const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
   const [studentId, setStudentId] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    let endpoint = '';
+    let body: any = {};
+
+    switch (role) {
+      case 'student':
+        endpoint = '/api/student/login';
+        body = { studentId, password };
+        break;
+      case 'admin':
+        endpoint = '/api/admin/login';
+        body = { username, password };
+        break;
+      case 'driver':
+        endpoint = '/api/driver/login';
+        body = { password };
+        break;
+    }
 
     try {
-      const response = await axios.post('/api/login', { studentId });
+      const response = await axios.post(endpoint, body);
       toast({
         title: "Login Successful",
-        description: `Welcome ${response.data.name}! Access granted to ${response.data.registeredRoutes.length} route(s).`,
+        description:
+          role === 'student'
+            ? `Welcome ${response.data.name}! Access granted to ${response.data.registeredRoutes.length} route(s).`
+            : 'Credentials verified',
       });
-      onLogin(response.data);
-    } catch (error) {
+      // when student returns the document itself, pass that along
+      onLogin(role === 'student' ? response.data : response.data);
+    } catch (error: any) {
       toast({
         title: "Login Failed",
-        description: "Invalid student ID. Please try again.",
+        description:
+          role === 'student'
+            ? 'Invalid student ID or password. Please try again.'
+            : 'Invalid credentials. Please try again.',
         variant: "destructive",
       });
     } finally {
@@ -58,28 +87,66 @@ const LoginForm = ({ onLogin, onBack }: LoginFormProps) => {
               <Bus className="w-8 h-8 text-white" />
             </div>
             <CardTitle className="text-2xl font-bold text-gray-900">
-              Student Login
+              {role === 'student' ? 'Student Login' : role === 'admin' ? 'Admin Login' : 'Driver Login'}
             </CardTitle>
             <CardDescription className="text-gray-600">
-              Enter your college credentials to access your registered bus routes
+              {role === 'student'
+                ? 'Enter your college credentials to access your registered bus routes'
+                : role === 'admin'
+                ? 'Enter your admin username and password'
+                : 'Enter driver password to start sharing location'}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="studentId" className="text-sm font-medium text-gray-700">
-                  Student ID
-                </Label>
-                <Input
-                  id="studentId"
-                  type="text"
-                  value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
-                  placeholder="Enter your student ID (try STU001, STU002, or STU003)"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
+              {role === 'student' && (
+                <div className="space-y-2">
+                  <Label htmlFor="studentId" className="text-sm font-medium text-gray-700">
+                    Student ID
+                  </Label>
+                  <Input
+                    id="studentId"
+                    type="text"
+                    value={studentId}
+                    onChange={(e) => setStudentId(e.target.value)}
+                    placeholder="Enter your student ID"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+              )}
+
+              {role === 'admin' && (
+                <div className="space-y-2">
+                  <Label htmlFor="username" className="text-sm font-medium text-gray-700">
+                    Username
+                  </Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="admin"
+                    required
+                  />
+                </div>
+              )}
+
+              {(role === 'student' || role === 'admin' || role === 'driver') && (
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                    Password
+                  </Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password"
+                    required
+                  />
+                </div>
+              )}
 
               <Button
                 type="submit"
@@ -92,8 +159,12 @@ const LoginForm = ({ onLogin, onBack }: LoginFormProps) => {
 
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
-                Don't have access?{" "}
-                <span className="text-blue-600 font-medium">Contact your college administration</span>
+                {role === 'student'
+                  ? "Don't have access? "
+                  : ""}
+                {role === 'student' && (
+                  <span className="text-blue-600 font-medium">Contact your college administration</span>
+                )}
               </p>
 
             </div>

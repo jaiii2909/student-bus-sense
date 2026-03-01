@@ -12,7 +12,8 @@ interface Bus {
   route: string;
   number: string;
   status: string;
-  coordinates: { lat: number; lng: number };
+  coordinates: { lat: number; lng: number } | null;
+  updatedAt?: string | null;
   heading?: number;
 }
 
@@ -23,10 +24,31 @@ interface BusMapProps {
 
 const BusMap = ({ selectedBusId, buses }: BusMapProps) => {
   const [markers, setMarkers] = useState([]);
+  const [nowMs, setNowMs] = useState(Date.now());
+
+  const getLocationState = (bus: Bus): "pending" | "live" | "stale" => {
+    if (!bus.coordinates || !bus.updatedAt) return "pending";
+    const ageMs = nowMs - new Date(bus.updatedAt).getTime();
+    return ageMs > 5 * 60 * 1000 ? "stale" : "live";
+  };
+
+  const formatLastUpdated = (updatedAt?: string | null) => {
+    if (!updatedAt) return "No location update yet";
+    const updatedMs = new Date(updatedAt).getTime();
+    const ageMs = Math.max(0, nowMs - updatedMs);
+    const seconds = Math.floor(ageMs / 1000);
+    if (seconds < 60) return "Updated just now";
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `Updated ${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `Updated ${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `Updated ${days}d ago`;
+  };
 
   useEffect(() => {
     // Set initial markers from active buses
-    setMarkers(buses.filter(bus => bus.status === 'active').map(bus => ({
+    setMarkers(buses.filter(bus => bus.status === 'active' && bus.coordinates).map(bus => ({
       position: bus.coordinates,
       title: bus.id
     })));
@@ -34,11 +56,14 @@ const BusMap = ({ selectedBusId, buses }: BusMapProps) => {
 
   useEffect(() => {
     // Socket connection should be persistent, not re-created on buses change
-    const socket = io();
+    const socketUrl =
+      import.meta.env.VITE_SOCKET_URL ||
+      (import.meta.env.DEV ? "http://localhost:5001" : undefined);
+    const socket = socketUrl ? io(socketUrl) : io();
 
     socket.on('busUpdates', (updatedBuses) => {
       console.debug('received busUpdates', updatedBuses);
-      setMarkers(updatedBuses.filter(bus => bus.status === 'active').map(bus => ({
+      setMarkers(updatedBuses.filter(bus => bus.status === 'active' && bus.coordinates).map(bus => ({
         position: bus.coordinates,
         title: bus.id
       })));
@@ -48,6 +73,11 @@ const BusMap = ({ selectedBusId, buses }: BusMapProps) => {
       socket.disconnect();
     };
   }, []); // Empty dependency array - socket only sets up once on mount
+
+  useEffect(() => {
+    const tickId = window.setInterval(() => setNowMs(Date.now()), 30000);
+    return () => window.clearInterval(tickId);
+  }, []);
 
   const selectedBus = buses.find(bus => bus.id === selectedBusId);
 
@@ -75,6 +105,20 @@ const BusMap = ({ selectedBusId, buses }: BusMapProps) => {
     );
   }
 
+  if (selectedBus && !selectedBus.coordinates) {
+    return (
+      <div className="h-full flex items-center justify-center bg-gray-50 rounded-lg">
+        <div className="text-center">
+          <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-600 mb-2">Location Pending</h3>
+          <p className="text-gray-500">
+            Driver for {selectedBus.number} has not started sharing location yet.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative h-full">
       <MapView 
@@ -89,12 +133,17 @@ const BusMap = ({ selectedBusId, buses }: BusMapProps) => {
           <div className="p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-gray-900">{selectedBus.number}</h3>
-              <Badge className="bg-green-100 text-green-800">Live</Badge>
+              {getLocationState(selectedBus) === "live" && (
+                <Badge className="bg-green-100 text-green-800">Live</Badge>
+              )}
+              {getLocationState(selectedBus) === "stale" && (
+                <Badge className="bg-amber-100 text-amber-800">Stale</Badge>
+              )}
+              {getLocationState(selectedBus) === "pending" && (
+                <Badge className="bg-gray-100 text-gray-700">Pending</Badge>
+              )}
             </div>
-            
-            {/* additional info could go here if needed in the future */}
-
-            {/* currently we only display the bus number and live badge */}
+            <p className="text-xs text-gray-600">{formatLastUpdated(selectedBus.updatedAt)}</p>
           </div>
         </Card>
       )}

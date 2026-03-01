@@ -1,44 +1,62 @@
-            // filepath: server/seed.js
-            const mongoose = require('mongoose');
-            const Bus = require('./models/Bus');
-            const Student = require('./models/Student');
-            require('dotenv').config();
+const mongoose = require('mongoose');
+const Admin = require('./models/Admin');
+const Student = require('./models/Student');
+const Route = require('./models/Route');
+const Bus = require('./models/Bus');
 
-            const seedData = async () => {
-            await mongoose.connect(process.env.MONGO_URI);
-            
-            await Bus.deleteMany({});
-            await Student.deleteMany({});
-            
-            // Sample buses
-            const buses = [
-             { id: 'R1', route: 'Rajroohpur', number: 'R1',
-               status: 'active',
-               coordinates: { lat: 25.4558, lng: 81.8663 }, heading: 45 },
-             { id: 'D1', route: 'Dhoomanganj', number: 'D1',
-               status: 'active',
-               coordinates: { lat: 25.4360, lng: 81.8470 }, heading: 90 },
-             { id: 'K2', route: 'Kareli', number: 'K2',
-               status: 'active',
-               coordinates: { lat: 25.4400, lng: 81.8500 } }
-             // …more…
-            ];
-            await Bus.insertMany(buses);
-            
-            // Sample students
-            const students = [
-                { id: 'STU001', name: 'John Doe', registeredRoutes: ['Rajroohpur', 'Kareli', 'Dhoomanganj'] },
-                { id: 'STU002', name: 'Adnan Attacker', registeredRoutes: ['Rajroohpur', 'Kareli', 'Dhoomanganj'] },
-                { id: 'STU003', name: 'Sigma Sparsh', registeredRoutes: ['Rajroohpur', 'Kareli', 'Dhoomanganj'] },
-                { id: 'STU004', name: 'Ayush Antman', registeredRoutes: ['Rajroohpur', 'Kareli', 'Dhoomanganj'] },
-                { id: 'STU005', name: 'Johnny Jai', registeredRoutes: ['Rajroohpur', 'Kareli', 'Dhoomanganj'] }
-                
-                // Add more...
-            ];
-            await Student.insertMany(students);
-            
-            console.log('Data seeded');
-            process.exit();
-            };
+require('dotenv').config();
 
-            seedData();
+const seedData = async () => {
+  await mongoose.connect(process.env.MONGO_URI);
+
+  // purge collections
+  await Admin.deleteMany({});
+  await Student.deleteMany({});
+  await Route.deleteMany({});
+  await Bus.deleteMany({});
+  // remove any leftover index on old `id` field which is no longer in schema
+  try {
+    await Bus.collection.dropIndex('id_1');
+  } catch (e) {
+    // ignore if index doesn't exist
+  }
+  try {
+    await Student.collection.dropIndex('id_1');
+  } catch (e) {
+    // ignore if index doesn't exist
+  }
+
+  // admin user
+  await Admin.create({ username: 'admin', password: 'admin123' });
+
+  // routes
+  const routeNames = ['Rajroohpur', 'Kareli', 'Dhoomanganj'];
+  await Route.insertMany(routeNames.map(r => ({ routeName: r })));
+
+  // buses
+  const buses = [
+    { busNumber: 'R1', route: 'Rajroohpur', status: 'active' },
+    { busNumber: 'R2', route: 'Rajroohpur', status: 'active' },
+    { busNumber: 'R3', route: 'Rajroohpur', status: 'active' },
+    { busNumber: 'K1', route: 'Kareli', status: 'active' },
+    { busNumber: 'K2', route: 'Kareli', status: 'active' },
+    { busNumber: 'K3', route: 'Kareli', status: 'active' },
+    { busNumber: 'D1', route: 'Dhoomanganj', status: 'active' },
+    { busNumber: 'D2', route: 'Dhoomanganj', status: 'active' },
+    { busNumber: 'D3', route: 'Dhoomanganj', status: 'active' }
+  ];
+  await Bus.insertMany(buses);
+
+  // students
+  const students = [
+    { studentId: 'STU001', name: 'John Doe', password: 'pass1', registeredRoutes: routeNames },
+    { studentId: 'STU002', name: 'Jane Smith', password: 'pass2', registeredRoutes: routeNames },
+    { studentId: 'STU003', name: 'Baccha badass', password: 'pass3', registeredRoutes: routeNames }
+  ];
+  await Student.insertMany(students);
+
+  console.log('Data seeded');
+  process.exit();
+};
+
+seedData();

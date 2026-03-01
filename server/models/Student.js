@@ -1,9 +1,10 @@
 const mongoose = require('mongoose');
 
 const studentSchema = new mongoose.Schema({
-  id: { type: String, required: true, unique: true },
+  studentId: { type: String, required: true, unique: true },
   name: { type: String, required: true },
-  registeredRoutes: [{ type: String }],
+  password: { type: String, required: true },
+  registeredRoutes: [{ type: String }], // optional list of route names
 });
 
 module.exports = mongoose.model('Student', studentSchema);

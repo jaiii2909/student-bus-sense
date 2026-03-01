@@ -10,25 +10,18 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Navigation, StopCircle } from "lucide-react";
 import axios from "axios";
+import LoginForm from "@/components/auth/LoginForm";
 
-/* ---------------- ROUTE → BUS CONFIG ---------------- */
-const ROUTES = [
-  {
-    name: "Rajroohpur",
-    buses: ["R1"]
-  },
-  {
-    name: "Dhoomanganj",
-    buses: ["D1", "D2"]
-  },
-  {
-    name: "Kareli",
-    buses: ["K1", "K2"]
-  }
-];
+interface ApiBus {
+  _id: string;
+  busNumber: string;
+  route: string;
+  status: "active" | "inactive";
+}
 
 const Driver = () => {
-  /* Persist to localStorage so state survives page refresh */
+  // login state for driver
+  const [loggedIn, setLoggedIn] = useState<boolean>(false);
   const [isSharing, setIsSharing] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{
     lat: number;
@@ -40,24 +33,70 @@ const Driver = () => {
   const [selectedRoute, setSelectedRoute] = useState<string>(
     () => localStorage.getItem("driverRoute") || ""
   );
+  const [routes, setRoutes] = useState<string[]>([]);
   const [availableBuses, setAvailableBuses] = useState<string[]>([]);
+  const [allBuses, setAllBuses] = useState<ApiBus[]>([]);
+  const [isLoadingFleet, setIsLoadingFleet] = useState(false);
   const [watchId, setWatchId] = useState<number | null>(null);
 
-  /* Restore available buses on mount if route is persisted */
+  /* Fetch routes and buses from API after login */
   useEffect(() => {
-    if (selectedRoute) {
-      const route = ROUTES.find(r => r.name === selectedRoute);
-      setAvailableBuses(route ? route.buses : []);
-    }
-  }, []);
+    const fetchFleet = async () => {
+      if (!loggedIn) return;
+
+      setIsLoadingFleet(true);
+      try {
+        const response = await axios.get<ApiBus[]>("/api/buses");
+        const buses = response.data || [];
+        setAllBuses(buses);
+
+        const uniqueRoutes = Array.from(new Set(buses.map((b) => b.route)));
+        setRoutes(uniqueRoutes);
+
+        // Restore persisted route/bus only if they still exist.
+        if (selectedRoute && !uniqueRoutes.includes(selectedRoute)) {
+          setSelectedRoute("");
+          setBusId("");
+          setAvailableBuses([]);
+          localStorage.removeItem("driverRoute");
+          localStorage.removeItem("driverBusId");
+          return;
+        }
+
+        if (selectedRoute) {
+          const busesForRoute = buses
+            .filter((b) => b.route === selectedRoute)
+            .map((b) => b.busNumber);
+          setAvailableBuses(busesForRoute);
+
+          if (busId && !busesForRoute.includes(busId)) {
+            setBusId("");
+            localStorage.removeItem("driverBusId");
+          }
+        } else {
+          setAvailableBuses([]);
+        }
+      } catch (error) {
+        console.error("Error fetching driver fleet data:", error);
+        setRoutes([]);
+        setAvailableBuses([]);
+      } finally {
+        setIsLoadingFleet(false);
+      }
+    };
+
+    fetchFleet();
+  }, [loggedIn]);
 
   /* ---------------- ROUTE HANDLER ---------------- */
   const handleRouteChange = (routeName: string) => {
     setSelectedRoute(routeName);
     localStorage.setItem("driverRoute", routeName);
 
-    const route = ROUTES.find(r => r.name === routeName);
-    setAvailableBuses(route ? route.buses : []);
+    const busesForRoute = allBuses
+      .filter((b) => b.route === routeName)
+      .map((b) => b.busNumber);
+    setAvailableBuses(busesForRoute);
 
     // Reset bus when route changes
     setBusId("");
@@ -85,9 +124,9 @@ const Driver = () => {
         setCurrentLocation({ lat: latitude, lng: longitude });
 
         try {
-          await axios.post(`http://localhost:5001/api/buses/${busId}/location`, {
-            lat: latitude,
-            lng: longitude
+          await axios.post(`/api/driver/buses/${busId}/location`, {
+            latitude,
+            longitude
           });
         } catch (error: any) {
           // log response body if available to help debug 404 vs other errors
@@ -123,6 +162,16 @@ const Driver = () => {
     setCurrentLocation(null);
   };
 
+  if (!loggedIn) {
+    return (
+      <LoginForm
+        role="driver"
+        onLogin={() => setLoggedIn(true)}
+        onBack={() => window.location.replace('/role-selection')}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4">
       <div className="container mx-auto max-w-md">
@@ -152,12 +201,12 @@ const Driver = () => {
                 className="w-full border rounded-md p-2"
                 value={selectedRoute}
                 onChange={(e) => handleRouteChange(e.target.value)}
-                disabled={isSharing}
+                disabled={isSharing || isLoadingFleet}
               >
                 <option value="">-- Select Route --</option>
-                {ROUTES.map(route => (
-                  <option key={route.name} value={route.name}>
-                    {route.name}
+                {routes.map((route) => (
+                  <option key={route} value={route}>
+                    {route}
                   </option>
                 ))}
               </select>

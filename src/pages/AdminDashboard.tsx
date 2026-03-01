@@ -27,190 +27,138 @@ import {
   DialogTrigger
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Edit2, Trash2, Bus } from "lucide-react";
+import { ArrowLeft, Plus, Edit2, Trash2, Bus, Users } from "lucide-react";
 import axios from "axios";
+import LoginForm from "@/components/auth/LoginForm";
 
 interface Bus {
-  id: string;
-  number: string;
+  _id: string;
+  busNumber: string;
   route: string;
-  capacity: number;
-  status: "active" | "inactive" | "maintenance";
-  driver?: string;
+  status: "active" | "inactive";
 }
 
 interface Route {
-  id: string;
+  _id: string;
+  routeName: string;
+}
+
+interface Student {
+  _id: string;
+  studentId: string;
   name: string;
-  startPoint: string;
-  endPoint: string;
-  busos: string[];
+  registeredRoutes: string[];
 }
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const [loggedIn, setLoggedIn] = useState(false);
   const [buses, setBuses] = useState<Bus[]>([]);
   const [routes, setRoutes] = useState<Route[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [openBusDialog, setOpenBusDialog] = useState(false);
   const [openRouteDialog, setOpenRouteDialog] = useState(false);
+  const [openStudentDialog, setOpenStudentDialog] = useState(false);
   const [editingBus, setEditingBus] = useState<Bus | null>(null);
   const [editingRoute, setEditingRoute] = useState<Route | null>(null);
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
 
   const [newBus, setNewBus] = useState({
-    number: "",
-    route: "",
-    capacity: 50,
-    driver: ""
+    busNumber: "",
+    route: ""
   });
 
   const [newRoute, setNewRoute] = useState({
-    name: "",
-    startPoint: "",
-    endPoint: ""
+    routeName: ""
   });
 
-  // Fetch buses and routes on component mount
+  const [selectedStudentRoutes, setSelectedStudentRoutes] = useState<string[]>([]);
+
   useEffect(() => {
-    fetchBuses();
-    fetchRoutes();
-  }, []);
+    if (loggedIn) {
+      fetchBuses();
+      fetchRoutes();
+      fetchStudents();
+    }
+  }, [loggedIn]);
 
   const fetchBuses = async () => {
     try {
-      const response = await axios.get("/api/buses");
+      const response = await axios.get("/api/admin/buses");
       setBuses(response.data);
       setIsLoading(false);
     } catch (error) {
       console.error("Error fetching buses:", error);
-      // Mock data for demo
-      setBuses([
-        {
-          id: "1",
-          number: "BUS-001",
-          route: "Rajroohpur",
-          capacity: 50,
-          status: "active",
-          driver: "John Doe"
-        },
-        {
-          id: "2",
-          number: "BUS-002",
-          route: "Dhoomanganj",
-          capacity: 45,
-          status: "active",
-          driver: "Jane Smith"
-        },
-        {
-          id: "3",
-          number: "BUS-003",
-          route: "Kareli",
-          capacity: 50,
-          status: "maintenance",
-          driver: ""
-        }
-      ]);
       setIsLoading(false);
     }
   };
 
   const fetchRoutes = async () => {
     try {
-      const response = await axios.get("/api/routes");
+      const response = await axios.get("/api/admin/routes");
       setRoutes(response.data);
     } catch (error) {
       console.error("Error fetching routes:", error);
-      // Mock data for demo
-      setRoutes([
-        {
-          id: "1",
-          name: "Rajroohpur",
-          startPoint: "Main campus",
-          endPoint: "Rajroohpur",
-          busos: ["BUS-001"]
-        },
-        {
-          id: "2",
-          name: "Dhoomanganj",
-          startPoint: "Main campus",
-          endPoint: "Dhoomanganj",
-          busos: ["BUS-002"]
-        },
-        {
-          id: "3",
-          name: "Kareli",
-          startPoint: "Main campus",
-          endPoint: "Kareli",
-          busos: ["BUS-003"]
-        }
-      ]);
+    }
+  };
+
+  const fetchStudents = async () => {
+    try {
+      const response = await axios.get("/api/admin/students");
+      setStudents(response.data);
+    } catch (error) {
+      console.error("Error fetching students:", error);
     }
   };
 
   const handleAddBus = async () => {
-    if (!newBus.number || !newBus.route || !newBus.capacity) {
+    if (!newBus.busNumber || !newBus.route) {
       alert("Please fill all fields");
       return;
     }
 
     try {
       if (editingBus) {
-        // Update existing bus
-        const response = await axios.put(`/api/buses/${editingBus.id}`, {
-          ...newBus,
-          status: editingBus.status
+        const response = await axios.put(`/api/admin/buses/${editingBus._id}`, {
+          busNumber: newBus.busNumber,
+          route: newBus.route
         });
-        setBuses(buses.map(b => b.id === editingBus.id ? response.data : b));
+        setBuses(buses.map((b) => (b._id === editingBus._id ? response.data : b)));
         setEditingBus(null);
       } else {
-        // Create new bus
-        const response = await axios.post("/api/buses", newBus);
+        const response = await axios.post("/api/admin/buses", newBus);
         setBuses([...buses, response.data]);
       }
-      setNewBus({ number: "", route: "", capacity: 50, driver: "" });
+      setNewBus({ busNumber: "", route: "" });
       setOpenBusDialog(false);
     } catch (error) {
       console.error("Error adding bus:", error);
-      // Mock success for demo
-      const bus: Bus = {
-        id: (buses.length + 1).toString(),
-        ...newBus,
-        status: "active"
-      };
-      setBuses(editingBus ? buses.map(b => b.id === editingBus.id ? bus : b) : [...buses, bus]);
-      setNewBus({ number: "", route: "", capacity: 50, driver: "" });
       setOpenBusDialog(false);
       setEditingBus(null);
     }
   };
 
   const handleAddRoute = async () => {
-    if (!newRoute.name || !newRoute.startPoint || !newRoute.endPoint) {
-      alert("Please fill all fields");
+    if (!newRoute.routeName) {
+      alert("Please fill the route name");
       return;
     }
 
     try {
       if (editingRoute) {
-        const response = await axios.put(`/api/routes/${editingRoute.id}`, newRoute);
-        setRoutes(routes.map(r => r.id === editingRoute.id ? response.data : r));
+        const response = await axios.put(`/api/admin/routes/${editingRoute._id}`, newRoute);
+        setRoutes(routes.map((r) => (r._id === editingRoute._id ? response.data : r)));
         setEditingRoute(null);
       } else {
-        const response = await axios.post("/api/routes", newRoute);
+        const response = await axios.post("/api/admin/routes", newRoute);
         setRoutes([...routes, response.data]);
       }
-      setNewRoute({ name: "", startPoint: "", endPoint: "" });
+      setNewRoute({ routeName: "" });
       setOpenRouteDialog(false);
     } catch (error) {
       console.error("Error adding route:", error);
-      // Mock success for demo
-      const route: Route = {
-        id: (routes.length + 1).toString(),
-        ...newRoute,
-        busos: []
-      };
-      setRoutes(editingRoute ? routes.map(r => r.id === editingRoute.id ? route : r) : [...routes, route]);
-      setNewRoute({ name: "", startPoint: "", endPoint: "" });
+      setNewRoute({ routeName: "" });
       setOpenRouteDialog(false);
       setEditingRoute(null);
     }
@@ -219,12 +167,10 @@ const AdminDashboard = () => {
   const handleDeleteBus = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this bus?")) {
       try {
-        await axios.delete(`/api/buses/${id}`);
-        setBuses(buses.filter(b => b.id !== id));
+        await axios.delete(`/api/admin/buses/${id}`);
+        setBuses(buses.filter((b) => b._id !== id));
       } catch (error) {
         console.error("Error deleting bus:", error);
-        // Mock success for demo
-        setBuses(buses.filter(b => b.id !== id));
       }
     }
   };
@@ -232,12 +178,10 @@ const AdminDashboard = () => {
   const handleDeleteRoute = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this route?")) {
       try {
-        await axios.delete(`/api/routes/${id}`);
-        setRoutes(routes.filter(r => r.id !== id));
+        await axios.delete(`/api/admin/routes/${id}`);
+        setRoutes(routes.filter((r) => r._id !== id));
       } catch (error) {
         console.error("Error deleting route:", error);
-        // Mock success for demo
-        setRoutes(routes.filter(r => r.id !== id));
       }
     }
   };
@@ -245,10 +189,8 @@ const AdminDashboard = () => {
   const handleEditBus = (bus: Bus) => {
     setEditingBus(bus);
     setNewBus({
-      number: bus.number,
-      route: bus.route,
-      capacity: bus.capacity,
-      driver: bus.driver || ""
+      busNumber: bus.busNumber,
+      route: bus.route
     });
     setOpenBusDialog(true);
   };
@@ -256,20 +198,54 @@ const AdminDashboard = () => {
   const handleEditRoute = (route: Route) => {
     setEditingRoute(route);
     setNewRoute({
-      name: route.name,
-      startPoint: route.startPoint,
-      endPoint: route.endPoint
+      routeName: route.routeName
     });
     setOpenRouteDialog(true);
+  };
+
+  const handleEditStudent = (student: Student) => {
+    setEditingStudent(student);
+    setSelectedStudentRoutes(student.registeredRoutes || []);
+    setOpenStudentDialog(true);
+  };
+
+  const handleToggleStudentRoute = (routeName: string) => {
+    setSelectedStudentRoutes((prev) =>
+      prev.includes(routeName)
+        ? prev.filter((r) => r !== routeName)
+        : [...prev, routeName]
+    );
+  };
+
+  const handleUpdateStudentRoutes = async () => {
+    if (!editingStudent) return;
+
+    try {
+      const response = await axios.put(`/api/admin/students/${editingStudent._id}/routes`, {
+        registeredRoutes: selectedStudentRoutes
+      });
+
+      setStudents(
+        students.map((s) => (s._id === editingStudent._id ? response.data : s))
+      );
+      setOpenStudentDialog(false);
+      setEditingStudent(null);
+      setSelectedStudentRoutes([]);
+    } catch (error) {
+      console.error("Error updating student routes:", error);
+    }
   };
 
   const handleCloseDialogs = () => {
     setOpenBusDialog(false);
     setOpenRouteDialog(false);
+    setOpenStudentDialog(false);
     setEditingBus(null);
     setEditingRoute(null);
-    setNewBus({ number: "", route: "", capacity: 50, driver: "" });
-    setNewRoute({ name: "", startPoint: "", endPoint: "" });
+    setEditingStudent(null);
+    setSelectedStudentRoutes([]);
+    setNewBus({ busNumber: "", route: "" });
+    setNewRoute({ routeName: "" });
   };
 
   const getStatusColor = (status: string) => {
@@ -278,12 +254,20 @@ const AdminDashboard = () => {
         return "bg-green-100 text-green-800";
       case "inactive":
         return "bg-gray-100 text-gray-800";
-      case "maintenance":
-        return "bg-yellow-100 text-yellow-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
   };
+
+  if (!loggedIn) {
+    return (
+      <LoginForm
+        role="admin"
+        onLogin={() => setLoggedIn(true)}
+        onBack={() => navigate("/role-selection")}
+      />
+    );
+  }
 
   if (isLoading) {
     return (
@@ -299,20 +283,15 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/")}
-              className="text-gray-600 hover:text-gray-900"
-            >
+            <Button variant="ghost" onClick={() => navigate("/")} className="text-gray-600 hover:text-gray-900">
               <ArrowLeft className="mr-2 w-4 h-4" />
               Back
             </Button>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="text-gray-600">Manage buses and routes</p>
+              <p className="text-gray-600">Manage buses, routes and student access</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -320,7 +299,6 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Stats */}
         <div className="grid md:grid-cols-3 gap-4 mb-8">
           <Card>
             <CardHeader className="pb-2">
@@ -328,7 +306,7 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-purple-600">{buses.length}</div>
-              <p className="text-xs text-gray-400 mt-1">{buses.filter(b => b.status === "active").length} active</p>
+              <p className="text-xs text-gray-400 mt-1">{buses.filter((b) => b.status === "active").length} active</p>
             </CardContent>
           </Card>
 
@@ -338,37 +316,39 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-blue-600">{routes.length}</div>
-              <p className="text-xs text-gray-400 mt-1">Active routes</p>
+              <p className="text-xs text-gray-400 mt-1">Configured routes</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Capacity</CardTitle>
+              <CardTitle className="text-sm font-medium text-gray-600">Total Students</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{buses.reduce((sum, b) => sum + b.capacity, 0)}</div>
-              <p className="text-xs text-gray-400 mt-1">Total seats</p>
+              <div className="text-2xl font-bold text-green-600">{students.length}</div>
+              <p className="text-xs text-gray-400 mt-1">Route access managed</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Buses Section */}
         <Card className="mb-8">
           <CardHeader className="flex flex-row items-center justify-between bg-purple-50 rounded-t-lg">
             <div>
               <CardTitle>Buses</CardTitle>
               <CardDescription>Manage your bus fleet</CardDescription>
             </div>
-            <Dialog open={openBusDialog} onOpenChange={(open) => {
-              setOpenBusDialog(open);
-              if (!open) handleCloseDialogs();
-            }}>
+            <Dialog
+              open={openBusDialog}
+              onOpenChange={(open) => {
+                setOpenBusDialog(open);
+                if (!open) handleCloseDialogs();
+              }}
+            >
               <DialogTrigger asChild>
                 <Button
                   onClick={() => {
                     setEditingBus(null);
-                    setNewBus({ number: "", route: "", capacity: 50, driver: "" });
+                    setNewBus({ busNumber: "", route: "" });
                   }}
                   className="bg-purple-600 hover:bg-purple-700"
                 >
@@ -388,9 +368,9 @@ const AdminDashboard = () => {
                     <Label htmlFor="bus-number">Bus Number</Label>
                     <Input
                       id="bus-number"
-                      placeholder="e.g., BUS-001"
-                      value={newBus.number}
-                      onChange={(e) => setNewBus({ ...newBus, number: e.target.value })}
+                      placeholder="e.g., R1"
+                      value={newBus.busNumber}
+                      onChange={(e) => setNewBus({ ...newBus, busNumber: e.target.value })}
                     />
                   </div>
                   <div>
@@ -403,30 +383,11 @@ const AdminDashboard = () => {
                     >
                       <option value="">Select a route</option>
                       {routes.map((route) => (
-                        <option key={route.id} value={route.name}>
-                          {route.name}
+                        <option key={route._id} value={route.routeName}>
+                          {route.routeName}
                         </option>
                       ))}
                     </select>
-                  </div>
-                  <div>
-                    <Label htmlFor="bus-capacity">Capacity</Label>
-                    <Input
-                      id="bus-capacity"
-                      type="number"
-                      placeholder="50"
-                      value={newBus.capacity}
-                      onChange={(e) => setNewBus({ ...newBus, capacity: parseInt(e.target.value) })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="bus-driver">Driver Name</Label>
-                    <Input
-                      id="bus-driver"
-                      placeholder="Driver name"
-                      value={newBus.driver}
-                      onChange={(e) => setNewBus({ ...newBus, driver: e.target.value })}
-                    />
                   </div>
                   <Button onClick={handleAddBus} className="w-full bg-purple-600 hover:bg-purple-700">
                     {editingBus ? "Update Bus" : "Add Bus"}
@@ -441,37 +402,26 @@ const AdminDashboard = () => {
                 <TableRow>
                   <TableHead>Bus Number</TableHead>
                   <TableHead>Route</TableHead>
-                  <TableHead>Capacity</TableHead>
-                  <TableHead>Driver</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {buses.map((bus) => (
-                  <TableRow key={bus.id}>
-                    <TableCell className="font-medium">{bus.number}</TableCell>
+                  <TableRow key={bus._id}>
+                    <TableCell className="font-medium">{bus.busNumber}</TableCell>
                     <TableCell>{bus.route}</TableCell>
-                    <TableCell>{bus.capacity} seats</TableCell>
-                    <TableCell>{bus.driver || "-"}</TableCell>
                     <TableCell>
-                      <Badge className={getStatusColor(bus.status)}>
-                        {bus.status}
-                      </Badge>
+                      <Badge className={getStatusColor(bus.status)}>{bus.status}</Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditBus(bus)}
-                        className="mr-2"
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => handleEditBus(bus)} className="mr-2">
                         <Edit2 className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteBus(bus.id)}
+                        onClick={() => handleDeleteBus(bus._id)}
                         className="text-red-600 hover:text-red-700"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -484,22 +434,24 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Routes Section */}
-        <Card>
+        <Card className="mb-8">
           <CardHeader className="flex flex-row items-center justify-between bg-blue-50 rounded-t-lg">
             <div>
               <CardTitle>Routes</CardTitle>
               <CardDescription>Manage bus routes</CardDescription>
             </div>
-            <Dialog open={openRouteDialog} onOpenChange={(open) => {
-              setOpenRouteDialog(open);
-              if (!open) handleCloseDialogs();
-            }}>
+            <Dialog
+              open={openRouteDialog}
+              onOpenChange={(open) => {
+                setOpenRouteDialog(open);
+                if (!open) handleCloseDialogs();
+              }}
+            >
               <DialogTrigger asChild>
                 <Button
                   onClick={() => {
                     setEditingRoute(null);
-                    setNewRoute({ name: "", startPoint: "", endPoint: "" });
+                    setNewRoute({ routeName: "" });
                   }}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
@@ -520,26 +472,8 @@ const AdminDashboard = () => {
                     <Input
                       id="route-name"
                       placeholder="e.g., Rajroohpur"
-                      value={newRoute.name}
-                      onChange={(e) => setNewRoute({ ...newRoute, name: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="route-start">Start Point</Label>
-                    <Input
-                      id="route-start"
-                      placeholder="Main campus"
-                      value={newRoute.startPoint}
-                      onChange={(e) => setNewRoute({ ...newRoute, startPoint: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="route-end">End Point</Label>
-                    <Input
-                      id="route-end"
-                      placeholder="Destination"
-                      value={newRoute.endPoint}
-                      onChange={(e) => setNewRoute({ ...newRoute, endPoint: e.target.value })}
+                      value={newRoute.routeName}
+                      onChange={(e) => setNewRoute({ ...newRoute, routeName: e.target.value })}
                     />
                   </div>
                   <Button onClick={handleAddRoute} className="w-full bg-blue-600 hover:bg-blue-700">
@@ -554,35 +488,107 @@ const AdminDashboard = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Route Name</TableHead>
-                  <TableHead>Start Point</TableHead>
-                  <TableHead>End Point</TableHead>
-                  <TableHead>Buses Assigned</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {routes.map((route) => (
-                  <TableRow key={route.id}>
-                    <TableCell className="font-medium">{route.name}</TableCell>
-                    <TableCell>{route.startPoint}</TableCell>
-                    <TableCell>{route.endPoint}</TableCell>
-                    <TableCell>{route.busos.length}</TableCell>
+                  <TableRow key={route._id}>
+                    <TableCell className="font-medium">{route.routeName}</TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEditRoute(route)}
-                        className="mr-2"
-                      >
+                      <Button variant="ghost" size="sm" onClick={() => handleEditRoute(route)} className="mr-2">
                         <Edit2 className="w-4 h-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteRoute(route.id)}
+                        onClick={() => handleDeleteRoute(route._id)}
                         className="text-red-600 hover:text-red-700"
                       >
                         <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between bg-green-50 rounded-t-lg">
+            <div>
+              <CardTitle>Student Route Access</CardTitle>
+              <CardDescription>Assign authorized routes to each student</CardDescription>
+            </div>
+            <Dialog
+              open={openStudentDialog}
+              onOpenChange={(open) => {
+                setOpenStudentDialog(open);
+                if (!open) handleCloseDialogs();
+              }}
+            >
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Update Student Routes</DialogTitle>
+                  <DialogDescription>
+                    {editingStudent
+                      ? `Select routes for ${editingStudent.name} (${editingStudent.studentId})`
+                      : "Select routes for student"}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-3 max-h-72 overflow-y-auto">
+                  {routes.map((route) => (
+                    <label key={route._id} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={selectedStudentRoutes.includes(route.routeName)}
+                        onChange={() => handleToggleStudentRoute(route.routeName)}
+                      />
+                      <span>{route.routeName}</span>
+                    </label>
+                  ))}
+                </div>
+
+                <Button onClick={handleUpdateStudentRoutes} className="w-full bg-green-600 hover:bg-green-700">
+                  Save Route Access
+                </Button>
+              </DialogContent>
+            </Dialog>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Student ID</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Authorized Routes</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {students.map((student) => (
+                  <TableRow key={student._id}>
+                    <TableCell className="font-medium">{student.studentId}</TableCell>
+                    <TableCell>{student.name}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-2">
+                        {student.registeredRoutes.length > 0 ? (
+                          student.registeredRoutes.map((route) => (
+                            <Badge key={`${student._id}-${route}`} className="bg-green-100 text-green-800">
+                              {route}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-sm text-gray-500">No routes assigned</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" onClick={() => handleEditStudent(student)}>
+                        <Users className="w-4 h-4 mr-1" />
+                        Manage Routes
                       </Button>
                     </TableCell>
                   </TableRow>
