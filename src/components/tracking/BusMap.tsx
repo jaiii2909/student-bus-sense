@@ -58,7 +58,8 @@ const BusMap = ({ selectedBusId, buses }: BusMapProps) => {
     // Socket connection should be persistent, not re-created on buses change
     const socketUrl =
       import.meta.env.VITE_SOCKET_URL ||
-      (import.meta.env.DEV ? "http://localhost:5001" : undefined);
+      import.meta.env.VITE_API_BASE_URL ||
+      "https://student-bus-sense-4.onrender.com";
     const socket = socketUrl ? io(socketUrl) : io();
 
     socket.on('busUpdates', (updatedBuses) => {
