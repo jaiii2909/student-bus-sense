@@ -1,10 +1,14 @@
 const Bus = require('../models/Bus');
 const Location = require('../models/Location');
+const { comparePassword } = require('../utils/passwords');
 
 const login = async (req, res) => {
   const { password } = req.body;
-  const required = process.env.DRIVER_PASSWORD || 'driver123';
-  if (password === required) {
+  const requiredHash = process.env.DRIVER_PASSWORD_HASH;
+  const required = requiredHash || 'driver123';
+
+  const isValid = await comparePassword(password, required);
+  if (isValid) {
     res.json({ success: true });
   } else {
     res.status(401).json({ error: 'Invalid driver password' });

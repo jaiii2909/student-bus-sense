@@ -3,6 +3,7 @@ const Admin = require('./models/Admin');
 const Student = require('./models/Student');
 const Route = require('./models/Route');
 const Bus = require('./models/Bus');
+const { hashPassword } = require('./utils/passwords');
 
 require('dotenv').config();
 
@@ -27,7 +28,7 @@ const seedData = async () => {
   }
 
   // admin user
-  await Admin.create({ username: 'admin', password: 'admin123' });
+  await Admin.create({ username: 'admin', password: await hashPassword('admin123') });
 
   // routes
   const routeNames = ['Rajroohpur', 'Kareli', 'Dhoomanganj'];
@@ -49,9 +50,9 @@ const seedData = async () => {
 
   // students
   const students = [
-    { studentId: 'STU001', name: 'John Doe', password: 'pass1', registeredRoutes: routeNames },
-    { studentId: 'STU002', name: 'Jane Smith', password: 'pass2', registeredRoutes: routeNames },
-    { studentId: 'STU003', name: 'Baccha badass', password: 'pass3', registeredRoutes: routeNames }
+    { studentId: 'STU001', name: 'John Doe', password: await hashPassword('pass1'), registeredRoutes: routeNames },
+    { studentId: 'STU002', name: 'Jane Smith', password: await hashPassword('pass2'), registeredRoutes: routeNames },
+    { studentId: 'STU003', name: 'Baccha badass', password: await hashPassword('pass3'), registeredRoutes: routeNames }
   ];
   await Student.insertMany(students);
 

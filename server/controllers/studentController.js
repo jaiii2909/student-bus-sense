@@ -1,17 +1,22 @@
 const Student = require('../models/Student');
 const Bus = require('../models/Bus');
 const Location = require('../models/Location');
+const { comparePassword } = require('../utils/passwords');
 
 const login = async (req, res) => {
   const { studentId, password } = req.body;
   try {
-    const student = await Student.findOne({ studentId, password });
-    if (student) {
-      // return the student document directly to match frontend expectations
-      res.json(student);
-    } else {
+    const student = await Student.findOne({ studentId });
+    const isValid = student && await comparePassword(password, student.password);
+    if (!isValid) {
       res.status(401).json({ error: 'Invalid credentials' });
+      return;
     }
+
+    // return frontend-required fields but never include password hash
+    const safeStudent = student.toObject();
+    delete safeStudent.password;
+    res.json(safeStudent);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

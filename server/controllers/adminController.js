@@ -2,13 +2,14 @@ const Admin = require('../models/Admin');
 const Route = require('../models/Route');
 const Bus = require('../models/Bus');
 const Student = require('../models/Student');
+const { comparePassword, hashPassword } = require('../utils/passwords');
 
-// simple password compare; in real app use hashing
 const login = async (req, res) => {
   const { username, password } = req.body;
   try {
     const admin = await Admin.findOne({ username });
-    if (admin && admin.password === password) {
+    const isValid = admin && await comparePassword(password, admin.password);
+    if (isValid) {
       res.json({ success: true });
     } else {
       res.status(401).json({ error: 'Invalid credentials' });
@@ -106,9 +107,12 @@ const deleteBus = async (req, res) => {
 const addStudent = async (req, res) => {
   const { studentId, name, password, registeredRoutes } = req.body;
   try {
-    const student = new Student({ studentId, name, password, registeredRoutes });
+    const hashedPassword = await hashPassword(password);
+    const student = new Student({ studentId, name, password: hashedPassword, registeredRoutes });
     await student.save();
-    res.json(student);
+    const safeStudent = student.toObject();
+    delete safeStudent.password;
+    res.json(safeStudent);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -116,7 +120,7 @@ const addStudent = async (req, res) => {
 
 const listStudents = async (req, res) => {
   try {
-    const students = await Student.find();
+    const students = await Student.find().select('-password');
     res.json(students);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -131,7 +135,7 @@ const updateStudentRoutes = async (req, res) => {
       id,
       { registeredRoutes: Array.isArray(registeredRoutes) ? registeredRoutes : [] },
       { new: true }
-    );
+    ).select('-password');
     if (student) res.json(student);
     else res.status(404).json({ error: 'Student not found' });
   } catch (err) {
