@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "node server/server.js",
-     "hash:password": "node server/scripts/hashPassword.js",
+    "hash:password": "node server/scripts/hashPassword.js",
     "migrate:passwords": "node server/scripts/migratePasswords.js"
   },
   "dependencies": {
@@ -46,6 +46,7 @@
     "@tanstack/react-query": "^5.56.2",
     "axios": "^1.6.0",
     "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
