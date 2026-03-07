@@ -1,17 +1,37 @@
 const Bus = require('../models/Bus');
 const Location = require('../models/Location');
-const { comparePassword } = require('../utils/passwords');
+const { comparePassword, isBcryptHash } = require('../utils/passwords');
 
 const login = async (req, res) => {
   const { password } = req.body;
-  const requiredHash = process.env.DRIVER_PASSWORD_HASH;
-  const required = requiredHash || 'driver123';
+  const configuredHash = process.env.DRIVER_PASSWORD_HASH;
+  const configuredPlain = process.env.DRIVER_PASSWORD;
 
-  const isValid = await comparePassword(password, required);
-  if (isValid) {
-    res.json({ success: true });
-  } else {
-    res.status(401).json({ error: 'Invalid driver password' });
+  try {
+    let isValid = false;
+
+    // Prefer hash-based auth when present. If a plain value was accidentally
+    // placed in DRIVER_PASSWORD_HASH, fall back to plain comparison.
+    if (configuredHash) {
+      if (isBcryptHash(configuredHash)) {
+        isValid = await comparePassword(password, configuredHash);
+      } else {
+        isValid = password === configuredHash;
+      }
+    } else if (configuredPlain) {
+      isValid = password === configuredPlain;
+    } else {
+      // Dev fallback to avoid lockout when env is missing.
+      isValid = password === 'driver123';
+    }
+
+    if (isValid) {
+      res.json({ success: true });
+    } else {
+      res.status(401).json({ error: 'Invalid driver password' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
 

@@ -21,7 +21,9 @@ Make sure `.env` contains:
 ```
 MONGO_URI=your-mongo-uri
 PORT=5001
-DRIVER_PASSWORD=driver123   # driver login password
+# Use either plain text (simple setup) or a bcrypt hash (recommended)
+DRIVER_PASSWORD=driver123
+# DRIVER_PASSWORD_HASH=$2b$12$...
 ```
 
 ### Seeding

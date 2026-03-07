@@ -10,6 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Navigation, StopCircle } from "lucide-react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import LoginForm from "@/components/auth/LoginForm";
 
 interface ApiBus {
@@ -20,6 +21,7 @@ interface ApiBus {
 }
 
 const Driver = () => {
+  const navigate = useNavigate();
   // login state for driver
   const [loggedIn, setLoggedIn] = useState<boolean>(false);
   const [isSharing, setIsSharing] = useState(false);
@@ -167,7 +169,7 @@ const Driver = () => {
       <LoginForm
         role="driver"
         onLogin={() => setLoggedIn(true)}
-        onBack={() => window.location.replace('/role-selection')}
+        onBack={() => navigate("/role-selection")}
       />
     );
   }
