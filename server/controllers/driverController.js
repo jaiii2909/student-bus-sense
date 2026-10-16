@@ -1,6 +1,10 @@
+const mongoose = require('mongoose');
 const Bus = require('../models/Bus');
 const Location = require('../models/Location');
 const { comparePassword, isBcryptHash } = require('../utils/passwords');
+const { signToken } = require('../middleware/auth');
+const { sendError } = require('../utils/errors');
+const { emitBusUpdate } = require('../utils/busPayload');
 
 const login = async (req, res) => {
   const { password } = req.body;
@@ -20,42 +24,49 @@ const login = async (req, res) => {
       }
     } else if (configuredPlain) {
       isValid = password === configuredPlain;
-    } else {
+    } else if (process.env.NODE_ENV !== 'production') {
       // Dev fallback to avoid lockout when env is missing.
       isValid = password === 'driver123';
+    } else {
+      console.error('DRIVER_PASSWORD_HASH / DRIVER_PASSWORD is not set');
     }
 
     if (isValid) {
-      res.json({ success: true });
+      res.json({ success: true, token: signToken({ role: 'driver' }) });
     } else {
       res.status(401).json({ error: 'Invalid driver password' });
     }
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 };
 
-// driver will post location for a particular bus
+// the front-end sends the bus number (e.g. "R1"); ObjectIds also work
+const findBus = async (busId) => {
+  let bus = null;
+  if (mongoose.Types.ObjectId.isValid(busId)) {
+    bus = await Bus.findById(busId);
+  }
+  return bus || Bus.findOne({ busNumber: busId });
+};
+
+// driver posts location for a particular bus; this also marks the bus as running
 const shareLocation = async (req, res) => {
   const { busId } = req.params;
-  const { latitude, longitude } = req.body;
+  const latitude = Number(req.body.latitude);
+  const longitude = Number(req.body.longitude);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return res.status(400).json({ error: 'Invalid coordinates' });
+  }
+
   try {
-    // the front-end currently sends a simple bus identifier (e.g. "R1")
-    // but our Bus model uses a Mongo ObjectId as _id, so look up by
-    // busNumber when the value isn't a valid ObjectId.  This keeps
-    // the existing admin paths working as well as allowing numeric
-    // ids in the future.
-    let bus;
-    const mongoose = require('mongoose');
-    if (mongoose.Types.ObjectId.isValid(busId)) {
-      bus = await Bus.findById(busId);
-    }
-    if (!bus) {
-      // fall back to busNumber field
-      bus = await Bus.findOne({ busNumber: busId });
-    }
+    const bus = await findBus(busId);
     if (!bus) {
       return res.status(404).json({ error: 'Bus not found' });
+    }
+    if (bus.status !== 'active') {
+      bus.status = 'active';
+      await bus.save();
     }
 
     const loc = await Location.findOneAndUpdate(
@@ -63,36 +74,28 @@ const shareLocation = async (req, res) => {
       { latitude, longitude, updatedAt: Date.now() },
       { upsert: true, new: true }
     );
-    // emit updated location to any listening clients
-    const io = req.app.locals.io;
-    if (io) {
-      // Backward-compatible event for existing clients.
-      io.emit('locationUpdate', loc);
-
-      // Canonical realtime payload used by student tracking map.
-      const updatedBuses = await Location.find()
-        .populate('busId')
-        .then((locations) =>
-          locations
-            .filter((item) => item.busId)
-            .map((item) => ({
-              id: item.busId._id.toString(),
-              number: item.busId.busNumber,
-              route: item.busId.route,
-              status: item.busId.status,
-              coordinates: {
-                lat: item.latitude,
-                lng: item.longitude
-              }
-            }))
-        );
-
-      io.emit('busUpdates', updatedBuses);
-    }
+    emitBusUpdate(req.app.locals.io, bus, loc);
     res.json(loc);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 };
 
-module.exports = { login, shareLocation };
+// driver stopped sharing: mark the bus as not running
+const stopSharing = async (req, res) => {
+  try {
+    const bus = await findBus(req.params.busId);
+    if (!bus) {
+      return res.status(404).json({ error: 'Bus not found' });
+    }
+    bus.status = 'inactive';
+    await bus.save();
+    const loc = await Location.findOne({ busId: bus._id });
+    emitBusUpdate(req.app.locals.io, bus, loc);
+    res.json({ success: true });
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+module.exports = { login, shareLocation, stopSharing };

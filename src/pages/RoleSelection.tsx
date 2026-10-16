@@ -38,11 +38,11 @@ const RoleSelection = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <CardDescription className="text-center text-gray-600">
-                Track your college bus in real-time and get accurate arrival estimates.
+                Track your college bus in real-time.
               </CardDescription>
               <ul className="text-sm text-gray-600 space-y-2 text-left">
                 <li>✓ Real-time bus tracking</li>
-                <li>✓ Arrival predictions</li>
+                <li>✓ Running / not running status</li>
                 <li>✓ Route information</li>
               </ul>
               <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-4">
@@ -63,12 +63,12 @@ const RoleSelection = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <CardDescription className="text-center text-gray-600">
-                Share your location and manage your bus route in real-time.
+                Share your bus location with students in one tap.
               </CardDescription>
               <ul className="text-sm text-gray-600 space-y-2 text-left">
                 <li>✓ Share live location</li>
-                <li>✓ Route management</li>
-                <li>✓ Student visibility</li>
+                <li>✓ Pick your route and bus</li>
+                <li>✓ Students see you instantly</li>
               </ul>
               <Button className="w-full bg-green-600 hover:bg-green-700 text-white mt-4">
                 Continue as Driver
@@ -92,8 +92,8 @@ const RoleSelection = () => {
               </CardDescription>
               <ul className="text-sm text-gray-600 space-y-2 text-left">
                 <li>✓ Bus management</li>
-                <li>✓ Route planning</li>
-                <li>✓ Fleet monitoring</li>
+                <li>✓ Route & student access</li>
+                <li>✓ Live fleet map</li>
               </ul>
               <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white mt-4">
                 Continue as Admin

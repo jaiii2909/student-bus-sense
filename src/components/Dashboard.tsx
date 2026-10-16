@@ -1,17 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import axios from "axios";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, MapPin, Bus, Shield } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { MapPin, Shield, Route as RouteIcon, Bus as BusIcon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import AppHeader from "./AppHeader";
 import BusMap from "./tracking/BusMap";
+import { TrackedBus, LOCATION_BADGE, getLocationState, formatLastUpdated } from "@/lib/busStatus";
+import { connectBusSocket } from "@/lib/socket";
 
 interface StudentData {
   _id?: string;
   studentId?: string;
   name: string;
   registeredRoutes: string[];
+  token?: string;
 }
 
 interface DashboardProps {
@@ -19,59 +23,59 @@ interface DashboardProps {
   onLogout: () => void;
 }
 
-interface AuthorizedBus {
-  id: string;
-  number: string;
-  route: string;
-  status: "active" | "inactive";
-  coordinates: { lat: number; lng: number } | null;
-  updatedAt: string | null;
-}
-
 interface AuthorizedBusesResponse {
   studentId: string;
   registeredRoutes: string[];
-  buses: AuthorizedBus[];
+  buses: TrackedBus[];
 }
 
-const STALE_THRESHOLD_MS = 5 * 60 * 1000;
+const readStored = (key: string) => {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const writeStored = (key: string, value: string | null) => {
+  try {
+    if (value) localStorage.setItem(key, value);
+    else localStorage.removeItem(key);
+  } catch {
+    // ignore
+  }
+};
+
+const EmptyState = ({ icon: Icon, title, text }: { icon: typeof Shield; title: string; text: string }) => (
+  <Card className="text-center p-6">
+    <CardContent>
+      <Icon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+      <h3 className="text-lg font-semibold text-gray-600 mb-2">{title}</h3>
+      <p className="text-gray-500 text-sm">{text}</p>
+    </CardContent>
+  </Card>
+);
 
 const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
-  const [selectedBus, setSelectedBus] = useState<string | null>(() => {
-    const saved = localStorage.getItem("selectedBus");
-    return saved ? saved : null;
-  });
-  const [selectedRoute, setSelectedRoute] = useState<string | null>(() => {
-    const saved = localStorage.getItem("selectedRoute");
-    return saved || null;
-  });
-
-  const [buses, setBuses] = useState<AuthorizedBus[]>([]);
-  const [authorizedRoutes, setAuthorizedRoutes] = useState<string[]>(
-    studentData.registeredRoutes || []
-  );
+  const [selectedBus, setSelectedBusState] = useState<string | null>(() => readStored("selectedBus"));
+  const [selectedRoute, setSelectedRouteState] = useState<string | null>(() => readStored("selectedRoute"));
+  const [buses, setBuses] = useState<TrackedBus[]>([]);
+  const [authorizedRoutes, setAuthorizedRoutes] = useState<string[]>(studentData.registeredRoutes || []);
+  const [isLoading, setIsLoading] = useState(true);
   const [nowMs, setNowMs] = useState(Date.now());
+  const mapRef = useRef<HTMLDivElement>(null);
 
-  const getLocationState = (bus: AuthorizedBus): "pending" | "live" | "stale" => {
-    if (!bus.coordinates || !bus.updatedAt) return "pending";
-    const ageMs = nowMs - new Date(bus.updatedAt).getTime();
-    return ageMs > STALE_THRESHOLD_MS ? "stale" : "live";
+  const setSelectedBus = (id: string | null) => {
+    setSelectedBusState(id);
+    writeStored("selectedBus", id);
   };
 
-  const formatLastUpdated = (updatedAt: string | null) => {
-    if (!updatedAt) return "No location update yet";
-    const updatedMs = new Date(updatedAt).getTime();
-    const ageMs = Math.max(0, nowMs - updatedMs);
-    const seconds = Math.floor(ageMs / 1000);
-    if (seconds < 60) return "Updated just now";
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `Updated ${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `Updated ${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `Updated ${days}d ago`;
+  const setSelectedRoute = (route: string | null) => {
+    setSelectedRouteState(route);
+    writeStored("selectedRoute", route);
   };
 
+  // regular refresh as a fallback to the live socket
   useEffect(() => {
     if (!studentData.studentId) return;
 
@@ -82,7 +86,8 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
           setBuses(res.data.buses || []);
           setAuthorizedRoutes(res.data.registeredRoutes || []);
         })
-        .catch((err) => console.error("Error fetching authorized buses:", err));
+        .catch((err) => console.error("Error fetching authorized buses:", err))
+        .finally(() => setIsLoading(false));
     };
 
     fetchAuthorizedBuses();
@@ -90,76 +95,125 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
     return () => window.clearInterval(pollId);
   }, [studentData.studentId]);
 
+  // live updates for buses on this student's routes
+  useEffect(() => {
+    if (!studentData.token) return;
+    const socket = connectBusSocket(studentData.token);
+    socket.on("busUpdate", (update: TrackedBus) => {
+      setBuses((prev) => prev.map((bus) => (bus.id === update.id ? update : bus)));
+    });
+    return () => {
+      socket.disconnect();
+    };
+  }, [studentData.token]);
+
   useEffect(() => {
     const tickId = window.setInterval(() => setNowMs(Date.now()), 30000);
     return () => window.clearInterval(tickId);
   }, []);
 
+  // drop a saved route that is no longer authorized; auto-pick when there is only one
   useEffect(() => {
     if (selectedRoute && !authorizedRoutes.includes(selectedRoute)) {
       setSelectedRoute(null);
-      localStorage.removeItem("selectedRoute");
+    } else if (!selectedRoute && authorizedRoutes.length === 1) {
+      setSelectedRoute(authorizedRoutes[0]);
     }
   }, [selectedRoute, authorizedRoutes]);
 
+  const filteredBuses = useMemo(
+    () => (selectedRoute ? buses.filter((bus) => bus.route === selectedRoute) : []),
+    [buses, selectedRoute]
+  );
+
+  // drop a saved bus that no longer exists; auto-pick when only one bus is running
   useEffect(() => {
-    if (!selectedBus) return;
-    const exists = buses.some((b) => b.id === selectedBus);
-    if (!exists) {
+    if (isLoading) return;
+    if (selectedBus && !filteredBuses.some((b) => b.id === selectedBus)) {
       setSelectedBus(null);
-      localStorage.removeItem("selectedBus");
+    } else if (!selectedBus) {
+      const running = filteredBuses.filter((b) => b.status === "active");
+      if (running.length === 1) setSelectedBus(running[0].id);
     }
-  }, [selectedBus, buses]);
+  }, [selectedBus, filteredBuses, isLoading]);
+
+  const handleSelectBus = (id: string) => {
+    setSelectedBus(id);
+    // on small screens the map sits below the list
+    if (window.innerWidth < 1024) {
+      mapRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   const handleLogout = () => {
-    localStorage.removeItem("selectedBus");
-    localStorage.removeItem("selectedRoute");
+    setSelectedBus(null);
+    setSelectedRoute(null);
     onLogout();
   };
 
-  const filteredBuses = selectedRoute
-    ? buses.filter((bus) => bus.route === selectedRoute)
-    : [];
+  const trackedBus = filteredBuses.find((b) => b.id === selectedBus) || null;
+
+  const renderBusList = () => {
+    if (isLoading) {
+      return [0, 1, 2].map((i) => <Skeleton key={i} className="h-24 w-full rounded-lg" />);
+    }
+    if (authorizedRoutes.length === 0) {
+      return (
+        <EmptyState
+          icon={Shield}
+          title="No Bus Access"
+          text="You don't have access to any bus routes. Please contact administration to register for bus services."
+        />
+      );
+    }
+    if (!selectedRoute) {
+      return <EmptyState icon={RouteIcon} title="Pick a route" text="Choose one of your routes above to see its buses." />;
+    }
+    if (filteredBuses.length === 0) {
+      return <EmptyState icon={BusIcon} title="No buses yet" text="No buses are assigned to this route yet." />;
+    }
+    return filteredBuses.map((bus) => {
+      const badge = LOCATION_BADGE[getLocationState(bus, nowMs)];
+      return (
+        <Card
+          key={bus.id}
+          className={`cursor-pointer transition-all duration-300 hover:shadow-lg border-2 ${
+            selectedBus === bus.id ? "border-primary shadow-lg" : "border-transparent hover:border-blue-200"
+          } ${bus.status === "inactive" ? "opacity-70" : ""}`}
+          onClick={() => handleSelectBus(bus.id)}
+        >
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-semibold text-gray-900">{bus.number}</CardTitle>
+              <Badge className={badge.className}>{badge.label}</Badge>
+            </div>
+            <CardDescription className="font-medium text-gray-700">{bus.route}</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-xs text-gray-500">
+              {bus.status === "inactive" ? "Driver is not sharing location right now" : formatLastUpdated(bus.updatedAt, nowMs)}
+            </p>
+          </CardContent>
+        </Card>
+      );
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      <div className="bg-white/80 backdrop-blur-sm shadow-sm border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-              <Bus className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Bus Tracker</h1>
-              <p className="text-sm text-gray-600">Welcome, {studentData.name}</p>
-            </div>
-          </div>
-          <Button variant="outline" onClick={handleLogout} className="flex items-center space-x-2">
-            <LogOut className="w-4 h-4" />
-            <span>Logout</span>
-          </Button>
-        </div>
-      </div>
+      <AppHeader title="Bus Tracker" subtitle={`Welcome, ${studentData.name}`} onLogout={handleLogout} />
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1 space-y-4">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Your Buses</h2>
-              <Badge className="bg-green-100 text-green-800 flex items-center space-x-1">
-                <Shield className="w-3 h-3" />
-                <span>Verified Access</span>
-              </Badge>
-            </div>
+            <h2 className="text-2xl font-bold text-gray-900">Your Buses</h2>
 
-            <div className="mb-4">
+            {authorizedRoutes.length > 0 && (
               <Select
                 value={selectedRoute || ""}
                 onValueChange={(val) => {
                   setSelectedRoute(val);
-                  localStorage.setItem("selectedRoute", val);
                   setSelectedBus(null);
-                  localStorage.removeItem("selectedBus");
                 }}
               >
                 <SelectTrigger className="w-full">
@@ -173,105 +227,24 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            {filteredBuses.length === 0 ? (
-              <Card className="text-center p-6">
-                <CardContent>
-                  <Shield className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-600 mb-2">No Bus Access</h3>
-                  <p className="text-gray-500 text-sm">
-                    You don&apos;t have access to any bus routes. Please contact administration to register for bus services.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              filteredBuses.map((bus) => (
-                <Card
-                  key={bus.id}
-                  className={`cursor-pointer transition-all duration-300 hover:shadow-lg border-2 ${
-                    selectedBus === bus.id ? "border-blue-500 shadow-lg" : "border-transparent hover:border-blue-200"
-                  } ${bus.status === "inactive" ? "opacity-60" : ""}`}
-                  onClick={() => {
-                    if (bus.status === "active") {
-                      setSelectedBus(bus.id);
-                      localStorage.setItem("selectedBus", bus.id);
-                    }
-                  }}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg font-semibold text-gray-900">{bus.number}</CardTitle>
-                      <div className="flex space-x-2">
-                        <Badge
-                          variant={bus.status === "active" ? "default" : "secondary"}
-                          className={bus.status === "active" ? "bg-green-100 text-green-800" : ""}
-                        >
-                          {bus.status === "active" ? "Active" : "Inactive"}
-                        </Badge>
-                        <Badge className="bg-blue-100 text-blue-800">
-                          <Shield className="w-3 h-3 mr-1" />
-                          Authorized
-                        </Badge>
-                        {getLocationState(bus) === "live" && (
-                          <Badge className="bg-emerald-100 text-emerald-800">Live</Badge>
-                        )}
-                        {getLocationState(bus) === "stale" && (
-                          <Badge className="bg-amber-100 text-amber-800">Stale</Badge>
-                        )}
-                        {getLocationState(bus) === "pending" && (
-                          <Badge className="bg-gray-100 text-gray-700">Pending</Badge>
-                        )}
-                      </div>
-                    </div>
-                    <CardDescription className="font-medium text-gray-700">{bus.route}</CardDescription>
-                  </CardHeader>
-
-                  <CardContent className="space-y-3 pt-0">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium">Bus ID: {bus.id}</p>
-                        <p className="text-xs text-gray-500">Route: {bus.route}</p>
-                        <p className="text-xs text-gray-500">
-                          {bus.coordinates ? "Live location available" : "Waiting for driver location"}
-                        </p>
-                        <p className="text-xs text-gray-500">{formatLastUpdated(bus.updatedAt)}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
             )}
 
-            {filteredBuses.length > 0 && (
-              <Card className="bg-blue-50 border-blue-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-2 text-sm text-blue-800">
-                    <Shield className="w-4 h-4" />
-                    <span className="font-medium">Secure Access: You can only view buses you&apos;re registered for</span>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            {renderBusList()}
           </div>
 
-          <div className="lg:col-span-2">
-            <Card className="h-full min-h-[600px] border-0 shadow-xl">
+          <div className="lg:col-span-2 scroll-mt-4" ref={mapRef}>
+            <Card className="border-0 shadow-xl overflow-hidden">
               <CardHeader>
                 <CardTitle className="text-xl font-bold text-gray-900 flex items-center space-x-2">
                   <MapPin className="w-5 h-5" />
                   <span>Live Bus Tracking</span>
                 </CardTitle>
                 <CardDescription>
-                  {selectedBus
-                    ? `Tracking ${filteredBuses.find((b) => b.id === selectedBus)?.number}`
-                    : filteredBuses.length > 0
-                    ? "Select a bus to view its live location"
-                    : "Register for bus services to start tracking"}
+                  {trackedBus ? `Tracking ${trackedBus.number}` : "Select a bus to view its live location"}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="h-full p-0">
-                <BusMap selectedBusId={selectedBus} buses={buses} />
+              <CardContent className="p-0 h-[420px] lg:h-[560px]">
+                <BusMap bus={trackedBus} nowMs={nowMs} />
               </CardContent>
             </Card>
           </div>

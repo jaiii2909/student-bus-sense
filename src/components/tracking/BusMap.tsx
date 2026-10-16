@@ -1,164 +1,62 @@
-
-import { useState, useEffect } from "react";
-import { io } from "socket.io-client";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
 import MapView from "../MapView";
-
-// note: Bus objects coming from the server include coordinates & (optionally) heading
-interface Bus {
-  id: string;
-  route: string;
-  number: string;
-  status: string;
-  coordinates: { lat: number; lng: number } | null;
-  updatedAt?: string | null;
-  heading?: number;
-}
+import { TrackedBus, LOCATION_BADGE, getLocationState, formatLastUpdated } from "@/lib/busStatus";
 
 interface BusMapProps {
-  selectedBusId: string | null;
-  buses: Bus[];
+  bus: TrackedBus | null;
+  nowMs: number;
 }
 
-const BusMap = ({ selectedBusId, buses }: BusMapProps) => {
-  const [markers, setMarkers] = useState([]);
-  const [nowMs, setNowMs] = useState(Date.now());
+const Placeholder = ({ title, text }: { title: string; text: string }) => (
+  <div className="h-full flex items-center justify-center bg-gray-50 p-6">
+    <div className="text-center">
+      <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+      <h3 className="text-lg font-semibold text-gray-600 mb-2">{title}</h3>
+      <p className="text-gray-500">{text}</p>
+    </div>
+  </div>
+);
 
-  const getLocationState = (bus: Bus): "pending" | "live" | "stale" => {
-    if (!bus.coordinates || !bus.updatedAt) return "pending";
-    const ageMs = nowMs - new Date(bus.updatedAt).getTime();
-    return ageMs > 5 * 60 * 1000 ? "stale" : "live";
-  };
+// Map for the one bus the student selected.
+const BusMap = ({ bus, nowMs }: BusMapProps) => {
+  if (!bus) {
+    return <Placeholder title="Select a Bus" text="Choose a bus from the list to view its location" />;
+  }
 
-  const formatLastUpdated = (updatedAt?: string | null) => {
-    if (!updatedAt) return "No location update yet";
-    const updatedMs = new Date(updatedAt).getTime();
-    const ageMs = Math.max(0, nowMs - updatedMs);
-    const seconds = Math.floor(ageMs / 1000);
-    if (seconds < 60) return "Updated just now";
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `Updated ${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `Updated ${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `Updated ${days}d ago`;
-  };
-
-  useEffect(() => {
-    // Set initial markers from active buses
-    setMarkers(buses.filter(bus => bus.status === 'active' && bus.coordinates).map(bus => ({
-      position: bus.coordinates,
-      title: bus.id
-    })));
-  }, [buses]);
-
-  useEffect(() => {
-    // Socket connection should be persistent, not re-created on buses change
-    const socketUrl =
-      import.meta.env.VITE_SOCKET_URL ||
-      import.meta.env.VITE_API_BASE_URL ||
-      "https://student-bus-sense-4.onrender.com";
-    const socket = socketUrl ? io(socketUrl) : io();
-
-    socket.on('busUpdates', (updatedBuses) => {
-      console.debug('received busUpdates', updatedBuses);
-      setMarkers(updatedBuses.filter(bus => bus.status === 'active' && bus.coordinates).map(bus => ({
-        position: bus.coordinates,
-        title: bus.id
-      })));
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, []); // Empty dependency array - socket only sets up once on mount
-
-  useEffect(() => {
-    const tickId = window.setInterval(() => setNowMs(Date.now()), 30000);
-    return () => window.clearInterval(tickId);
-  }, []);
-
-  const selectedBus = buses.find(bus => bus.id === selectedBusId);
-
-  // Center map on selected bus or default location
-  const mapCenter = selectedBus && selectedBus.coordinates
-    ? { lat: selectedBus.coordinates.lat, lng: selectedBus.coordinates.lng }
-    : { lat: 25.4358, lng: 81.8463 }; // Prayagraj/Allahabad center
-
-  if (!selectedBusId || buses.length === 0) {
+  if (!bus.coordinates) {
     return (
-      <div className="h-full flex items-center justify-center bg-gray-50 rounded-lg">
-        <div className="text-center">
-          <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-600 mb-2">
-            {buses.length === 0 ? "Select a Route" : "Select a Bus"}
-          </h3>
-          <p className="text-gray-500">
-            {buses.length === 0 
-              ? "Choose a route from the dropdown to view available buses" 
-              : "Choose an active bus from the list to view its live location"
-            }
-          </p>
-        </div>
-      </div>
+      <Placeholder
+        title="Location Pending"
+        text={`Driver for ${bus.number} has not started sharing location yet.`}
+      />
     );
   }
 
-  if (selectedBus && !selectedBus.coordinates) {
-    return (
-      <div className="h-full flex items-center justify-center bg-gray-50 rounded-lg">
-        <div className="text-center">
-          <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-600 mb-2">Location Pending</h3>
-          <p className="text-gray-500">
-            Driver for {selectedBus.number} has not started sharing location yet.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const badge = LOCATION_BADGE[getLocationState(bus, nowMs)];
 
   return (
     <div className="relative h-full">
-      <MapView 
-        center={mapCenter} 
-        markers={markers}
+      <MapView
+        center={bus.coordinates}
+        markers={[{ id: bus.id, position: bus.coordinates, title: bus.number }]}
         zoom={15}
       />
 
       {/* Bus Info Overlay */}
-      {selectedBus && (
-        <Card className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold text-gray-900">{selectedBus.number}</h3>
-              {getLocationState(selectedBus) === "live" && (
-                <Badge className="bg-green-100 text-green-800">Live</Badge>
-              )}
-              {getLocationState(selectedBus) === "stale" && (
-                <Badge className="bg-amber-100 text-amber-800">Stale</Badge>
-              )}
-              {getLocationState(selectedBus) === "pending" && (
-                <Badge className="bg-gray-100 text-gray-700">Pending</Badge>
-              )}
-            </div>
-            <p className="text-xs text-gray-600">{formatLastUpdated(selectedBus.updatedAt)}</p>
+      <Card className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="font-semibold text-gray-900">{bus.number}</h3>
+            <Badge className={badge.className}>{badge.label}</Badge>
           </div>
-        </Card>
-      )}
-
-      {/* Status Note */}
-      <div className="absolute top-4 right-4">
-        <Card className="bg-green-50 border-green-200">
-          <div className="p-3">
-            <p className="text-xs text-green-800">
-              🗺️ Live GPS Tracking Active
-            </p>
-          </div>
-        </Card>
-      </div>
+          <p className="text-xs text-gray-600">
+            {bus.status === "inactive" ? "Last known location. " : ""}
+            {formatLastUpdated(bus.updatedAt, nowMs)}
+          </p>
+        </div>
+      </Card>
     </div>
   );
 };

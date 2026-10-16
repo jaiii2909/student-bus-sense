@@ -2,28 +2,22 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LoginForm from "@/components/auth/LoginForm";
 import Dashboard from "@/components/Dashboard";
+import { clearSession, getSession, saveSession } from "@/lib/session";
 
 interface StudentData {
   _id?: string;
   studentId?: string;
   name: string;
-  password?: string;
   registeredRoutes: string[];
+  token?: string;
 }
-
-const STUDENT_SESSION_KEY = "studentSession";
 
 const StudentLogin = () => {
   const navigate = useNavigate();
   const [studentData, setStudentData] = useState<StudentData | null>(() => {
-    const saved = localStorage.getItem(STUDENT_SESSION_KEY);
-    if (!saved) return null;
-    try {
-      return JSON.parse(saved) as StudentData;
-    } catch {
-      localStorage.removeItem(STUDENT_SESSION_KEY);
-      return null;
-    }
+    const saved = getSession<StudentData>("student");
+    // sessions saved before login tokens existed must log in again
+    return saved?.token ? saved : null;
   });
 
   const handleLogin = (data: StudentData) => {
@@ -32,15 +26,16 @@ const StudentLogin = () => {
       _id: data._id,
       studentId: data.studentId,
       name: data.name,
-      registeredRoutes: data.registeredRoutes || []
+      registeredRoutes: data.registeredRoutes || [],
+      token: data.token
     };
     setStudentData(sessionData);
-    localStorage.setItem(STUDENT_SESSION_KEY, JSON.stringify(sessionData));
+    saveSession("student", sessionData);
   };
 
   const handleLogout = () => {
     setStudentData(null);
-    localStorage.removeItem(STUDENT_SESSION_KEY);
+    clearSession("student");
   };
 
   if (studentData) {
@@ -48,10 +43,10 @@ const StudentLogin = () => {
   }
 
   return (
-    <LoginForm 
+    <LoginForm
       role="student"
-      onLogin={handleLogin} 
-      onBack={() => navigate("/role-selection")} 
+      onLogin={handleLogin}
+      onBack={() => navigate("/")}
     />
   );
 };

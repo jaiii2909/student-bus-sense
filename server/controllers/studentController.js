@@ -2,6 +2,9 @@ const Student = require('../models/Student');
 const Bus = require('../models/Bus');
 const Location = require('../models/Location');
 const { comparePassword } = require('../utils/passwords');
+const { signToken } = require('../middleware/auth');
+const { sendError } = require('../utils/errors');
+const { toBusPayload } = require('../utils/busPayload');
 
 const login = async (req, res) => {
   const { studentId, password } = req.body;
@@ -16,9 +19,10 @@ const login = async (req, res) => {
     // return frontend-required fields but never include password hash
     const safeStudent = student.toObject();
     delete safeStudent.password;
+    safeStudent.token = signToken({ role: 'student', studentId: student.studentId });
     res.json(safeStudent);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 };
 
@@ -28,13 +32,17 @@ const viewBuses = async (req, res) => {
     const locs = await Location.find().populate('busId');
     res.json(locs);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 };
 
 // return all buses on student's authorized routes, with latest location if available
 const viewAuthorizedBuses = async (req, res) => {
   const { studentId } = req.params;
+  // a student may only read their own buses
+  if (req.user.studentId !== studentId) {
+    return res.status(403).json({ error: 'Not allowed' });
+  }
   try {
     const student = await Student.findOne({ studentId });
     if (!student) {
@@ -48,27 +56,13 @@ const viewAuthorizedBuses = async (req, res) => {
       locations.map((loc) => [loc.busId.toString(), loc])
     );
 
-    const mappedBuses = buses.map((bus) => {
-      const loc = locationByBusId.get(bus._id.toString());
-      return {
-        id: bus._id.toString(),
-        number: bus.busNumber,
-        route: bus.route,
-        status: bus.status,
-        coordinates: loc
-          ? { lat: loc.latitude, lng: loc.longitude }
-          : null,
-        updatedAt: loc ? loc.updatedAt : null
-      };
-    });
-
     res.json({
       studentId: student.studentId,
       registeredRoutes: student.registeredRoutes,
-      buses: mappedBuses
+      buses: buses.map((bus) => toBusPayload(bus, locationByBusId.get(bus._id.toString())))
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    sendError(res, err);
   }
 };
 

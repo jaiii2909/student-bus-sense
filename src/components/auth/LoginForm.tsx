@@ -78,12 +78,12 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
           className="mb-6 text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Home
+          Back
         </Button>
 
         <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-sm">
           <CardHeader className="text-center space-y-4">
-            <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto">
+            <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto">
               <Bus className="w-8 h-8 text-white" />
             </div>
             <CardTitle className="text-2xl font-bold text-gray-900">
@@ -150,7 +150,7 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
 
               <Button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                className="w-full py-3 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
                 disabled={isLoading}
               >
                 {isLoading ? "Verifying Access..." : "Login"}
@@ -163,7 +163,7 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
                   ? "Don't have access? "
                   : ""}
                 {role === 'student' && (
-                  <span className="text-blue-600 font-medium">Contact your college administration</span>
+                  <span className="text-primary font-medium">Contact your college administration</span>
                 )}
               </p>
 
