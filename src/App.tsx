@@ -9,6 +9,7 @@ import StudentLogin from "./pages/StudentLogin";
 import Driver from "./pages/Driver";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
+import { Analytics } from "@vercel/analytics/next"
 
 const queryClient = new QueryClient();
 
