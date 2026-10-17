@@ -1,9 +1,19 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import axios from "axios";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, Shield, Route as RouteIcon, Bus as BusIcon } from "lucide-react";
+import { 
+  MapPin, 
+  ShieldAlert, 
+  Route as RouteIcon, 
+  Bus as BusIcon, 
+  Radio, 
+  Clock, 
+  Navigation, 
+  Check, 
+  RefreshCw 
+} from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AppHeader from "./AppHeader";
 import BusMap from "./tracking/BusMap";
@@ -46,14 +56,14 @@ const writeStored = (key: string, value: string | null) => {
   }
 };
 
-const EmptyState = ({ icon: Icon, title, text }: { icon: typeof Shield; title: string; text: string }) => (
-  <Card className="text-center p-6">
-    <CardContent>
-      <Icon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-      <h3 className="text-lg font-semibold text-gray-600 mb-2">{title}</h3>
-      <p className="text-gray-500 text-sm">{text}</p>
-    </CardContent>
-  </Card>
+const EmptyState = ({ icon: Icon, title, text }: { icon: any; title: string; text: string }) => (
+  <div className="text-center p-8 border border-border bg-card rounded-lg space-y-2">
+    <div className="w-10 h-10 rounded-md bg-stone-100 dark:bg-stone-800 flex items-center justify-center mx-auto text-stone-500">
+      <Icon className="w-5 h-5" />
+    </div>
+    <h3 className="text-sm font-bold text-foreground">{title}</h3>
+    <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">{text}</p>
+  </div>
 );
 
 const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
@@ -62,7 +72,9 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
   const [buses, setBuses] = useState<TrackedBus[]>([]);
   const [authorizedRoutes, setAuthorizedRoutes] = useState<string[]>(studentData.registeredRoutes || []);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [nowMs, setNowMs] = useState(Date.now());
+  const [mobileView, setMobileView] = useState<"map" | "list">("map");
   const mapRef = useRef<HTMLDivElement>(null);
 
   const setSelectedBus = (id: string | null) => {
@@ -75,27 +87,28 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
     writeStored("selectedRoute", route);
   };
 
-  // regular refresh as a fallback to the live socket
-  useEffect(() => {
+  const fetchAuthorizedBuses = () => {
     if (!studentData.studentId) return;
+    setIsRefreshing(true);
+    axios
+      .get<AuthorizedBusesResponse>(`/api/student/${studentData.studentId}/authorized-buses`)
+      .then((res) => {
+        setBuses(res.data.buses || []);
+        setAuthorizedRoutes(res.data.registeredRoutes || []);
+      })
+      .catch((err) => console.error("Error fetching authorized buses:", err))
+      .finally(() => {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      });
+  };
 
-    const fetchAuthorizedBuses = () => {
-      axios
-        .get<AuthorizedBusesResponse>(`/api/student/${studentData.studentId}/authorized-buses`)
-        .then((res) => {
-          setBuses(res.data.buses || []);
-          setAuthorizedRoutes(res.data.registeredRoutes || []);
-        })
-        .catch((err) => console.error("Error fetching authorized buses:", err))
-        .finally(() => setIsLoading(false));
-    };
-
+  useEffect(() => {
     fetchAuthorizedBuses();
     const pollId = window.setInterval(fetchAuthorizedBuses, 15000);
     return () => window.clearInterval(pollId);
   }, [studentData.studentId]);
 
-  // live updates for buses on this student's routes
   useEffect(() => {
     if (!studentData.token) return;
     const socket = connectBusSocket(studentData.token);
@@ -108,11 +121,10 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
   }, [studentData.token]);
 
   useEffect(() => {
-    const tickId = window.setInterval(() => setNowMs(Date.now()), 30000);
+    const tickId = window.setInterval(() => setNowMs(Date.now()), 15000);
     return () => window.clearInterval(tickId);
   }, []);
 
-  // drop a saved route that is no longer authorized; auto-pick when there is only one
   useEffect(() => {
     if (selectedRoute && !authorizedRoutes.includes(selectedRoute)) {
       setSelectedRoute(null);
@@ -126,7 +138,6 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
     [buses, selectedRoute]
   );
 
-  // drop a saved bus that no longer exists; auto-pick when only one bus is running
   useEffect(() => {
     if (isLoading) return;
     if (selectedBus && !filteredBuses.some((b) => b.id === selectedBus)) {
@@ -139,7 +150,7 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
 
   const handleSelectBus = (id: string) => {
     setSelectedBus(id);
-    // on small screens the map sits below the list
+    setMobileView("map");
     if (window.innerWidth < 1024) {
       mapRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -152,104 +163,284 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
   };
 
   const trackedBus = filteredBuses.find((b) => b.id === selectedBus) || null;
+  const activeBusesCount = filteredBuses.filter((b) => b.status === "active").length;
 
   const renderBusList = () => {
     if (isLoading) {
-      return [0, 1, 2].map((i) => <Skeleton key={i} className="h-24 w-full rounded-lg" />);
+      return (
+        <div className="space-y-2.5">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="p-3.5 rounded-lg border border-border bg-card space-y-2">
+              <Skeleton className="h-4 w-24 rounded" />
+              <Skeleton className="h-3 w-32 rounded" />
+            </div>
+          ))}
+        </div>
+      );
     }
+
     if (authorizedRoutes.length === 0) {
       return (
         <EmptyState
-          icon={Shield}
-          title="No Bus Access"
-          text="You don't have access to any bus routes. Please contact administration to register for bus services."
+          icon={ShieldAlert}
+          title="No Route Pass Registered"
+          text="You have no fee-cleared bus passes on file for this semester. Contact the Transport Office at Gate 1."
         />
       );
     }
+
     if (!selectedRoute) {
-      return <EmptyState icon={RouteIcon} title="Pick a route" text="Choose one of your routes above to see its buses." />;
-    }
-    if (filteredBuses.length === 0) {
-      return <EmptyState icon={BusIcon} title="No buses yet" text="No buses are assigned to this route yet." />;
-    }
-    return filteredBuses.map((bus) => {
-      const badge = LOCATION_BADGE[getLocationState(bus, nowMs)];
       return (
-        <Card
-          key={bus.id}
-          className={`cursor-pointer transition-all duration-300 hover:shadow-lg border-2 ${
-            selectedBus === bus.id ? "border-primary shadow-lg" : "border-transparent hover:border-blue-200"
-          } ${bus.status === "inactive" ? "opacity-70" : ""}`}
-          onClick={() => handleSelectBus(bus.id)}
-        >
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold text-gray-900">{bus.number}</CardTitle>
-              <Badge className={badge.className}>{badge.label}</Badge>
-            </div>
-            <CardDescription className="font-medium text-gray-700">{bus.route}</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <p className="text-xs text-gray-500">
-              {bus.status === "inactive" ? "Driver is not sharing location right now" : formatLastUpdated(bus.updatedAt, nowMs)}
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={RouteIcon}
+          title="Select Route Corridor"
+          text="Pick your registered transit route from the dropdown above to view assigned buses."
+        />
       );
-    });
+    }
+
+    if (filteredBuses.length === 0) {
+      return (
+        <EmptyState
+          icon={BusIcon}
+          title="No Scheduled Buses"
+          text="No vehicles are assigned to this route today. Check morning or evening transit timings."
+        />
+      );
+    }
+
+    return (
+      <div className="space-y-2">
+        {filteredBuses.map((bus) => {
+          const isSelected = selectedBus === bus.id;
+          const locationState = getLocationState(bus, nowMs);
+          const badge = LOCATION_BADGE[locationState];
+
+          return (
+            <div
+              key={bus.id}
+              onClick={() => handleSelectBus(bus.id)}
+              className={`p-3.5 rounded-lg border transition-colors cursor-pointer text-left ${
+                isSelected
+                  ? "bg-stone-50 dark:bg-stone-900 border-primary ring-1 ring-primary"
+                  : "bg-card border-border hover:border-stone-400"
+              } ${bus.status === "inactive" ? "opacity-75" : ""}`}
+            >
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <div className="flex items-center gap-2">
+                  <span className={`w-6 h-6 rounded flex items-center justify-center font-bold text-xs ${
+                    isSelected ? "bg-primary text-primary-foreground" : "bg-stone-100 dark:bg-stone-800 text-foreground"
+                  }`}>
+                    {bus.number}
+                  </span>
+                  <div>
+                    <h3 className="text-xs font-bold text-foreground">Bus {bus.number}</h3>
+                    <p className="text-[11px] text-muted-foreground">{bus.route}</p>
+                  </div>
+                </div>
+
+                <Badge className={`${badge.className} text-[10px] font-semibold gap-1 px-1.5 py-0.5 rounded`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${badge.dotClass}`} />
+                  <span>{badge.label}</span>
+                </Badge>
+              </div>
+
+              <div className="pt-2 border-t border-border flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>
+                  {bus.status === "inactive"
+                    ? "Driver off duty"
+                    : formatLastUpdated(bus.updatedAt, nowMs)}
+                </span>
+                {isSelected && (
+                  <span className="text-primary font-bold text-[10px] flex items-center gap-1">
+                    <Check className="w-3 h-3" /> Selected on Radar
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      <AppHeader title="Bus Tracker" subtitle={`Welcome, ${studentData.name}`} onLogout={handleLogout} />
+    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
+      <AppHeader
+        title="Student Bus Tracker"
+        subtitle={`Pass: ${studentData.name} • ID: ${studentData.studentId || ""}`}
+        roleBadge="Student"
+        onLogout={handleLogout}
+      />
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1 space-y-4">
-            <h2 className="text-2xl font-bold text-gray-900">Your Buses</h2>
-
-            {authorizedRoutes.length > 0 && (
-              <Select
-                value={selectedRoute || ""}
-                onValueChange={(val) => {
-                  setSelectedRoute(val);
-                  setSelectedBus(null);
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a route" />
-                </SelectTrigger>
-                <SelectContent>
-                  {authorizedRoutes.map((route) => (
-                    <SelectItem key={route} value={route}>
-                      {route}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-
-            {renderBusList()}
+      <main className="container mx-auto px-4 py-6 max-w-6xl flex-1 space-y-5">
+        
+        {/* Short Summary Strip of Key Metrics with Clear Hierarchy */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="border border-border rounded-lg bg-card p-3">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Route Status</span>
+            <span className="text-xl font-extrabold text-foreground tabular-nums mt-0.5 block">
+              {activeBusesCount} <span className="text-xs font-normal text-muted-foreground">Active Now</span>
+            </span>
           </div>
 
-          <div className="lg:col-span-2 scroll-mt-4" ref={mapRef}>
-            <Card className="border-0 shadow-xl overflow-hidden">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold text-gray-900 flex items-center space-x-2">
-                  <MapPin className="w-5 h-5" />
-                  <span>Live Bus Tracking</span>
-                </CardTitle>
-                <CardDescription>
-                  {trackedBus ? `Tracking ${trackedBus.number}` : "Select a bus to view its live location"}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-0 h-[420px] lg:h-[560px]">
-                <BusMap bus={trackedBus} nowMs={nowMs} />
-              </CardContent>
-            </Card>
+          <div className="border border-border rounded-lg bg-card p-3">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Selected Corridor</span>
+            <span className="text-xs font-bold text-foreground truncate mt-1 block">
+              {selectedRoute || "Select route"}
+            </span>
+          </div>
+
+          <div className="border border-border rounded-lg bg-card p-3">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Verified Passes</span>
+            <span className="text-xs font-bold text-foreground mt-1 block">
+              {authorizedRoutes.length} Route(s)
+            </span>
+          </div>
+
+          <div className="border border-border rounded-lg bg-card p-3">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">GPS Dispatch</span>
+            <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mt-1 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+              Live Telemetry
+            </span>
           </div>
         </div>
-      </div>
+
+        {/* Mobile View Toggle */}
+        <div className="lg:hidden flex items-center p-1 rounded-md bg-stone-100 dark:bg-stone-800 border border-border">
+          <button
+            onClick={() => setMobileView("map")}
+            className={`flex-1 py-1.5 text-xs font-semibold rounded flex items-center justify-center gap-1.5 ${
+              mobileView === "map"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <MapPin className="w-3.5 h-3.5" />
+            <span>Transit Map</span>
+          </button>
+          <button
+            onClick={() => setMobileView("list")}
+            className={`flex-1 py-1.5 text-xs font-semibold rounded flex items-center justify-center gap-1.5 ${
+              mobileView === "list"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <BusIcon className="w-3.5 h-3.5" />
+            <span>Bus List ({filteredBuses.length})</span>
+          </button>
+        </div>
+
+        {/* Master Split Grid Layout */}
+        <div className="grid lg:grid-cols-12 gap-5 items-start">
+          
+          {/* Left Column: Route Switcher & Bus Selector */}
+          <div className={`lg:col-span-4 space-y-4 ${mobileView === "map" ? "hidden lg:block" : "block"}`}>
+            <div className="border border-border rounded-lg bg-card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">Assigned Routes</h2>
+                  <p className="text-[11px] text-muted-foreground">Select to filter buses</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={fetchAuthorizedBuses}
+                  disabled={isRefreshing}
+                  className="h-7 w-7 text-stone-500 hover:text-foreground"
+                  title="Refresh bus telemetry"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+                </Button>
+              </div>
+
+              {authorizedRoutes.length > 0 && (
+                <div className="space-y-1.5">
+                  <Select
+                    value={selectedRoute || ""}
+                    onValueChange={(val) => {
+                      setSelectedRoute(val);
+                      setSelectedBus(null);
+                    }}
+                  >
+                    <SelectTrigger className="w-full h-10 rounded-md border-border text-xs font-semibold">
+                      <SelectValue placeholder="Choose route corridor..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {authorizedRoutes.map((route) => (
+                        <SelectItem key={route} value={route} className="text-xs cursor-pointer">
+                          {route}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {selectedRoute && (
+                    <div className="flex items-center justify-between text-[11px] px-1 text-muted-foreground">
+                      <span>{filteredBuses.length} bus(es) scheduled</span>
+                      <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                        {activeBusesCount} on route
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* List of buses for selected route */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Corridor Vehicles
+                </span>
+                {filteredBuses.length > 0 && (
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    {filteredBuses.length} total
+                  </span>
+                )}
+              </div>
+              {renderBusList()}
+            </div>
+          </div>
+
+          {/* Right Column: Clean Map View */}
+          <div 
+            className={`lg:col-span-8 ${mobileView === "list" ? "hidden lg:block" : "block"}`}
+            ref={mapRef}
+          >
+            <div className="border border-border rounded-lg bg-card overflow-hidden">
+              <div className="p-3.5 border-b border-border bg-stone-50 dark:bg-stone-900/60 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs">
+                    <MapPin className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <h2 className="text-xs font-bold text-foreground">
+                      {trackedBus ? `Tracking Bus ${trackedBus.number}` : "Campus Route Map"}
+                    </h2>
+                    <p className="text-[11px] text-muted-foreground">
+                      {trackedBus ? `${trackedBus.route} • Live Telemetry` : "Pick an active bus to follow location"}
+                    </p>
+                  </div>
+                </div>
+
+                {trackedBus && (
+                  <span className="text-[11px] font-mono tabular-nums text-muted-foreground">
+                    {formatLastUpdated(trackedBus.updatedAt, nowMs)}
+                  </span>
+                )}
+              </div>
+
+              <div className="h-[460px] sm:h-[540px] relative">
+                <BusMap bus={trackedBus} nowMs={nowMs} />
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
     </div>
   );
 };

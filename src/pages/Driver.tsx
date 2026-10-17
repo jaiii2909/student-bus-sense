@@ -1,15 +1,19 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
-} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { CheckCircle2, AlertTriangle, Navigation, StopCircle } from "lucide-react";
+import { 
+  Check, 
+  AlertTriangle, 
+  Navigation, 
+  StopCircle, 
+  Radio, 
+  Wifi, 
+  Sun, 
+  Activity,
+  ArrowRight
+} from "lucide-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import LoginForm from "@/components/auth/LoginForm";
@@ -24,7 +28,6 @@ interface ApiBus {
   status: "active" | "inactive";
 }
 
-// send at most one location update per interval to save data and battery
 const SEND_INTERVAL_MS = 5000;
 const SHARING_FLAG_KEY = "driverSharing";
 
@@ -50,7 +53,6 @@ const Driver = () => {
   const { toast } = useToast();
   const [loggedIn, setLoggedIn] = useState<boolean>(() => !!getSession("driver")?.token);
   const [isSharing, setIsSharing] = useState(false);
-  // true when the page was closed or refreshed while sharing
   const [wasInterrupted, setWasInterrupted] = useState(() => readStored(SHARING_FLAG_KEY) === "1");
   const [busId, setBusId] = useState<string>(() => readStored("driverBusId"));
   const [selectedRoute, setSelectedRoute] = useState<string>(() => readStored("driverRoute"));
@@ -59,6 +61,7 @@ const Driver = () => {
   const [lastSentAt, setLastSentAt] = useState<number | null>(null);
   const [sendFailed, setSendFailed] = useState(false);
   const [nowMs, setNowMs] = useState(Date.now());
+  const [wakeLockActive, setWakeLockActive] = useState(false);
 
   const watchIdRef = useRef<number | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
@@ -67,7 +70,6 @@ const Driver = () => {
   const routes = Array.from(new Set(allBuses.map((b) => b.route)));
   const availableBuses = allBuses.filter((b) => b.route === selectedRoute).map((b) => b.busNumber);
 
-  /* Fetch routes and buses from API after login */
   useEffect(() => {
     if (!loggedIn) return;
 
@@ -78,7 +80,6 @@ const Driver = () => {
         const buses = response.data || [];
         setAllBuses(buses);
 
-        // Restore persisted route/bus only if they still exist.
         if (selectedRoute && !buses.some((b) => b.route === selectedRoute)) {
           handleRouteChange("");
         } else if (busId && !buses.some((b) => b.route === selectedRoute && b.busNumber === busId)) {
@@ -86,7 +87,7 @@ const Driver = () => {
         }
       } catch (error) {
         console.error("Error fetching driver fleet data:", error);
-        toast({ title: "Could not load buses", description: "Check your internet and refresh.", variant: "destructive" });
+        toast({ title: "Could not load buses", description: "Check connection and refresh.", variant: "destructive" });
       } finally {
         setIsLoadingFleet(false);
       }
@@ -95,14 +96,12 @@ const Driver = () => {
     fetchFleet();
   }, [loggedIn]);
 
-  // tick so "last sent Xs ago" stays current
   useEffect(() => {
     if (!isSharing) return;
     const tickId = window.setInterval(() => setNowMs(Date.now()), 1000);
     return () => window.clearInterval(tickId);
   }, [isSharing]);
 
-  // the browser drops the wake lock when the tab is hidden; take it again on return
   useEffect(() => {
     const onVisible = () => {
       if (isSharing && document.visibilityState === "visible") requestWakeLock();
@@ -111,7 +110,6 @@ const Driver = () => {
     return () => document.removeEventListener("visibilitychange", onVisible);
   }, [isSharing]);
 
-  // stop GPS when leaving the page
   useEffect(() => {
     return () => {
       if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
@@ -123,30 +121,30 @@ const Driver = () => {
     try {
       if ("wakeLock" in navigator) {
         wakeLockRef.current = await navigator.wakeLock.request("screen");
+        setWakeLockActive(true);
+        wakeLockRef.current.addEventListener("release", () => {
+          setWakeLockActive(false);
+        });
       }
     } catch {
-      // not supported or denied: sharing still works while the screen is on
+      setWakeLockActive(false);
     }
   };
 
-  /* ---------------- ROUTE HANDLER ---------------- */
   const handleRouteChange = (routeName: string) => {
     setSelectedRoute(routeName);
     writeStored("driverRoute", routeName);
-    // Reset bus when route changes
     handleBusChange("");
   };
 
-  /* Handle bus selection with persistence */
   const handleBusChange = (busIdValue: string) => {
     setBusId(busIdValue);
     writeStored("driverBusId", busIdValue);
   };
 
-  /* ---------------- START SHARING ---------------- */
   const startSharingLocation = () => {
     if (!navigator.geolocation) {
-      toast({ title: "Location not supported", description: "This browser cannot share location.", variant: "destructive" });
+      toast({ title: "Location not supported", description: "This device browser cannot access GPS.", variant: "destructive" });
       return;
     }
 
@@ -177,11 +175,11 @@ const Driver = () => {
       (error) => {
         console.error("Error getting location:", error);
         toast({
-          title: "Can't get your location",
+          title: "Cannot access location",
           description:
             error.code === error.PERMISSION_DENIED
-              ? "Allow location access for this site in your browser settings, then try again."
-              : "Make sure GPS is on, then try again.",
+              ? "Enable GPS / Location permissions in your mobile browser settings."
+              : "Verify mobile GPS is switched on, then retry.",
           variant: "destructive"
         });
         stopSharingLocation();
@@ -194,7 +192,6 @@ const Driver = () => {
     );
   };
 
-  /* ---------------- STOP SHARING ---------------- */
   const stopSharingLocation = () => {
     if (watchIdRef.current !== null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
@@ -202,10 +199,10 @@ const Driver = () => {
     }
     wakeLockRef.current?.release().catch(() => {});
     wakeLockRef.current = null;
+    setWakeLockActive(false);
     setIsSharing(false);
     writeStored(SHARING_FLAG_KEY, "");
 
-    // tell students the bus is no longer running
     if (busId) {
       axios.post(`/api/driver/buses/${busId}/stop`).catch((error) => {
         console.error("Error marking bus stopped:", error);
@@ -235,43 +232,68 @@ const Driver = () => {
   const secondsSinceSent = lastSentAt ? Math.max(0, Math.round((nowMs - lastSentAt) / 1000)) : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      <AppHeader title="Driver" subtitle={busId ? `Bus ${busId}` : "Location sharing"} onLogout={handleLogout} />
+    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
+      <AppHeader
+        title="Driver In-Cab Console"
+        subtitle={busId ? `Bus ${busId} • ${selectedRoute}` : "Standby — Select Vehicle"}
+        roleBadge="Driver"
+        onLogout={handleLogout}
+      />
 
-      <div className="container mx-auto max-w-md p-4">
-        <Card className="shadow-lg">
-          <CardHeader className="text-center">
-            <CardTitle className="flex items-center justify-center gap-2">
-              <Navigation className="w-6 h-6" />
-              Driver Location Sharing
-            </CardTitle>
-            <CardDescription>
-              Select route & bus, then share your live location
-            </CardDescription>
-          </CardHeader>
+      <main className="container mx-auto max-w-lg p-4 sm:p-6 flex-1 flex flex-col justify-center space-y-4">
+        
+        {/* Main In-Cab Control Card */}
+        <div className="border border-border rounded-xl bg-card shadow-sm overflow-hidden">
+          
+          {/* Status HUD Header */}
+          <div className={`p-6 text-center border-b ${
+            isSharing
+              ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
+              : "bg-stone-50 dark:bg-stone-900 border-border"
+          }`}>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <span className={`w-3 h-3 rounded-full ${isSharing ? "bg-emerald-600 animate-bus-pulse" : "bg-stone-400"}`}></span>
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                {isSharing ? "Broadcasting Vehicle Position" : "Vehicle Stationary / Standby"}
+              </span>
+            </div>
 
-          <CardContent className="space-y-6">
+            <h1 className="text-xl sm:text-2xl font-extrabold text-foreground tracking-tight">
+              {isSharing ? `Bus ${busId} is Live` : "Prepare Trip Dispatch"}
+            </h1>
+            
+            <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
+              {isSharing
+                ? "Students on this route are now tracking your live location on their map."
+                : "Select route and bus number below, mount device on dashboard, and start trip."}
+            </p>
+          </div>
+
+          <div className="p-6 space-y-5">
+            
             {wasInterrupted && !isSharing && (
-              <div className="flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+              <div className="flex items-start gap-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 p-3 text-xs text-amber-800 dark:text-amber-300">
                 <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-                Sharing stopped when the page was closed. Tap Start to resume.
+                <span>Broadcasting stopped when the browser closed. Tap start to resume your scheduled trip.</span>
               </div>
             )}
 
-            {/* ROUTE SELECTION */}
-            <div className="space-y-2">
-              <Label>Select Route</Label>
+            {/* In-Cab Route Selection */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Select Transit Route
+              </Label>
               <Select
                 value={selectedRoute}
                 onValueChange={handleRouteChange}
                 disabled={isSharing || isLoadingFleet}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder={isLoadingFleet ? "Loading..." : "Select route"} />
+                <SelectTrigger className="w-full h-11 text-xs font-semibold rounded-md border-border">
+                  <SelectValue placeholder={isLoadingFleet ? "Loading routes..." : "Choose route corridor"} />
                 </SelectTrigger>
                 <SelectContent>
                   {routes.map((route) => (
-                    <SelectItem key={route} value={route}>
+                    <SelectItem key={route} value={route} className="text-xs cursor-pointer py-2">
                       {route}
                     </SelectItem>
                   ))}
@@ -279,18 +301,20 @@ const Driver = () => {
               </Select>
             </div>
 
-            {/* BUS SELECTION */}
+            {/* In-Cab Bus Selection */}
             {availableBuses.length > 0 && (
-              <div className="space-y-2">
-                <Label>Select Bus</Label>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  Select Vehicle Number
+                </Label>
                 <Select value={busId} onValueChange={handleBusChange} disabled={isSharing}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select bus" />
+                  <SelectTrigger className="w-full h-11 text-xs font-semibold rounded-md border-border">
+                    <SelectValue placeholder="Select assigned bus" />
                   </SelectTrigger>
                   <SelectContent>
                     {availableBuses.map((bus) => (
-                      <SelectItem key={bus} value={bus}>
-                        {bus}
+                      <SelectItem key={bus} value={bus} className="text-xs cursor-pointer py-2 font-bold">
+                        Bus {bus}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -298,55 +322,66 @@ const Driver = () => {
               </div>
             )}
 
-            {/* SHARING STATUS */}
+            {/* Live Telemetry Strip */}
             {isSharing && (
-              <div
-                className={`rounded-lg p-4 text-center ${sendFailed ? "bg-red-50 text-red-800" : "bg-green-50 text-green-800"}`}
-              >
-                {sendFailed ? (
-                  <>
-                    <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
-                    <p className="font-semibold">Sending failed</p>
-                    <p className="text-sm">Check your internet. We'll keep trying.</p>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-8 h-8 mx-auto mb-2" />
-                    <p className="font-semibold">You're live</p>
-                    <p className="text-sm">
-                      {secondsSinceSent === null ? "Getting your location..." : `Last sent ${secondsSinceSent}s ago`}
-                    </p>
-                  </>
-                )}
-                <p className="text-xs mt-2 opacity-80">Keep this screen open while driving.</p>
+              <div className="border border-border rounded-lg bg-stone-50 dark:bg-stone-900 p-3.5 space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground flex items-center gap-1.5">
+                    <Wifi className="w-3.5 h-3.5" /> Mobile Signal
+                  </span>
+                  <span className={`font-semibold ${sendFailed ? "text-destructive" : "text-emerald-700 dark:text-emerald-400"}`}>
+                    {sendFailed ? "Retry in progress" : "Connected (HTTP 200)"}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground flex items-center gap-1.5">
+                    <Activity className="w-3.5 h-3.5" /> GPS Transmission
+                  </span>
+                  <span className="font-mono tabular-nums font-bold text-foreground">
+                    {secondsSinceSent === null ? "Fixing coordinates..." : `Ping sent ${secondsSinceSent}s ago`}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground flex items-center gap-1.5">
+                    <Sun className="w-3.5 h-3.5 text-amber-600" /> Screen Lock
+                  </span>
+                  <span className="font-medium text-foreground">
+                    {wakeLockActive ? "Wake-Lock Active (Screen on)" : "Auto Sleep"}
+                  </span>
+                </div>
               </div>
             )}
 
-            {/* ACTION BUTTON */}
+            {/* Giant Action Button (Min 56px height) */}
             {!isSharing ? (
               <Button
                 onClick={startSharingLocation}
                 disabled={!busId}
-                className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50"
-                size="lg"
+                className="w-full h-14 rounded-lg font-bold text-sm shadow-none disabled:opacity-50"
               >
-                <Navigation className="w-4 h-4 mr-2" />
-                Start Sharing Location
+                <Radio className="w-4 h-4 mr-2" />
+                START LOCATION BROADCAST
               </Button>
             ) : (
               <Button
                 onClick={stopSharingLocation}
                 variant="destructive"
-                className="w-full"
-                size="lg"
+                className="w-full h-14 rounded-lg font-bold text-sm shadow-none"
               >
                 <StopCircle className="w-4 h-4 mr-2" />
-                Stop Sharing
+                STOP SHARING LOCATION
               </Button>
             )}
-          </CardContent>
-        </Card>
-      </div>
+
+            <p className="text-[11px] text-center text-muted-foreground">
+              Keep this screen visible on your dashboard holder while driving.
+            </p>
+          </div>
+        </div>
+
+      </main>
     </div>
   );
 };

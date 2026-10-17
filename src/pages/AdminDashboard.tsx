@@ -2,13 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle
-} from "@/components/ui/card";
-import {
   Table,
   TableBody,
   TableCell,
@@ -39,7 +32,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit2, Trash2, Users, MapPin } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Plus, 
+  Edit2, 
+  Trash2, 
+  Users, 
+  MapPin, 
+  Bus as BusIcon, 
+  Route as RouteIcon, 
+  Radio, 
+  Search, 
+  Loader2,
+  RefreshCw,
+  ShieldCheck,
+  Check
+} from "lucide-react";
 import axios from "axios";
 import LoginForm from "@/components/auth/LoginForm";
 import AppHeader from "@/components/AppHeader";
@@ -86,16 +94,18 @@ const AdminDashboard = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [locations, setLocations] = useState<TrackedBus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [openBusDialog, setOpenBusDialog] = useState(false);
   const [openRouteDialog, setOpenRouteDialog] = useState(false);
   const [openStudentDialog, setOpenStudentDialog] = useState(false);
   const [editingBus, setEditingBus] = useState<Bus | null>(null);
   const [editingRoute, setEditingRoute] = useState<Route | null>(null);
-  // null while adding a new student
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
   const [studentSearch, setStudentSearch] = useState("");
+  const [busSearch, setBusSearch] = useState("");
+  const [activeTab, setActiveTab] = useState("radar");
 
   const [newBus, setNewBus] = useState({
     busNumber: "",
@@ -111,10 +121,11 @@ const AdminDashboard = () => {
 
   const showError = (error: unknown, fallback: string) => {
     console.error(fallback, error);
-    toast({ title: fallback, description: apiErrorMessage(error, "Please try again."), variant: "destructive" });
+    toast({ title: fallback, description: apiErrorMessage(error, "Please verify inputs and retry."), variant: "destructive" });
   };
 
   const fetchAll = async () => {
+    setIsRefreshing(true);
     try {
       const [busRes, routeRes, studentRes, locationRes] = await Promise.all([
         axios.get("/api/admin/buses"),
@@ -127,9 +138,10 @@ const AdminDashboard = () => {
       setStudents(studentRes.data);
       setLocations(locationRes.data);
     } catch (error) {
-      showError(error, "Could not load dashboard data");
+      showError(error, "Could not load transport data");
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -137,7 +149,6 @@ const AdminDashboard = () => {
     if (token) fetchAll();
   }, [token]);
 
-  // live fleet updates
   useEffect(() => {
     if (!token) return;
     const socket = connectBusSocket(token);
@@ -160,7 +171,7 @@ const AdminDashboard = () => {
   /* ---------------- BUSES ---------------- */
   const handleAddBus = async () => {
     if (!newBus.busNumber.trim() || !newBus.route) {
-      toast({ title: "Please fill all fields", variant: "destructive" });
+      toast({ title: "Please fill bus number and select route", variant: "destructive" });
       return;
     }
 
@@ -177,7 +188,7 @@ const AdminDashboard = () => {
         setBuses([...buses, response.data]);
       }
       handleCloseDialogs();
-      toast({ title: editingBus ? "Bus updated" : "Bus added" });
+      toast({ title: editingBus ? "Bus record updated" : "Vehicle registered in fleet" });
     } catch (error) {
       showError(error, editingBus ? "Could not update bus" : "Could not add bus");
     } finally {
@@ -191,14 +202,14 @@ const AdminDashboard = () => {
       const response = await axios.put(`/api/admin/buses/${bus._id}`, { status });
       setBuses((prev) => prev.map((b) => (b._id === bus._id ? response.data : b)));
     } catch (error) {
-      showError(error, "Could not change bus status");
+      showError(error, "Could not change status");
     }
   };
 
   const handleDeleteBus = (bus: Bus) => {
     setPendingDelete({
-      title: `Delete bus ${bus.busNumber}?`,
-      description: "Students will no longer see this bus. This cannot be undone.",
+      title: `Remove Bus ${bus.busNumber}?`,
+      description: "Students will no longer see this vehicle on their corridor list. This action cannot be reversed.",
       run: async () => {
         await axios.delete(`/api/admin/buses/${bus._id}`);
         setBuses((prev) => prev.filter((b) => b._id !== bus._id));
@@ -219,7 +230,7 @@ const AdminDashboard = () => {
   /* ---------------- ROUTES ---------------- */
   const handleAddRoute = async () => {
     if (!newRoute.routeName.trim()) {
-      toast({ title: "Please fill the route name", variant: "destructive" });
+      toast({ title: "Please enter a route corridor name", variant: "destructive" });
       return;
     }
 
@@ -228,14 +239,13 @@ const AdminDashboard = () => {
       const body = { routeName: newRoute.routeName.trim() };
       if (editingRoute) {
         await axios.put(`/api/admin/routes/${editingRoute._id}`, body);
-        // a rename also updates buses and students, so reload everything
         await fetchAll();
       } else {
         const response = await axios.post("/api/admin/routes", body);
         setRoutes([...routes, response.data]);
       }
       handleCloseDialogs();
-      toast({ title: editingRoute ? "Route updated" : "Route added" });
+      toast({ title: editingRoute ? "Route corridor updated" : "Route created" });
     } catch (error) {
       showError(error, editingRoute ? "Could not update route" : "Could not add route");
     } finally {
@@ -245,8 +255,8 @@ const AdminDashboard = () => {
 
   const handleDeleteRoute = (route: Route) => {
     setPendingDelete({
-      title: `Delete route ${route.routeName}?`,
-      description: "It will also be removed from every student's access list.",
+      title: `Delete Route ${route.routeName}?`,
+      description: "This will remove the route corridor from all associated buses and enrolled student passes.",
       run: async () => {
         await axios.delete(`/api/admin/routes/${route._id}`);
         await fetchAll();
@@ -292,10 +302,10 @@ const AdminDashboard = () => {
           registeredRoutes: selectedStudentRoutes
         });
         setStudents(students.map((s) => (s._id === editingStudent._id ? response.data : s)));
-        toast({ title: "Route access saved" });
+        toast({ title: "Student pass routes updated" });
       } else {
         if (!newStudent.studentId.trim() || !newStudent.name.trim() || !newStudent.password) {
-          toast({ title: "Please fill student ID, name and password", variant: "destructive" });
+          toast({ title: "Please fill student enrollment, name and password", variant: "destructive" });
           return;
         }
         const response = await axios.post("/api/admin/students", {
@@ -305,11 +315,11 @@ const AdminDashboard = () => {
           registeredRoutes: selectedStudentRoutes
         });
         setStudents([...students, response.data]);
-        toast({ title: "Student added" });
+        toast({ title: "Student enrolled in transport registry" });
       }
       handleCloseDialogs();
     } catch (error) {
-      showError(error, editingStudent ? "Could not save route access" : "Could not add student");
+      showError(error, editingStudent ? "Could not update pass" : "Could not enroll student");
     } finally {
       setIsSaving(false);
     }
@@ -332,9 +342,9 @@ const AdminDashboard = () => {
     if (!pendingDelete) return;
     try {
       await pendingDelete.run();
-      toast({ title: "Deleted" });
+      toast({ title: "Record removed" });
     } catch (error) {
-      showError(error, "Could not delete");
+      showError(error, "Could not delete record");
     } finally {
       setPendingDelete(null);
     }
@@ -356,423 +366,580 @@ const AdminDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading admin dashboard...</p>
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="text-center space-y-2">
+          <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" />
+          <p className="text-xs text-muted-foreground">Connecting to Transport Control Registry...</p>
         </div>
       </div>
     );
   }
 
-  const search = studentSearch.trim().toLowerCase();
-  const visibleStudents = search
+  const sSearch = studentSearch.trim().toLowerCase();
+  const visibleStudents = sSearch
     ? students.filter(
-        (s) => s.studentId.toLowerCase().includes(search) || s.name.toLowerCase().includes(search)
+        (s) => s.studentId.toLowerCase().includes(sSearch) || s.name.toLowerCase().includes(sSearch)
       )
     : students;
+
+  const bSearch = busSearch.trim().toLowerCase();
+  const visibleBuses = bSearch
+    ? buses.filter(
+        (b) => b.busNumber.toLowerCase().includes(bSearch) || b.route.toLowerCase().includes(bSearch)
+      )
+    : buses;
+
   const busesWithLocation = locations.filter((l) => l.coordinates);
+  const activeBusesCount = buses.filter((b) => b.status === "active").length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      <AppHeader title="Admin Dashboard" subtitle="Manage buses, routes and student access" onLogout={handleLogout} />
+    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
+      <AppHeader 
+        title="Fleet Supervisor Portal" 
+        subtitle="United Group of Institutions • Transport Control Registry" 
+        roleBadge="Admin" 
+        onLogout={handleLogout} 
+      />
 
-      <div className="max-w-7xl mx-auto p-4 sm:p-6">
-        <div className="grid md:grid-cols-3 gap-4 mb-8">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Total Buses</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">{buses.length}</div>
-              <p className="text-xs text-gray-400 mt-1">{buses.filter((b) => b.status === "active").length} running</p>
-            </CardContent>
-          </Card>
+      <main className="container mx-auto px-4 py-6 max-w-6xl flex-1 space-y-6">
+        
+        {/* Short Summary Strip with Strong Hierarchy */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {/* Prominent Primary Metric */}
+          <div className="border border-border rounded-lg bg-card p-4">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Active Vehicles</span>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="text-2xl font-extrabold text-foreground tabular-nums">{activeBusesCount}</span>
+              <span className="text-xs text-muted-foreground font-medium">/ {buses.length} total buses</span>
+            </div>
+            <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold block mt-1">
+              {activeBusesCount > 0 ? "Operating on campus corridors" : "All vehicles at depot"}
+            </span>
+          </div>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Total Routes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">{routes.length}</div>
-              <p className="text-xs text-gray-400 mt-1">Configured routes</p>
-            </CardContent>
-          </Card>
+          <div className="border border-border rounded-lg bg-card p-4">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Campus Corridors</span>
+            <div className="text-2xl font-extrabold text-foreground tabular-nums mt-1">{routes.length}</div>
+            <span className="text-[11px] text-muted-foreground block mt-1">Configured transit lines</span>
+          </div>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">Total Students</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">{students.length}</div>
-              <p className="text-xs text-gray-400 mt-1">Route access managed</p>
-            </CardContent>
-          </Card>
+          <div className="border border-border rounded-lg bg-card p-4">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Enrolled Commuters</span>
+            <div className="text-2xl font-extrabold text-foreground tabular-nums mt-1">{students.length}</div>
+            <span className="text-[11px] text-muted-foreground block mt-1">Verified student passes</span>
+          </div>
+
+          <div className="border border-border rounded-lg bg-card p-4">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Live Telemetry Fixes</span>
+            <div className="text-2xl font-extrabold text-emerald-700 dark:text-emerald-400 tabular-nums mt-1">{busesWithLocation.length}</div>
+            <span className="text-[11px] text-muted-foreground block mt-1">Transmitting in-cab signals</span>
+          </div>
         </div>
 
-        {/* LIVE FLEET */}
-        <Card className="mb-8 overflow-hidden">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="w-5 h-5" />
-              Live Fleet
-            </CardTitle>
-            <CardDescription>
-              {busesWithLocation.length > 0
-                ? `Last known location of ${busesWithLocation.length} bus(es)`
-                : "No bus has shared a location yet"}
-            </CardDescription>
-          </CardHeader>
-          {busesWithLocation.length > 0 && (
-            <CardContent className="p-0 h-[360px]">
-              <MapView
-                center={busesWithLocation[0].coordinates!}
-                markers={busesWithLocation.map((l) => ({
-                  id: l.id,
-                  position: l.coordinates!,
-                  title: `${l.number} (${l.status === "active" ? "running" : "not running"})`
-                }))}
-                zoom={12}
-              />
-            </CardContent>
-          )}
-        </Card>
+        {/* Tabbed Views */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          <div className="flex items-center justify-between border-b border-border pb-3 flex-wrap gap-2">
+            <TabsList className="bg-stone-100 dark:bg-stone-800 p-1 rounded-md h-10 border border-border">
+              <TabsTrigger value="radar" className="rounded text-xs font-semibold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground">
+                <Radio className="w-3.5 h-3.5 text-primary" />
+                <span>Fleet Radar</span>
+              </TabsTrigger>
+              <TabsTrigger value="buses" className="rounded text-xs font-semibold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground">
+                <BusIcon className="w-3.5 h-3.5" />
+                <span>Buses ({buses.length})</span>
+              </TabsTrigger>
+              <TabsTrigger value="routes" className="rounded text-xs font-semibold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground">
+                <RouteIcon className="w-3.5 h-3.5" />
+                <span>Routes ({routes.length})</span>
+              </TabsTrigger>
+              <TabsTrigger value="students" className="rounded text-xs font-semibold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground">
+                <Users className="w-3.5 h-3.5" />
+                <span>Student Directory ({students.length})</span>
+              </TabsTrigger>
+            </TabsList>
 
-        {/* BUSES */}
-        <Card className="mb-8">
-          <CardHeader className="flex flex-row items-center justify-between gap-2">
-            <div>
-              <CardTitle>Buses</CardTitle>
-              <CardDescription>Manage your bus fleet</CardDescription>
-            </div>
             <Button
-              onClick={() => {
-                setEditingBus(null);
-                setNewBus({ busNumber: "", route: "" });
-                setOpenBusDialog(true);
-              }}
+              variant="outline"
+              size="sm"
+              onClick={fetchAll}
+              disabled={isRefreshing}
+              className="text-xs h-8 rounded-md border-border gap-1.5"
             >
-              <Plus className="mr-2 w-4 h-4" />
-              Add Bus
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+              <span>Refresh Telemetry</span>
             </Button>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Bus Number</TableHead>
-                  <TableHead>Route</TableHead>
-                  <TableHead>Running</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {buses.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center text-gray-500">No buses yet</TableCell>
-                  </TableRow>
-                )}
-                {buses.map((bus) => (
-                  <TableRow key={bus._id}>
-                    <TableCell className="font-medium">{bus.busNumber}</TableCell>
-                    <TableCell>{bus.route}</TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={bus.status === "active"}
-                        onCheckedChange={() => handleToggleBusStatus(bus)}
-                        aria-label={`Bus ${bus.busNumber} running`}
-                      />
-                    </TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
-                      <Button variant="ghost" size="sm" onClick={() => handleEditBus(bus)} className="mr-2" aria-label="Edit bus">
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteBus(bus)}
-                        className="text-red-600 hover:text-red-700"
-                        aria-label="Delete bus"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* ROUTES */}
-        <Card className="mb-8">
-          <CardHeader className="flex flex-row items-center justify-between gap-2">
-            <div>
-              <CardTitle>Routes</CardTitle>
-              <CardDescription>Manage bus routes</CardDescription>
-            </div>
-            <Button
-              onClick={() => {
-                setEditingRoute(null);
-                setNewRoute({ routeName: "" });
-                setOpenRouteDialog(true);
-              }}
-            >
-              <Plus className="mr-2 w-4 h-4" />
-              Add Route
-            </Button>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Route Name</TableHead>
-                  <TableHead>Buses</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {routes.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={3} className="text-center text-gray-500">No routes yet</TableCell>
-                  </TableRow>
+          {/* TAB 1: FLEET RADAR MAP */}
+          <TabsContent value="radar" className="m-0 focus-visible:ring-0">
+            <div className="border border-border rounded-lg bg-card overflow-hidden">
+              <div className="p-3.5 border-b border-border bg-stone-50 dark:bg-stone-900/60 flex items-center justify-between">
+                <div>
+                  <h2 className="text-xs font-bold text-foreground">Prayagraj Campus Fleet Radar</h2>
+                  <p className="text-[11px] text-muted-foreground">
+                    {busesWithLocation.length > 0
+                      ? `Displaying ${busesWithLocation.length} active vehicle GPS fixes across university routes`
+                      : "No drivers currently broadcasting GPS signals"}
+                  </p>
+                </div>
+                {busesWithLocation.length > 0 && (
+                  <Badge variant="outline" className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800">
+                    {busesWithLocation.length} Live
+                  </Badge>
                 )}
-                {routes.map((route) => (
-                  <TableRow key={route._id}>
-                    <TableCell className="font-medium">{route.routeName}</TableCell>
-                    <TableCell>{buses.filter((b) => b.route === route.routeName).length}</TableCell>
-                    <TableCell className="text-right whitespace-nowrap">
-                      <Button variant="ghost" size="sm" onClick={() => handleEditRoute(route)} className="mr-2" aria-label="Edit route">
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteRoute(route)}
-                        className="text-red-600 hover:text-red-700"
-                        aria-label="Delete route"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        {/* STUDENTS */}
-        <Card>
-          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <CardTitle>Students</CardTitle>
-              <CardDescription>Add students and assign their routes</CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Search ID or name"
-                value={studentSearch}
-                onChange={(e) => setStudentSearch(e.target.value)}
-                className="sm:w-56"
-              />
-              <Button onClick={handleNewStudent}>
-                <Plus className="mr-2 w-4 h-4" />
-                Add Student
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Student ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Authorized Routes</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {visibleStudents.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center text-gray-500">
-                      {search ? "No matching students" : "No students yet"}
-                    </TableCell>
-                  </TableRow>
-                )}
-                {visibleStudents.map((student) => (
-                  <TableRow key={student._id}>
-                    <TableCell className="font-medium">{student.studentId}</TableCell>
-                    <TableCell>{student.name}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-2">
-                        {student.registeredRoutes.length > 0 ? (
-                          student.registeredRoutes.map((route) => (
-                            <Badge key={`${student._id}-${route}`} className="bg-green-100 text-green-800 hover:bg-green-100">
-                              {route}
-                            </Badge>
-                          ))
-                        ) : (
-                          <span className="text-sm text-gray-500">No routes assigned</span>
-                        )}
+              </div>
+              <div className="h-[460px] sm:h-[560px] relative">
+                {busesWithLocation.length > 0 ? (
+                  <MapView
+                    center={busesWithLocation[0].coordinates!}
+                    markers={busesWithLocation.map((l) => ({
+                      id: l.id,
+                      position: l.coordinates!,
+                      title: `Bus ${l.number} • ${l.route}`
+                    }))}
+                    zoom={13}
+                  />
+                ) : (
+                  <div className="h-full flex items-center justify-center bg-stone-50 dark:bg-stone-900/50 p-6 text-center">
+                    <div className="max-w-xs space-y-2">
+                      <div className="w-10 h-10 rounded-md bg-stone-200 dark:bg-stone-800 flex items-center justify-center mx-auto text-stone-500">
+                        <MapPin className="w-5 h-5" />
                       </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" onClick={() => handleEditStudent(student)}>
-                        <Users className="w-4 h-4 mr-1" />
-                        Manage Routes
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
+                      <h3 className="text-sm font-bold text-foreground">Fleet in Depot</h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Vehicles will populate this radar as soon as drivers begin morning or evening shifts from the Driver Console.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
 
-      {/* BUS DIALOG */}
+          {/* TAB 2: BUS VEHICLES */}
+          <TabsContent value="buses" className="m-0 focus-visible:ring-0">
+            <div className="border border-border rounded-lg bg-card overflow-hidden">
+              <div className="p-4 border-b border-border bg-stone-50 dark:bg-stone-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">Registered Bus Vehicles</h2>
+                  <p className="text-[11px] text-muted-foreground">Manage bus numbers, assigned routes, and operational status</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-stone-400" />
+                    <Input
+                      placeholder="Search bus or route..."
+                      value={busSearch}
+                      onChange={(e) => setBusSearch(e.target.value)}
+                      className="pl-8 h-8 text-xs w-44 rounded-md border-border"
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setEditingBus(null);
+                      setNewBus({ busNumber: "", route: "" });
+                      setOpenBusDialog(true);
+                    }}
+                    className="h-8 text-xs font-semibold rounded-md gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Register Bus
+                  </Button>
+                </div>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border hover:bg-transparent">
+                    <TableHead className="text-xs font-bold uppercase tracking-wider">Bus Identifier</TableHead>
+                    <TableHead className="text-xs font-bold uppercase tracking-wider">Assigned Corridor</TableHead>
+                    <TableHead className="text-xs font-bold uppercase tracking-wider">Operational Switch</TableHead>
+                    <TableHead className="text-right text-xs font-bold uppercase tracking-wider">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {visibleBuses.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8 text-xs text-muted-foreground">
+                        {bSearch ? "No matching buses found" : "No vehicles registered in fleet"}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    visibleBuses.map((bus) => (
+                      <TableRow key={bus._id} className="border-border hover:bg-stone-50/50 dark:hover:bg-stone-900/30">
+                        <TableCell className="font-bold text-xs text-foreground">Bus {bus.busNumber}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{bus.route}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={bus.status === "active"}
+                              onCheckedChange={() => handleToggleBusStatus(bus)}
+                              aria-label={`Toggle status for Bus ${bus.busNumber}`}
+                            />
+                            <span className={`text-xs font-semibold ${bus.status === "active" ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"}`}>
+                              {bus.status === "active" ? "On Route" : "At Depot"}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditBus(bus)}
+                            className="h-7 w-7 p-0 rounded text-stone-500 hover:text-foreground mr-1"
+                            title="Edit vehicle"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteBus(bus)}
+                            className="h-7 w-7 p-0 rounded text-stone-500 hover:text-destructive"
+                            title="Delete vehicle"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+
+          {/* TAB 3: TRANSIT CORRIDORS (ROUTES) */}
+          <TabsContent value="routes" className="m-0 focus-visible:ring-0">
+            <div className="border border-border rounded-lg bg-card overflow-hidden">
+              <div className="p-4 border-b border-border bg-stone-50 dark:bg-stone-900/60 flex items-center justify-between">
+                <div>
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">Campus Transit Corridors</h2>
+                  <p className="text-[11px] text-muted-foreground">Manage designated university transit lines</p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setEditingRoute(null);
+                    setNewRoute({ routeName: "" });
+                    setOpenRouteDialog(true);
+                  }}
+                  className="h-8 text-xs font-semibold rounded-md gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add Route
+                </Button>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border hover:bg-transparent">
+                    <TableHead className="text-xs font-bold uppercase tracking-wider">Route Corridor Name</TableHead>
+                    <TableHead className="text-xs font-bold uppercase tracking-wider">Assigned Fleet</TableHead>
+                    <TableHead className="text-right text-xs font-bold uppercase tracking-wider">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {routes.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-center py-8 text-xs text-muted-foreground">
+                        No transit routes configured yet
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    routes.map((route) => {
+                      const assignedBuses = buses.filter((b) => b.route === route.routeName);
+                      return (
+                        <TableRow key={route._id} className="border-border hover:bg-stone-50/50 dark:hover:bg-stone-900/30">
+                          <TableCell className="font-bold text-xs text-foreground">{route.routeName}</TableCell>
+                          <TableCell>
+                            <span className="text-xs font-mono text-muted-foreground">
+                              {assignedBuses.length} vehicle(s)
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right whitespace-nowrap">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditRoute(route)}
+                              className="h-7 w-7 p-0 rounded text-stone-500 hover:text-foreground mr-1"
+                              title="Edit route"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteRoute(route)}
+                              className="h-7 w-7 p-0 rounded text-stone-500 hover:text-destructive"
+                              title="Delete route"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+
+          {/* TAB 4: STUDENT PASS DIRECTORY */}
+          <TabsContent value="students" className="m-0 focus-visible:ring-0">
+            <div className="border border-border rounded-lg bg-card overflow-hidden">
+              <div className="p-4 border-b border-border bg-stone-50 dark:bg-stone-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">Student Pass Directory</h2>
+                  <p className="text-[11px] text-muted-foreground">Enroll commuters and assign authorized corridor passes</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-stone-400" />
+                    <Input
+                      placeholder="Search ID or name..."
+                      value={studentSearch}
+                      onChange={(e) => setStudentSearch(e.target.value)}
+                      className="pl-8 h-8 text-xs w-44 rounded-md border-border"
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={handleNewStudent}
+                    className="h-8 text-xs font-semibold rounded-md gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Enroll Student
+                  </Button>
+                </div>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border hover:bg-transparent">
+                    <TableHead className="text-xs font-bold uppercase tracking-wider">Enrollment ID</TableHead>
+                    <TableHead className="text-xs font-bold uppercase tracking-wider">Student Name</TableHead>
+                    <TableHead className="text-xs font-bold uppercase tracking-wider">Authorized Route Passes</TableHead>
+                    <TableHead className="text-right text-xs font-bold uppercase tracking-wider">Pass Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {visibleStudents.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8 text-xs text-muted-foreground">
+                        {sSearch ? "No matching students found" : "No students enrolled in transport registry"}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    visibleStudents.map((student) => (
+                      <TableRow key={student._id} className="border-border hover:bg-stone-50/50 dark:hover:bg-stone-900/30">
+                        <TableCell className="font-mono font-bold text-xs text-foreground">
+                          {student.studentId}
+                        </TableCell>
+                        <TableCell className="font-medium text-xs text-foreground">{student.name}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {student.registeredRoutes.length > 0 ? (
+                              student.registeredRoutes.map((r) => (
+                                <Badge 
+                                  key={`${student._id}-${r}`} 
+                                  variant="outline"
+                                  className="text-[10px] font-semibold px-1.5 py-0 rounded border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800"
+                                >
+                                  {r}
+                                </Badge>
+                              ))
+                            ) : (
+                              <span className="text-[11px] text-muted-foreground italic">No route pass assigned</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditStudent(student)}
+                            className="h-7 text-xs rounded border-border"
+                          >
+                            Manage Pass
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </TabsContent>
+
+        </Tabs>
+      </main>
+
+      {/* BUS MODAL */}
       <Dialog open={openBusDialog} onOpenChange={(open) => !open && handleCloseDialogs()}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md rounded-lg">
           <DialogHeader>
-            <DialogTitle>{editingBus ? "Edit Bus" : "Add New Bus"}</DialogTitle>
-            <DialogDescription>
-              {editingBus ? "Update bus information" : "Add a new bus to the fleet"}
+            <DialogTitle className="text-base font-bold">{editingBus ? "Edit Vehicle" : "Register Campus Bus"}</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              {editingBus ? "Update bus identifier and corridor assignment" : "Enter vehicle details for university transit roster"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="bus-number">Bus Number</Label>
+          <div className="space-y-3.5 pt-2">
+            <div className="space-y-1">
+              <Label htmlFor="bus-number" className="text-xs font-semibold">Bus Identifier / License Code</Label>
               <Input
                 id="bus-number"
-                placeholder="e.g., R1"
+                placeholder="e.g. 04 (UP-70-BT-4412)"
                 value={newBus.busNumber}
                 onChange={(e) => setNewBus({ ...newBus, busNumber: e.target.value })}
+                className="h-9 text-xs rounded-md"
               />
             </div>
-            <div className="space-y-2">
-              <Label>Route</Label>
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">Assigned Corridor Route</Label>
               <Select value={newBus.route} onValueChange={(route) => setNewBus({ ...newBus, route })}>
-                <SelectTrigger>
-                  <SelectValue placeholder={routes.length ? "Select a route" : "Add a route first"} />
+                <SelectTrigger className="h-9 text-xs rounded-md">
+                  <SelectValue placeholder={routes.length ? "Select corridor" : "Create a route first"} />
                 </SelectTrigger>
                 <SelectContent>
                   {routes.map((route) => (
-                    <SelectItem key={route._id} value={route.routeName}>
+                    <SelectItem key={route._id} value={route.routeName} className="text-xs">
                       {route.routeName}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={handleAddBus} disabled={isSaving} className="w-full">
-              {editingBus ? "Update Bus" : "Add Bus"}
+            <Button onClick={handleAddBus} disabled={isSaving} className="w-full h-9 text-xs rounded-md font-semibold mt-2">
+              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
+              {editingBus ? "Save Vehicle Record" : "Register Bus in Fleet"}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* ROUTE DIALOG */}
+      {/* ROUTE MODAL */}
       <Dialog open={openRouteDialog} onOpenChange={(open) => !open && handleCloseDialogs()}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md rounded-lg">
           <DialogHeader>
-            <DialogTitle>{editingRoute ? "Edit Route" : "Add New Route"}</DialogTitle>
-            <DialogDescription>
-              {editingRoute ? "Renaming also updates its buses and students" : "Add a new bus route"}
+            <DialogTitle className="text-base font-bold">{editingRoute ? "Edit Corridor" : "New Transit Corridor"}</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              {editingRoute 
+                ? "Renaming will automatically update all associated buses and active student passes." 
+                : "Add a university bus route corridor to the campus network."}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="route-name">Route Name</Label>
+          <div className="space-y-3.5 pt-2">
+            <div className="space-y-1">
+              <Label htmlFor="route-name" className="text-xs font-semibold">Corridor Route Name</Label>
               <Input
                 id="route-name"
-                placeholder="e.g., Rajroohpur"
+                placeholder="e.g. Route 01 - Civil Lines Express"
                 value={newRoute.routeName}
                 onChange={(e) => setNewRoute({ ...newRoute, routeName: e.target.value })}
+                className="h-9 text-xs rounded-md"
               />
             </div>
-            <Button onClick={handleAddRoute} disabled={isSaving} className="w-full">
-              {editingRoute ? "Update Route" : "Add Route"}
+            <Button onClick={handleAddRoute} disabled={isSaving} className="w-full h-9 text-xs rounded-md font-semibold mt-2">
+              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
+              {editingRoute ? "Save Corridor Changes" : "Create Transit Corridor"}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* STUDENT DIALOG (add or edit routes) */}
+      {/* STUDENT PASS MODAL */}
       <Dialog open={openStudentDialog} onOpenChange={(open) => !open && handleCloseDialogs()}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md rounded-lg">
           <DialogHeader>
-            <DialogTitle>{editingStudent ? "Update Student Routes" : "Add Student"}</DialogTitle>
-            <DialogDescription>
-              {editingStudent
-                ? `Select routes for ${editingStudent.name} (${editingStudent.studentId})`
-                : "Create a login for a student and choose their routes"}
+            <DialogTitle className="text-base font-bold">
+              {editingStudent ? `Corridor Pass: ${editingStudent.name}` : "Enroll Commuter"}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              {editingStudent 
+                ? "Select verified routes authorized on this student's semester pass." 
+                : "Enroll student in the university transport database."}
             </DialogDescription>
           </DialogHeader>
+          <div className="space-y-3.5 pt-2">
+            {!editingStudent && (
+              <>
+                <div className="space-y-1">
+                  <Label htmlFor="student-id" className="text-xs font-semibold">Student Enrollment ID</Label>
+                  <Input
+                    id="student-id"
+                    placeholder="e.g. UGI-2023-CS-104"
+                    value={newStudent.studentId}
+                    onChange={(e) => setNewStudent({ ...newStudent, studentId: e.target.value })}
+                    className="h-9 text-xs rounded-md"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="student-name" className="text-xs font-semibold">Full Legal Name</Label>
+                  <Input
+                    id="student-name"
+                    placeholder="e.g. Rajesh Kumar"
+                    value={newStudent.name}
+                    onChange={(e) => setNewStudent({ ...newStudent, name: e.target.value })}
+                    className="h-9 text-xs rounded-md"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="student-pwd" className="text-xs font-semibold">Passkey / Password</Label>
+                  <Input
+                    id="student-pwd"
+                    type="password"
+                    placeholder="Set student login password"
+                    value={newStudent.password}
+                    onChange={(e) => setNewStudent({ ...newStudent, password: e.target.value })}
+                    className="h-9 text-xs rounded-md"
+                  />
+                </div>
+              </>
+            )}
 
-          {!editingStudent && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="student-id">Student ID</Label>
-                <Input
-                  id="student-id"
-                  placeholder="e.g., STU004"
-                  value={newStudent.studentId}
-                  onChange={(e) => setNewStudent({ ...newStudent, studentId: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="student-name">Name</Label>
-                <Input
-                  id="student-name"
-                  value={newStudent.name}
-                  onChange={(e) => setNewStudent({ ...newStudent, name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="student-password">Password</Label>
-                <Input
-                  id="student-password"
-                  type="password"
-                  autoComplete="new-password"
-                  value={newStudent.password}
-                  onChange={(e) => setNewStudent({ ...newStudent, password: e.target.value })}
-                />
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Authorized Corridor Routes</Label>
+              <div className="border border-border rounded-md p-3 max-h-44 overflow-y-auto space-y-2 bg-stone-50 dark:bg-stone-900">
+                {routes.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No corridors configured</p>
+                ) : (
+                  routes.map((route) => (
+                    <div key={route._id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`route-${route._id}`}
+                        checked={selectedStudentRoutes.includes(route.routeName)}
+                        onCheckedChange={() => handleToggleStudentRoute(route.routeName)}
+                      />
+                      <label htmlFor={`route-${route._id}`} className="text-xs font-medium cursor-pointer">
+                        {route.routeName}
+                      </label>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
-          )}
 
-          <div className="space-y-3 max-h-72 overflow-y-auto">
-            <Label>Routes</Label>
-            {routes.length === 0 && <p className="text-sm text-gray-500">No routes yet</p>}
-            {routes.map((route) => (
-              <label key={route._id} className="flex items-center gap-2 text-sm cursor-pointer">
-                <Checkbox
-                  checked={selectedStudentRoutes.includes(route.routeName)}
-                  onCheckedChange={() => handleToggleStudentRoute(route.routeName)}
-                />
-                <span>{route.routeName}</span>
-              </label>
-            ))}
+            <Button onClick={handleSaveStudent} disabled={isSaving} className="w-full h-9 text-xs rounded-md font-semibold mt-2">
+              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
+              {editingStudent ? "Save Corridor Pass" : "Complete Enrollment"}
+            </Button>
           </div>
-
-          <Button onClick={handleSaveStudent} disabled={isSaving} className="w-full">
-            {editingStudent ? "Save Route Access" : "Add Student"}
-          </Button>
         </DialogContent>
       </Dialog>
 
-      {/* DELETE CONFIRMATION */}
+      {/* CONFIRM DELETE DIALOG */}
       <AlertDialog open={!!pendingDelete} onOpenChange={(open) => !open && setPendingDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="rounded-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle>{pendingDelete?.title}</AlertDialogTitle>
-            <AlertDialogDescription>{pendingDelete?.description}</AlertDialogDescription>
+            <AlertDialogTitle className="text-base font-bold">{pendingDelete?.title}</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
+              {pendingDelete?.description}
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
-              Delete
+            <AlertDialogCancel className="text-xs rounded-md">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="text-xs rounded-md bg-destructive hover:bg-destructive/90 text-white font-semibold">
+              Confirm Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

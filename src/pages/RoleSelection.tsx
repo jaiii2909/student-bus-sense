@@ -1,106 +1,180 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Shield, Users, Navigation } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, ArrowRight, Bus, Users, Navigation, ShieldCheck, Check } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const RoleSelection = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl">
-        {/* Header */}
-        <div className="text-center mb-12">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4 sm:p-6 font-sans">
+      <div className="w-full max-w-4xl space-y-8">
+        
+        {/* Top Bar with Return link and ThemeToggle */}
+        <div className="flex items-center justify-between">
           <Button
             variant="ghost"
+            size="sm"
             onClick={() => navigate("/")}
-            className="mb-6 text-gray-600 hover:text-gray-900 justify-start"
+            className="text-stone-600 dark:text-stone-300 hover:text-foreground text-xs font-semibold -ml-2"
           >
-            <ArrowLeft className="mr-2 w-4 h-4" />
-            Back to Home
+            <ArrowLeft className="mr-1.5 w-4 h-4" />
+            Back to Campus Home
           </Button>
+          <ThemeToggle />
+        </div>
+
+        {/* Section Header */}
+        <div className="space-y-2 text-center max-w-lg mx-auto">
+          <div className="inline-flex items-center justify-center w-10 h-10 rounded-md bg-primary text-primary-foreground font-bold mb-1">
+            <Bus className="w-5 h-5" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+            Campus Transit Portal
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Select your transit role to access real-time route tracking, in-cab GPS broadcasting, or fleet supervision.
+          </p>
+        </div>
+
+        {/* Role Cards Grid */}
+        <div className="grid md:grid-cols-3 gap-5">
           
-          <h1 className="text-4xl font-bold mb-4 text-gray-900">Select Your Role</h1>
-          <p className="text-lg text-gray-600">Choose your role to continue with the bus tracking system</p>
-        </div>
-
-        {/* Role Cards */}
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* Student Card */}
-          <Card className="border-2 border-transparent hover:border-blue-500 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer group"
+          {/* Card 1: Student Commuter */}
+          <div 
             onClick={() => navigate("/student-login")}
+            className="border border-border rounded-xl p-6 bg-card hover:border-primary transition-colors cursor-pointer flex flex-col justify-between space-y-5"
           >
-            <CardHeader className="text-center pb-4">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-200 transition-colors">
-                <Users className="w-8 h-8 text-blue-600" />
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-md bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-foreground font-bold">
+                  <Users className="w-5 h-5 text-primary" />
+                </div>
+                <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider rounded border-stone-200 dark:border-stone-700">
+                  Pass Required
+                </Badge>
               </div>
-              <CardTitle className="text-2xl font-bold text-gray-900">Student</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <CardDescription className="text-center text-gray-600">
-                Track your college bus in real-time.
-              </CardDescription>
-              <ul className="text-sm text-gray-600 space-y-2 text-left">
-                <li>✓ Real-time bus tracking</li>
-                <li>✓ Running / not running status</li>
-                <li>✓ Route information</li>
-              </ul>
-              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-4">
-                Continue as Student
-              </Button>
-            </CardContent>
-          </Card>
 
-          {/* Driver Card */}
-          <Card className="border-2 border-transparent hover:border-green-500 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer group"
+              <div>
+                <h2 className="text-lg font-bold text-foreground">Student Commuter</h2>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  Track your designated corridor buses, view morning & evening timetables, and monitor arrivals.
+                </p>
+              </div>
+
+              <ul className="text-xs text-stone-600 dark:text-stone-400 space-y-2 pt-2 border-t border-border">
+                <li className="flex items-center gap-2">
+                  <Check className="w-3.5 h-3.5 text-accent shrink-0" />
+                  <span>Real-time GPS bus tracking</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-3.5 h-3.5 text-accent shrink-0" />
+                  <span>Fee-verified corridor pass access</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-3.5 h-3.5 text-accent shrink-0" />
+                  <span>Active vs depot vehicle status</span>
+                </li>
+              </ul>
+            </div>
+
+            <Button className="w-full text-xs font-semibold h-10 rounded-md">
+              Sign In as Student
+              <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+            </Button>
+          </div>
+
+          {/* Card 2: Transport Driver */}
+          <div 
             onClick={() => navigate("/driver-location")}
+            className="border border-border rounded-xl p-6 bg-card hover:border-primary transition-colors cursor-pointer flex flex-col justify-between space-y-5"
           >
-            <CardHeader className="text-center pb-4">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-green-200 transition-colors">
-                <Navigation className="w-8 h-8 text-green-600" />
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-md bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-foreground font-bold">
+                  <Navigation className="w-5 h-5 text-stone-700 dark:text-stone-300" />
+                </div>
+                <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider rounded border-stone-200 dark:border-stone-700">
+                  In-Cab Mobile
+                </Badge>
               </div>
-              <CardTitle className="text-2xl font-bold text-gray-900">Driver</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <CardDescription className="text-center text-gray-600">
-                Share your bus location with students in one tap.
-              </CardDescription>
-              <ul className="text-sm text-gray-600 space-y-2 text-left">
-                <li>✓ Share live location</li>
-                <li>✓ Pick your route and bus</li>
-                <li>✓ Students see you instantly</li>
-              </ul>
-              <Button className="w-full bg-green-600 hover:bg-green-700 text-white mt-4">
-                Continue as Driver
-              </Button>
-            </CardContent>
-          </Card>
 
-          {/* Admin Card */}
-          <Card className="border-2 border-transparent hover:border-purple-500 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer group"
-            onClick={() => navigate("/admin-dashboard")}
-          >
-            <CardHeader className="text-center pb-4">
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-200 transition-colors">
-                <Shield className="w-8 h-8 text-purple-600" />
+              <div>
+                <h2 className="text-lg font-bold text-foreground">Transport Driver</h2>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  Transmit vehicle location to student commuters while operating scheduled morning & evening routes.
+                </p>
               </div>
-              <CardTitle className="text-2xl font-bold text-gray-900">Admin</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <CardDescription className="text-center text-gray-600">
-                Manage buses, routes, and monitor the entire fleet.
-              </CardDescription>
-              <ul className="text-sm text-gray-600 space-y-2 text-left">
-                <li>✓ Bus management</li>
-                <li>✓ Route & student access</li>
-                <li>✓ Live fleet map</li>
+
+              <ul className="text-xs text-stone-600 dark:text-stone-400 space-y-2 pt-2 border-t border-border">
+                <li className="flex items-center gap-2">
+                  <Check className="w-3.5 h-3.5 text-accent shrink-0" />
+                  <span>One-tap live GPS broadcasting</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-3.5 h-3.5 text-accent shrink-0" />
+                  <span>Automatic screen wake-lock</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-3.5 h-3.5 text-accent shrink-0" />
+                  <span>Low mobile battery & data overhead</span>
+                </li>
               </ul>
-              <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white mt-4">
-                Continue as Admin
-              </Button>
-            </CardContent>
-          </Card>
+            </div>
+
+            <Button variant="outline" className="w-full text-xs font-semibold h-10 rounded-md border-border hover:bg-stone-100 dark:hover:bg-stone-800">
+              Open Driver Console
+              <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+            </Button>
+          </div>
+
+          {/* Card 3: Fleet Supervisor / Admin */}
+          <div 
+            onClick={() => navigate("/admin-dashboard")}
+            className="border border-border rounded-xl p-6 bg-card hover:border-primary transition-colors cursor-pointer flex flex-col justify-between space-y-5"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-md bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-foreground font-bold">
+                  <ShieldCheck className="w-5 h-5 text-stone-700 dark:text-stone-300" />
+                </div>
+                <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider rounded border-stone-200 dark:border-stone-700">
+                  Staff Only
+                </Badge>
+              </div>
+
+              <div>
+                <h2 className="text-lg font-bold text-foreground">Fleet Supervisor</h2>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  Manage university routes, assign bus vehicles, monitor the live fleet radar, and manage student passes.
+                </p>
+              </div>
+
+              <ul className="text-xs text-stone-600 dark:text-stone-400 space-y-2 pt-2 border-t border-border">
+                <li className="flex items-center gap-2">
+                  <Check className="w-3.5 h-3.5 text-accent shrink-0" />
+                  <span>Full campus fleet radar map</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-3.5 h-3.5 text-accent shrink-0" />
+                  <span>Bus vehicle & route allocation</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-3.5 h-3.5 text-accent shrink-0" />
+                  <span>Semester student pass database</span>
+                </li>
+              </ul>
+            </div>
+
+            <Button variant="outline" className="w-full text-xs font-semibold h-10 rounded-md border-border hover:bg-stone-100 dark:hover:bg-stone-800">
+              Enter Admin Portal
+              <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+            </Button>
+          </div>
+
         </div>
+
       </div>
     </div>
   );

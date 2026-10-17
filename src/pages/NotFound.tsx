@@ -1,8 +1,8 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
-import { Bus } from "lucide-react";
+import { Bus, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const NotFound = () => {
   const location = useLocation();
@@ -10,23 +10,36 @@ const NotFound = () => {
 
   useEffect(() => {
     console.error(
-      "404 Error: User attempted to access non-existent route:",
+      "404 Error: Non-existent route path:",
       location.pathname
     );
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-2xl border-0 text-center">
-        <CardContent className="pt-8 pb-8 space-y-4">
-          <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto">
-            <Bus className="w-8 h-8 text-primary-foreground" />
-          </div>
-          <h1 className="text-4xl font-bold text-gray-900">404</h1>
-          <p className="text-lg text-gray-600">This page took a wrong turn.</p>
-          <Button onClick={() => navigate("/")}>Go Home</Button>
-        </CardContent>
-      </Card>
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4 font-sans relative">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
+      <div className="w-full max-w-sm border border-border rounded-xl bg-card shadow-sm p-6 text-center space-y-4">
+        <div className="w-10 h-10 rounded-md bg-stone-100 dark:bg-stone-800 flex items-center justify-center mx-auto text-primary">
+          <Bus className="w-5 h-5" />
+        </div>
+        <div className="space-y-1">
+          <span className="text-3xl font-extrabold text-foreground tabular-nums">404</span>
+          <h1 className="text-base font-bold text-foreground">Transit Stop Not Found</h1>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            The page or route you attempted to access is not on the university transit schedule.
+          </p>
+        </div>
+        <Button 
+          onClick={() => navigate("/")} 
+          className="rounded-md w-full h-9 text-xs font-semibold"
+        >
+          <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
+          Return to Campus Home
+        </Button>
+      </div>
     </div>
   );
 };

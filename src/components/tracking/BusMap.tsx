@@ -1,6 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { MapPin } from "lucide-react";
+import { Bus, MapPin, Compass } from "lucide-react";
 import MapView from "../MapView";
 import { TrackedBus, LOCATION_BADGE, getLocationState, formatLastUpdated } from "@/lib/busStatus";
 
@@ -9,54 +8,85 @@ interface BusMapProps {
   nowMs: number;
 }
 
-const Placeholder = ({ title, text }: { title: string; text: string }) => (
-  <div className="h-full flex items-center justify-center bg-gray-50 p-6">
-    <div className="text-center">
-      <MapPin className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-      <h3 className="text-lg font-semibold text-gray-600 mb-2">{title}</h3>
-      <p className="text-gray-500">{text}</p>
+const Placeholder = ({ icon: Icon, title, text, subtext }: { icon: any; title: string; text: string; subtext?: string }) => (
+  <div className="h-full min-h-[380px] flex items-center justify-center bg-stone-50/70 dark:bg-stone-900/50 p-6 text-center">
+    <div className="max-w-xs space-y-2">
+      <div className="w-10 h-10 rounded-md bg-stone-200 dark:bg-stone-800 flex items-center justify-center mx-auto text-stone-600 dark:text-stone-300">
+        <Icon className="w-5 h-5" />
+      </div>
+      <div>
+        <h3 className="text-sm font-bold text-foreground">{title}</h3>
+        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{text}</p>
+        {subtext && <p className="text-[11px] text-muted-foreground mt-1 font-mono">{subtext}</p>}
+      </div>
     </div>
   </div>
 );
 
-// Map for the one bus the student selected.
+// Clean Campus Bus Map View
 const BusMap = ({ bus, nowMs }: BusMapProps) => {
   if (!bus) {
-    return <Placeholder title="Select a Bus" text="Choose a bus from the list to view its location" />;
+    return (
+      <Placeholder
+        icon={Bus}
+        title="No Vehicle Selected"
+        text="Choose your route pass from the sidebar to inspect active buses on that corridor."
+      />
+    );
   }
 
   if (!bus.coordinates) {
     return (
       <Placeholder
-        title="Location Pending"
-        text={`Driver for ${bus.number} has not started sharing location yet.`}
+        icon={MapPin}
+        title="Awaiting In-Cab Driver GPS"
+        text={`Driver for Bus ${bus.number} (${bus.route}) has not started vehicle broadcast yet.`}
+        subtext="Tracking will appear automatically once driver begins trip."
       />
     );
   }
 
-  const badge = LOCATION_BADGE[getLocationState(bus, nowMs)];
+  const locationState = getLocationState(bus, nowMs);
+  const badge = LOCATION_BADGE[locationState];
 
   return (
-    <div className="relative h-full">
+    <div className="relative h-full w-full min-h-[380px] overflow-hidden">
       <MapView
         center={bus.coordinates}
-        markers={[{ id: bus.id, position: bus.coordinates, title: bus.number }]}
+        markers={[{ id: bus.id, position: bus.coordinates, title: `Bus ${bus.number} • ${bus.route}` }]}
         zoom={15}
       />
 
-      {/* Bus Info Overlay */}
-      <Card className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-1">
-            <h3 className="font-semibold text-gray-900">{bus.number}</h3>
-            <Badge className={badge.className}>{badge.label}</Badge>
+      {/* Flat Bottom Info Strip Over Map */}
+      <div className="absolute bottom-3 left-3 right-3 z-10">
+        <div className="max-w-md mx-auto sm:ml-0 bg-card border border-border shadow-sm rounded-lg p-3.5 space-y-2.5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-foreground">Bus {bus.number}</span>
+                <span className="text-xs text-muted-foreground">• {bus.route}</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                <Compass className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span>
+                  {bus.status === "inactive" ? "Last recorded: " : "Real-time: "}
+                  {formatLastUpdated(bus.updatedAt, nowMs)}
+                </span>
+              </p>
+            </div>
+
+            <Badge className={`${badge.className} gap-1.5 px-2 py-0.5 text-[11px] shrink-0 rounded`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${badge.dotClass}`} />
+              <span>{badge.label}</span>
+            </Badge>
           </div>
-          <p className="text-xs text-gray-600">
-            {bus.status === "inactive" ? "Last known location. " : ""}
-            {formatLastUpdated(bus.updatedAt, nowMs)}
-          </p>
+
+          <div className="pt-2 border-t border-border flex items-center justify-between text-[11px] text-muted-foreground font-mono tabular-nums">
+            <span>Fix: {bus.coordinates.lat.toFixed(4)}° N, {bus.coordinates.lng.toFixed(4)}° E</span>
+            <span className="text-foreground font-sans font-medium text-xs">Live Telemetry Active</span>
+          </div>
         </div>
-      </Card>
+      </div>
     </div>
   );
 };

@@ -1,33 +1,69 @@
 import { ReactNode } from "react";
-import { Bus, LogOut } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Bus, LogOut, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface AppHeaderProps {
   title: string;
   subtitle?: string;
+  roleBadge?: "Student" | "Driver" | "Admin";
   onLogout?: () => void;
   children?: ReactNode;
 }
 
-// Shared top bar for the student, driver and admin screens.
-const AppHeader = ({ title, subtitle, onLogout, children }: AppHeaderProps) => (
-  <header className="bg-white/80 backdrop-blur-sm shadow-sm border-b">
-    <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-3">
+const AppHeader = ({ title, subtitle, roleBadge, onLogout, children }: AppHeaderProps) => (
+  <header className="sticky top-0 z-40 w-full border-b border-border bg-card">
+    <div className="container mx-auto px-4 h-16 max-w-7xl flex items-center justify-between gap-4">
+      {/* Brand & Wayfinding Title */}
       <div className="flex items-center gap-3 min-w-0">
-        <div className="w-10 h-10 shrink-0 bg-primary rounded-full flex items-center justify-center">
-          <Bus className="w-5 h-5 text-primary-foreground" />
-        </div>
+        <Link 
+          to="/" 
+          className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary text-primary-foreground font-bold shrink-0 hover:bg-primary/90 transition-colors"
+          title="Return to Campus Portal"
+        >
+          <Bus className="w-5 h-5" />
+        </Link>
         <div className="min-w-0">
-          <h1 className="text-lg font-bold text-gray-900 truncate">{title}</h1>
-          {subtitle && <p className="text-sm text-gray-600 truncate">{subtitle}</p>}
+          <div className="flex items-center gap-2">
+            <h1 className="text-sm sm:text-base font-bold text-foreground truncate">
+              {title}
+            </h1>
+            {roleBadge && (
+              <Badge 
+                variant="outline" 
+                className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 bg-stone-50 dark:bg-stone-900"
+              >
+                {roleBadge === "Admin" ? "Fleet Supervisor" : roleBadge === "Driver" ? "Driver Console" : "Student Pass"}
+              </Badge>
+            )}
+          </div>
+          {subtitle && (
+            <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
+          )}
         </div>
       </div>
+
+      {/* Operational Dispatch Status */}
+      <div className="hidden lg:flex items-center gap-2 text-xs text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 px-3 py-1 rounded-md">
+        <span className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400"></span>
+        <span className="font-medium">Prayagraj Campus Transit Network: Active</span>
+      </div>
+
+      {/* Right Actions */}
       <div className="flex items-center gap-2 shrink-0">
         {children}
+        <ThemeToggle />
         {onLogout && (
-          <Button variant="outline" onClick={onLogout}>
-            <LogOut className="w-4 h-4 sm:mr-2" />
-            <span className="hidden sm:inline">Logout</span>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={onLogout}
+            className="h-8 px-3 rounded-md text-xs font-semibold border-border hover:bg-stone-100 dark:hover:bg-stone-800"
+          >
+            <LogOut className="w-3.5 h-3.5 mr-1.5" />
+            Sign Out
           </Button>
         )}
       </div>

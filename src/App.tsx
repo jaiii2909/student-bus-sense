@@ -10,14 +10,16 @@ import Driver from "./pages/Driver";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import { Analytics } from "@vercel/analytics/react";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
+  <ThemeProvider defaultTheme="light" attribute="class" enableSystem>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
@@ -32,6 +34,7 @@ const App = () => (
       <Analytics />
     </TooltipProvider>
   </QueryClientProvider>
+</ThemeProvider>
 );
 
 export default App;
