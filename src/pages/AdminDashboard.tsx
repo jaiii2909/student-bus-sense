@@ -51,7 +51,7 @@ import {
 import axios from "axios";
 import LoginForm from "@/components/auth/LoginForm";
 import AppHeader from "@/components/AppHeader";
-import MapView from "@/components/MapView";
+import MapView from "@/components/LazyMapView";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/utils";
 import { clearSession, getSession, saveSession } from "@/lib/session";

@@ -12,7 +12,8 @@ import {
   Clock, 
   Navigation, 
   Check, 
-  RefreshCw 
+  RefreshCw,
+  type LucideIcon,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AppHeader from "./AppHeader";
@@ -56,7 +57,7 @@ const writeStored = (key: string, value: string | null) => {
   }
 };
 
-const EmptyState = ({ icon: Icon, title, text }: { icon: any; title: string; text: string }) => (
+const EmptyState = ({ icon: Icon, title, text }: { icon: LucideIcon; title: string; text: string }) => (
   <div className="text-center p-8 border border-border bg-card rounded-lg space-y-2">
     <div className="w-10 h-10 rounded-md bg-stone-100 dark:bg-stone-800 flex items-center justify-center mx-auto text-stone-500">
       <Icon className="w-5 h-5" />
@@ -219,8 +220,18 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
           return (
             <div
               key={bus.id}
+              role="button"
+              tabIndex={0}
+              aria-pressed={isSelected}
+              aria-label={`Bus ${bus.number}, ${bus.route}, ${badge.label}`}
               onClick={() => handleSelectBus(bus.id)}
-              className={`p-3.5 rounded-lg border transition-colors cursor-pointer text-left ${
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleSelectBus(bus.id);
+                }
+              }}
+              className={`p-3.5 rounded-lg border transition-colors cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 isSelected
                   ? "bg-stone-50 dark:bg-stone-900 border-primary ring-1 ring-primary"
                   : "bg-card border-border hover:border-stone-400"

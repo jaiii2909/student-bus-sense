@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const adminCtrl = require('../controllers/adminController');
 const { requireRole } = require('../middleware/auth');
+const { loginLimiter } = require('../middleware/rateLimit');
 
-router.post('/login', adminCtrl.login);
+router.post('/login', loginLimiter, adminCtrl.login);
 
 // everything below needs an admin token
 router.use(requireRole('admin'));

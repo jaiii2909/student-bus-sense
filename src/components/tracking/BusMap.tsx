@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
-import { Bus, MapPin, Compass } from "lucide-react";
-import MapView from "../MapView";
+import { Bus, MapPin, Compass, type LucideIcon } from "lucide-react";
+import MapView from "../LazyMapView";
 import { TrackedBus, LOCATION_BADGE, getLocationState, formatLastUpdated } from "@/lib/busStatus";
 
 interface BusMapProps {
@@ -8,7 +8,7 @@ interface BusMapProps {
   nowMs: number;
 }
 
-const Placeholder = ({ icon: Icon, title, text, subtext }: { icon: any; title: string; text: string; subtext?: string }) => (
+const Placeholder = ({ icon: Icon, title, text, subtext }: { icon: LucideIcon; title: string; text: string; subtext?: string }) => (
   <div className="h-full min-h-[380px] flex items-center justify-center bg-stone-50/70 dark:bg-stone-900/50 p-6 text-center">
     <div className="max-w-xs space-y-2">
       <div className="w-10 h-10 rounded-md bg-stone-200 dark:bg-stone-800 flex items-center justify-center mx-auto text-stone-600 dark:text-stone-300">

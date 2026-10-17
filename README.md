@@ -37,6 +37,22 @@ DRIVER_PASSWORD=driver123
 
 If `JWT_SECRET` is missing the server still runs, but everyone is logged out on every restart.
 
+Optional:
+
+- `CORS_ORIGINS` – your frontend URL(s), comma separated. Unset means any site can call the API.
+- `LOGIN_MAX_FAILED_ATTEMPTS` – failed logins allowed per IP per 15 minutes (default 20).
+
+### Tests
+
+API tests run against a local MongoDB (a separate `busSenseTest` database that is wiped):
+
+```bash
+cd server
+npm test
+```
+
+`node seed.js` refuses to run against a remote or production database unless you add `--force`, because it deletes all data first.
+
 ### Seeding
 
 To populate sample data (admin, routes, buses, students) run:

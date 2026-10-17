@@ -3,14 +3,25 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Suspense, lazy } from "react";
+import { Loader2 } from "lucide-react";
 import Index from "./pages/Index";
-import RoleSelection from "./pages/RoleSelection";
-import StudentLogin from "./pages/StudentLogin";
-import Driver from "./pages/Driver";
-import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { Analytics } from "@vercel/analytics/react";
 import { ThemeProvider } from "@/components/theme-provider";
+
+// pages other than the landing page are downloaded only when opened
+const RoleSelection = lazy(() => import("./pages/RoleSelection"));
+const StudentLogin = lazy(() => import("./pages/StudentLogin"));
+const Driver = lazy(() => import("./pages/Driver"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+
+const PageLoading = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+  </div>
+);
 
 const queryClient = new QueryClient();
 
@@ -21,6 +32,8 @@ const App = () => (
         <Toaster />
         <Sonner />
       <BrowserRouter>
+        <ErrorBoundary>
+        <Suspense fallback={<PageLoading />}>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/role-selection" element={<RoleSelection />} />
@@ -30,6 +43,8 @@ const App = () => (
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
+        </ErrorBoundary>
       </BrowserRouter>
       <Analytics />
     </TooltipProvider>

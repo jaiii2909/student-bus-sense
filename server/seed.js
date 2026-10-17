@@ -5,7 +5,20 @@ const Route = require('./models/Route');
 const Bus = require('./models/Bus');
 const { hashPassword } = require('./utils/passwords');
 
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+
+// This script deletes all data first. Only run it on a remote/production
+// database when explicitly asked: node seed.js --force
+const isLocalDb = /^mongodb:\/\/(localhost|127\.0\.0\.1)[:/]/.test(process.env.MONGO_URI || '');
+const isProduction = process.env.NODE_ENV === 'production';
+if ((isProduction || !isLocalDb) && !process.argv.includes('--force')) {
+  console.error(
+    'Refusing to seed: this would DELETE all admins, students, routes and buses in a ' +
+    (isProduction ? 'production' : 'remote') + ' database.\n' +
+    'If you are sure, run: node seed.js --force'
+  );
+  process.exit(1);
+}
 
 const seedData = async () => {
   await mongoose.connect(process.env.MONGO_URI);

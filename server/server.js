@@ -12,14 +12,32 @@ const { sendError } = require('./utils/errors');
 const Bus = require('./models/Bus');
 const Student = require('./models/Student');
 
+// Allowed frontend origins, comma separated (e.g. https://your-app.vercel.app).
+// When unset every origin is allowed, which is fine for local development.
+const allowedOrigins = (process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+if (allowedOrigins.length === 0 && process.env.NODE_ENV === 'production') {
+  console.warn('CORS_ORIGINS is not set; any website can call this API.');
+}
+const corsOptions = { origin: allowedOrigins.length ? allowedOrigins : '*' };
+
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, { cors: { origin: "*" } });
+const io = socketIo(server, { cors: corsOptions });
 // make io accessible to controllers via request object
 app.locals.io = io;
 
-app.use(cors());
+// Render sits behind one proxy; this gives the rate limiter the real client IP
+app.set('trust proxy', 1);
+app.use(cors(corsOptions));
 app.use(express.json());
+
+// used by the frontend to wake the server and by uptime checks
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true, db: mongoose.connection.readyState === 1 });
+});
 
 // routers for each user type
 const adminRoutes = require('./routes/adminRoutes');
@@ -59,7 +77,12 @@ io.on('connection', async (socket) => {
   }
 });
 
-mongoose.connect(process.env.MONGO_URI).then(() => console.log("MongoDB connected")).catch(err => console.error("DB error:", err));
+// started directly (npm start); tests import the app instead
+if (require.main === module) {
+  mongoose.connect(process.env.MONGO_URI).then(() => console.log("MongoDB connected")).catch(err => console.error("DB error:", err));
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, "0.0.0.0", () => console.log(`Server on http://localhost:${PORT}`));
+  const PORT = process.env.PORT || 5000;
+  server.listen(PORT, "0.0.0.0", () => console.log(`Server on http://localhost:${PORT}`));
+}
+
+module.exports = { app, server, io };

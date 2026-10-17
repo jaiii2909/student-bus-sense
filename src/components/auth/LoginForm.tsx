@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,13 +6,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Bus, Eye, EyeOff, Lock, User, ShieldCheck, Navigation, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiErrorMessage } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 type Role = 'student' | 'admin' | 'driver';
 
+// what the login endpoints return (student fields only for students)
+interface LoginResponse {
+  token: string;
+  name: string;
+  registeredRoutes: string[];
+  studentId?: string;
+  _id?: string;
+}
+
 interface LoginFormProps {
   role: Role;
-  onLogin: (data: any) => void;
+  onLogin: (data: LoginResponse) => void;
   onBack: () => void;
 }
 
@@ -43,7 +53,14 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  // the free server sleeps when idle; tell the user if login is slow
+  const [isWakingServer, setIsWakingServer] = useState(false);
   const { toast } = useToast();
+
+  // start waking the server as soon as the login screen opens
+  useEffect(() => {
+    axios.get("/api/health").catch(() => {});
+  }, []);
 
   const meta = roleMeta[role];
   const IconComponent = meta.icon;
@@ -51,8 +68,9 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    const slowTimer = window.setTimeout(() => setIsWakingServer(true), 3000);
     let endpoint = '';
-    let body: any = {};
+    let body: Record<string, string> = {};
 
     switch (role) {
       case 'student':
@@ -70,7 +88,7 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
     }
 
     try {
-      const response = await axios.post(endpoint, body);
+      const response = await axios.post<LoginResponse>(endpoint, body);
       toast({
         title: "Access Verified",
         description:
@@ -79,17 +97,20 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
             : 'Credentials confirmed.',
       });
       onLogin(response.data);
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: "Authentication Failed",
-        description:
-          error.response?.data?.message ||
-          (role === 'student'
+        description: apiErrorMessage(
+          error,
+          role === 'student'
             ? 'Invalid student ID or password. Check with the campus transport desk.'
-            : 'Invalid credentials. Please verify your entry.'),
+            : 'Invalid credentials. Please verify your entry.'
+        ),
         variant: "destructive",
       });
     } finally {
+      window.clearTimeout(slowTimer);
+      setIsWakingServer(false);
       setIsLoading(false);
     }
   };
@@ -214,6 +235,11 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
                 role === 'driver' ? "Begin In-Cab Session" : "Verify & Sign In"
               )}
             </Button>
+            {isWakingServer && (
+              <p className="text-[11px] text-muted-foreground text-center" role="status">
+                Waking up the server, this can take up to a minute...
+              </p>
+            )}
           </form>
 
           <div className="pt-4 border-t border-border text-[11px] text-muted-foreground text-center">

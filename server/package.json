@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test tests/api.test.js",
     "hash:password": "node scripts/hashPassword.js",
     "migrate:passwords": "node scripts/migratePasswords.js"
   },
@@ -17,6 +17,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "express-rate-limit": "^7.5.1",
     "jsonwebtoken": "^9.0.0",
     "mongoose": "^9.0.1",
     "nodemon": "^3.1.14",
