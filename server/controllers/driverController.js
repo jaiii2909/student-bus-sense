@@ -58,6 +58,10 @@ const shareLocation = async (req, res) => {
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     return res.status(400).json({ error: 'Invalid coordinates' });
   }
+  // optional; phones without GPS speed send nothing, and odd values are ignored
+  const rawSpeed = req.body.speedKmh;
+  const speedKmh = rawSpeed === null || rawSpeed === undefined ? null : Number(rawSpeed);
+  const validSpeed = Number.isFinite(speedKmh) && speedKmh >= 0 && speedKmh <= 150 ? speedKmh : null;
 
   try {
     const bus = await findBus(busId);
@@ -71,7 +75,7 @@ const shareLocation = async (req, res) => {
 
     const loc = await Location.findOneAndUpdate(
       { busId: bus._id },
-      { latitude, longitude, updatedAt: Date.now() },
+      { latitude, longitude, speedKmh: validSpeed, updatedAt: Date.now() },
       { upsert: true, new: true }
     );
     emitBusUpdate(req.app.locals.io, bus, loc);

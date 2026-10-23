@@ -162,9 +162,11 @@ const Driver = () => {
         if (now - lastSendAttemptRef.current < SEND_INTERVAL_MS) return;
         lastSendAttemptRef.current = now;
 
-        const { latitude, longitude } = position.coords;
+        const { latitude, longitude, speed } = position.coords;
+        // GPS speed is in m/s and missing on some devices; used for student ETA
+        const speedKmh = typeof speed === "number" && speed >= 0 ? Math.round(speed * 3.6) : null;
         try {
-          await axios.post(`/api/driver/buses/${busId}/location`, { latitude, longitude });
+          await axios.post(`/api/driver/buses/${busId}/location`, { latitude, longitude, speedKmh });
           setLastSentAt(Date.now());
           setSendFailed(false);
         } catch (error) {

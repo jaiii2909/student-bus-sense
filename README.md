@@ -1,10 +1,30 @@
-MERN built with vite 
+# Track My Bus
+
+Real-time college bus tracking. Drivers share live GPS from their phone, and students see their bus on a map with a rough arrival time at their stop.
+
+**Live:** https://student-bus-sense.vercel.app
+
+**Try it as a student:** Student ID `DEMO01`, password `demo1234`.
+
+**Stack:** React + TypeScript (Vite, Tailwind, shadcn/ui) · Node.js + Express · MongoDB · Socket.io · Google Maps
 
 ## How it works
 
-- **Students** log in with their student ID, pick one of their registered routes, and see the live location of a bus on that route.
+- **Students** log in with their student ID, pick one of their registered routes and their stop, and see the live location of a bus on that route with an ETA to their stop.
 - **Drivers** log in with the shared driver password, pick their route and bus, and tap *Start Sharing*. The bus shows as running until they tap *Stop*.
-- **Admins** manage buses, routes and students, assign routes to students, and see the live fleet map.
+- **Admins** manage buses, routes (including stops, placed on a map) and students, assign routes to students, and see the live fleet map.
+
+```
+Driver phone --GPS every 5s--> Express API --> MongoDB
+                                    |
+                                Socket.io (one room per route)
+                                    |
+                       Students on that route + admins
+```
+
+**ETA** is approximate: straight-line distance to the stop x 1.3 (roads are longer than a straight line), divided by the bus's GPS speed, or 25 km/h when the speed is unknown or the bus is stopped.
+
+**Security:** JWT login per role, bcrypt passwords, login rate limiting, CORS restricted to the frontend, and students only receive buses on their own routes.
 
 ## Frontend
 
@@ -72,6 +92,7 @@ Login endpoints return a `token`. Every other endpoint needs `Authorization: Bea
 - `GET /routes` – list all routes
 - `POST /routes` – body `{routeName}`
 - `PUT /routes/:id` – body `{routeName}` (renames the route on its buses and students too)
+- `PUT /routes/:id/stops` – body `{stops:[{name,lat,lng}]}` in travel order (max 50)
 - `DELETE /routes/:id` – refused while buses still use the route
 - `GET /buses` – list all buses
 - `POST /buses` – body `{busNumber,route}`
@@ -85,13 +106,13 @@ Login endpoints return a `token`. Every other endpoint needs `Authorization: Bea
 #### Driver (`/api/driver`)
 
 - `POST /login` – body `{password}` (common secret)
-- `POST /buses/:busId/location` – body `{latitude,longitude}`; marks the bus as running
+- `POST /buses/:busId/location` – body `{latitude,longitude,speedKmh?}`; marks the bus as running
 - `POST /buses/:busId/stop` – marks the bus as not running
 
 #### Student (`/api/student`)
 
 - `POST /login` – body `{studentId,password}`
-- `GET /:studentId/authorized-buses` – buses on the student's routes with their latest location
+- `GET /:studentId/authorized-buses` – buses on the student's routes with their latest location, plus each route's stops
 
 #### Live updates (Socket.io)
 

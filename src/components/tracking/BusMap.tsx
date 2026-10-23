@@ -2,10 +2,13 @@ import { Badge } from "@/components/ui/badge";
 import { Bus, MapPin, Compass, type LucideIcon } from "lucide-react";
 import MapView from "../LazyMapView";
 import { TrackedBus, LOCATION_BADGE, getLocationState, formatLastUpdated } from "@/lib/busStatus";
+import { Stop, etaText } from "@/lib/eta";
 
 interface BusMapProps {
   bus: TrackedBus | null;
   nowMs: number;
+  stops?: Stop[];
+  myStop?: Stop | null;
 }
 
 const Placeholder = ({ icon: Icon, title, text, subtext }: { icon: LucideIcon; title: string; text: string; subtext?: string }) => (
@@ -24,7 +27,7 @@ const Placeholder = ({ icon: Icon, title, text, subtext }: { icon: LucideIcon; t
 );
 
 // Clean Campus Bus Map View
-const BusMap = ({ bus, nowMs }: BusMapProps) => {
+const BusMap = ({ bus, nowMs, stops = [], myStop = null }: BusMapProps) => {
   if (!bus) {
     return (
       <Placeholder
@@ -48,12 +51,21 @@ const BusMap = ({ bus, nowMs }: BusMapProps) => {
 
   const locationState = getLocationState(bus, nowMs);
   const badge = LOCATION_BADGE[locationState];
+  const eta = myStop && locationState === "live" ? etaText(bus, myStop) : null;
 
   return (
     <div className="relative h-full w-full min-h-[380px] overflow-hidden">
       <MapView
         center={bus.coordinates}
-        markers={[{ id: bus.id, position: bus.coordinates, title: `Bus ${bus.number} • ${bus.route}` }]}
+        markers={[
+          ...stops.map((stop, index) => ({
+            id: `stop-${index}`,
+            position: stop,
+            title: `${index + 1}. ${stop.name}`,
+            kind: stop === myStop ? ("myStop" as const) : ("stop" as const),
+          })),
+          { id: bus.id, position: bus.coordinates, title: `Bus ${bus.number} • ${bus.route}` },
+        ]}
         zoom={15}
       />
 
@@ -80,6 +92,12 @@ const BusMap = ({ bus, nowMs }: BusMapProps) => {
               <span>{badge.label}</span>
             </Badge>
           </div>
+
+          {eta && (
+            <p className="text-sm font-bold text-foreground">
+              {eta} <span className="text-[11px] font-normal text-muted-foreground">(approx.)</span>
+            </p>
+          )}
 
           <div className="pt-2 border-t border-border flex items-center justify-between text-[11px] text-muted-foreground font-mono tabular-nums">
             <span>Fix: {bus.coordinates.lat.toFixed(4)}° N, {bus.coordinates.lng.toFixed(4)}° E</span>

@@ -1,6 +1,7 @@
 const Student = require('../models/Student');
 const Bus = require('../models/Bus');
 const Location = require('../models/Location');
+const Route = require('../models/Route');
 const { comparePassword } = require('../utils/passwords');
 const { signToken } = require('../middleware/auth');
 const { sendError } = require('../utils/errors');
@@ -56,9 +57,13 @@ const viewAuthorizedBuses = async (req, res) => {
       locations.map((loc) => [loc.busId.toString(), loc])
     );
 
+    // stops of the student's routes, for "my stop" and ETA
+    const routes = await Route.find({ routeName: { $in: student.registeredRoutes } });
+
     res.json({
       studentId: student.studentId,
       registeredRoutes: student.registeredRoutes,
+      routes: routes.map((r) => ({ routeName: r.routeName, stops: r.stops })),
       buses: buses.map((bus) => toBusPayload(bus, locationByBusId.get(bus._id.toString())))
     });
   } catch (err) {

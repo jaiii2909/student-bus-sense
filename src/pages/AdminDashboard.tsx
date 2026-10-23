@@ -52,6 +52,8 @@ import axios from "axios";
 import LoginForm from "@/components/auth/LoginForm";
 import AppHeader from "@/components/AppHeader";
 import MapView from "@/components/LazyMapView";
+import RouteStopsDialog from "@/components/admin/RouteStopsDialog";
+import { Stop } from "@/lib/eta";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/utils";
 import { clearSession, getSession, saveSession } from "@/lib/session";
@@ -68,6 +70,7 @@ interface Bus {
 interface Route {
   _id: string;
   routeName: string;
+  stops?: Stop[];
 }
 
 interface Student {
@@ -101,6 +104,7 @@ const AdminDashboard = () => {
   const [openStudentDialog, setOpenStudentDialog] = useState(false);
   const [editingBus, setEditingBus] = useState<Bus | null>(null);
   const [editingRoute, setEditingRoute] = useState<Route | null>(null);
+  const [stopsRoute, setStopsRoute] = useState<Route | null>(null);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
   const [studentSearch, setStudentSearch] = useState("");
@@ -635,13 +639,14 @@ const AdminDashboard = () => {
                   <TableRow className="border-border hover:bg-transparent">
                     <TableHead className="text-xs font-bold uppercase tracking-wider">Route Corridor Name</TableHead>
                     <TableHead className="text-xs font-bold uppercase tracking-wider">Assigned Fleet</TableHead>
+                    <TableHead className="text-xs font-bold uppercase tracking-wider">Stops</TableHead>
                     <TableHead className="text-right text-xs font-bold uppercase tracking-wider">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {routes.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center py-8 text-xs text-muted-foreground">
+                      <TableCell colSpan={4} className="text-center py-8 text-xs text-muted-foreground">
                         No transit routes configured yet
                       </TableCell>
                     </TableRow>
@@ -655,6 +660,17 @@ const AdminDashboard = () => {
                             <span className="text-xs font-mono text-muted-foreground">
                               {assignedBuses.length} vehicle(s)
                             </span>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setStopsRoute(route)}
+                              className="h-7 text-xs gap-1"
+                            >
+                              <MapPin className="w-3.5 h-3.5" />
+                              {route.stops?.length ? `${route.stops.length} stop(s)` : "Add stops"}
+                            </Button>
                           </TableCell>
                           <TableCell className="text-right whitespace-nowrap">
                             <Button
@@ -926,6 +942,13 @@ const AdminDashboard = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ROUTE STOPS EDITOR */}
+      <RouteStopsDialog
+        route={stopsRoute}
+        onClose={() => setStopsRoute(null)}
+        onSaved={(saved) => setRoutes((prev) => prev.map((r) => (r._id === saved._id ? { ...r, stops: saved.stops } : r)))}
+      />
 
       {/* CONFIRM DELETE DIALOG */}
       <AlertDialog open={!!pendingDelete} onOpenChange={(open) => !open && setPendingDelete(null)}>

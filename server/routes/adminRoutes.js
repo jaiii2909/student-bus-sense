@@ -13,6 +13,7 @@ router.use(requireRole('admin'));
 router.post('/routes', adminCtrl.addRoute);
 router.get('/routes', adminCtrl.listRoutes);
 router.put('/routes/:id', adminCtrl.updateRoute);
+router.put('/routes/:id/stops', adminCtrl.updateRouteStops);
 router.delete('/routes/:id', adminCtrl.deleteRoute);
 
 // bus management

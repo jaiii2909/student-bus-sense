@@ -20,6 +20,7 @@ import AppHeader from "./AppHeader";
 import BusMap from "./tracking/BusMap";
 import { TrackedBus, LOCATION_BADGE, getLocationState, formatLastUpdated } from "@/lib/busStatus";
 import { connectBusSocket } from "@/lib/socket";
+import { Stop, etaText } from "@/lib/eta";
 
 interface StudentData {
   _id?: string;
@@ -37,6 +38,7 @@ interface DashboardProps {
 interface AuthorizedBusesResponse {
   studentId: string;
   registeredRoutes: string[];
+  routes?: { routeName: string; stops: Stop[] }[];
   buses: TrackedBus[];
 }
 
@@ -72,6 +74,9 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
   const [selectedRoute, setSelectedRouteState] = useState<string | null>(() => readStored("selectedRoute"));
   const [buses, setBuses] = useState<TrackedBus[]>([]);
   const [authorizedRoutes, setAuthorizedRoutes] = useState<string[]>(studentData.registeredRoutes || []);
+  const [stopsByRoute, setStopsByRoute] = useState<Record<string, Stop[]>>({});
+  // the student's stop per route, remembered on this device
+  const [myStopName, setMyStopName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [nowMs, setNowMs] = useState(Date.now());
@@ -96,6 +101,9 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
       .then((res) => {
         setBuses(res.data.buses || []);
         setAuthorizedRoutes(res.data.registeredRoutes || []);
+        setStopsByRoute(
+          Object.fromEntries((res.data.routes || []).map((r) => [r.routeName, r.stops || []]))
+        );
       })
       .catch((err) => console.error("Error fetching authorized buses:", err))
       .finally(() => {
@@ -133,6 +141,18 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
       setSelectedRoute(authorizedRoutes[0]);
     }
   }, [selectedRoute, authorizedRoutes]);
+
+  useEffect(() => {
+    setMyStopName(selectedRoute ? readStored(`myStop:${selectedRoute}`) : null);
+  }, [selectedRoute]);
+
+  const routeStops = selectedRoute ? stopsByRoute[selectedRoute] || [] : [];
+  const myStop = routeStops.find((stop) => stop.name === myStopName) || null;
+
+  const handleSelectStop = (name: string) => {
+    setMyStopName(name);
+    if (selectedRoute) writeStored(`myStop:${selectedRoute}`, name);
+  };
 
   const filteredBuses = useMemo(
     () => (selectedRoute ? buses.filter((bus) => bus.route === selectedRoute) : []),
@@ -260,6 +280,8 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
                 <span>
                   {bus.status === "inactive"
                     ? "Driver off duty"
+                    : myStop && locationState === "live"
+                    ? <span className="font-semibold text-foreground">{etaText(bus, myStop)}</span>
                     : formatLastUpdated(bus.updatedAt, nowMs)}
                 </span>
                 {isSelected && (
@@ -388,6 +410,21 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
                     </SelectContent>
                   </Select>
 
+                  {selectedRoute && routeStops.length > 0 && (
+                    <Select value={myStop?.name || ""} onValueChange={handleSelectStop}>
+                      <SelectTrigger className="w-full h-10 rounded-md border-border text-xs" aria-label="My stop">
+                        <SelectValue placeholder="Choose your stop for ETA..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {routeStops.map((stop, index) => (
+                          <SelectItem key={`${index}-${stop.name}`} value={stop.name} className="text-xs cursor-pointer">
+                            {index + 1}. {stop.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+
                   {selectedRoute && (
                     <div className="flex items-center justify-between text-[11px] px-1 text-muted-foreground">
                       <span>{filteredBuses.length} bus(es) scheduled</span>
@@ -445,7 +482,7 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
               </div>
 
               <div className="h-[460px] sm:h-[540px] relative">
-                <BusMap bus={trackedBus} nowMs={nowMs} />
+                <BusMap bus={trackedBus} nowMs={nowMs} stops={routeStops} myStop={myStop} />
               </div>
             </div>
           </div>

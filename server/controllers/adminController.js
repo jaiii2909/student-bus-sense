@@ -66,6 +66,34 @@ const updateRoute = async (req, res) => {
   }
 };
 
+const MAX_STOPS = 50;
+
+// replace a route's stops; body: { stops: [{ name, lat, lng }, ...] } in travel order
+const updateRouteStops = async (req, res) => {
+  const { stops } = req.body;
+  if (!Array.isArray(stops) || stops.length > MAX_STOPS) {
+    return res.status(400).json({ error: `Send a list of up to ${MAX_STOPS} stops` });
+  }
+  const cleanStops = [];
+  for (const stop of stops) {
+    const name = typeof stop?.name === 'string' ? stop.name.trim() : '';
+    const lat = Number(stop?.lat);
+    const lng = Number(stop?.lng);
+    if (!name || !Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+      return res.status(400).json({ error: 'Every stop needs a name and a valid map position' });
+    }
+    cleanStops.push({ name, lat, lng });
+  }
+
+  try {
+    const route = await Route.findByIdAndUpdate(req.params.id, { stops: cleanStops }, { new: true, runValidators: true });
+    if (!route) return res.status(404).json({ error: 'Route not found' });
+    res.json(route);
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
 const deleteRoute = async (req, res) => {
   const { id } = req.params;
   try {
@@ -200,6 +228,7 @@ module.exports = {
   login,
   addRoute,
   updateRoute,
+  updateRouteStops,
   deleteRoute,
   listRoutes,
   addBus,

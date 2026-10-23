@@ -5,6 +5,7 @@ const toBusPayload = (bus, loc) => ({
   route: bus.route,
   status: bus.status,
   coordinates: loc ? { lat: loc.latitude, lng: loc.longitude } : null,
+  speedKmh: loc && Number.isFinite(loc.speedKmh) ? loc.speedKmh : null,
   updatedAt: loc ? loc.updatedAt : null
 });
 

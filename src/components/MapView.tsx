@@ -7,6 +7,8 @@ export interface MapMarker {
   id: string;
   position: { lat: number; lng: number };
   title?: string;
+  // bus (default), a route stop, or the student's own stop
+  kind?: "bus" | "stop" | "myStop";
 }
 
 interface MapViewProps {
@@ -14,7 +16,18 @@ interface MapViewProps {
   markers?: MapMarker[];
   zoom?: number;
   height?: string;
+  // when set, clicking the map reports the clicked position (admin stop editor)
+  onMapClick?: (position: { lat: number; lng: number }) => void;
 }
+
+const circleIcon = (fill: string, size: number) => ({
+  url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
+    `<svg width="${size}" height="${size}" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="7" fill="${fill}" stroke="#1C1917" stroke-width="2.5"/></svg>`
+  )}`,
+});
+
+const stopIcon = circleIcon("#FAF9F5", 16);
+const myStopIcon = circleIcon("#059669", 22);
 
 const defaultCenter = {
   lat: 25.4358, // Prayagraj/Allahabad coordinates
@@ -70,7 +83,7 @@ const darkMapStyles: google.maps.MapTypeStyle[] = [
   },
 ];
 
-const MapView = ({ center = defaultCenter, markers = [], zoom = 14, height = "100%" }: MapViewProps) => {
+const MapView = ({ center = defaultCenter, markers = [], zoom = 14, height = "100%", onMapClick }: MapViewProps) => {
   const { resolvedTheme } = useTheme();
 
   const { isLoaded, loadError } = useJsApiLoader({
@@ -82,7 +95,9 @@ const MapView = ({ center = defaultCenter, markers = [], zoom = 14, height = "10
     disableDefaultUI: true,
     zoomControl: true,
     styles: resolvedTheme === "dark" ? darkMapStyles : lightMapStyles,
-  }), [resolvedTheme]);
+    clickableIcons: !onMapClick,
+    draggableCursor: onMapClick ? "crosshair" : undefined,
+  }), [resolvedTheme, onMapClick]);
 
   if (loadError) {
     return (
@@ -108,13 +123,20 @@ const MapView = ({ center = defaultCenter, markers = [], zoom = 14, height = "10
       center={center} 
       zoom={zoom}
       options={mapOptions}
+      onClick={
+        onMapClick
+          ? (e) => {
+              if (e.latLng) onMapClick({ lat: e.latLng.lat(), lng: e.latLng.lng() });
+            }
+          : undefined
+      }
     >
       {markers.map((marker) => (
         <Marker 
           key={marker.id} 
           position={marker.position} 
           title={marker.title} 
-          icon={campusBusPinIcon} 
+          icon={marker.kind === "stop" ? stopIcon : marker.kind === "myStop" ? myStopIcon : campusBusPinIcon}
         />
       ))}
     </GoogleMap>

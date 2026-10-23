@@ -156,3 +156,43 @@ test('driver sharing marks the bus running, stopping marks it not running', asyn
   assert.equal(stopped.status, 200);
   assert.equal((await Bus.findOne({ busNumber: 'N1' })).status, 'inactive');
 });
+
+test('admin can save route stops; invalid stops are rejected', async () => {
+  const token = await login('admin', { username: 'admin', password: 'admin-pass' });
+  const route = await Route.findOne({ routeName: 'North Line' });
+
+  const bad = await api('PUT', `/api/admin/routes/${route._id}/stops`, {
+    token,
+    body: { stops: [{ name: '', lat: 25.4, lng: 81.8 }] }
+  });
+  assert.equal(bad.status, 400);
+
+  const stops = [
+    { name: 'Gate 1', lat: 25.43, lng: 81.84 },
+    { name: 'Civil Lines', lat: 25.45, lng: 81.83 }
+  ];
+  const saved = await api('PUT', `/api/admin/routes/${route._id}/stops`, { token, body: { stops } });
+  assert.equal(saved.status, 200);
+  assert.deepEqual(saved.data.stops, stops);
+});
+
+test('a student gets the stops of their routes and the bus speed', async () => {
+  const driverToken = await login('driver', { password: 'driver-test' });
+  await api('POST', '/api/driver/buses/N1/location', {
+    token: driverToken,
+    body: { latitude: 25.44, longitude: 81.84, speedKmh: 32 }
+  });
+  const bus = await Bus.findOne({ busNumber: 'N1' });
+  assert.equal((await mongoose.model('Location').findOne({ busId: bus._id })).speedKmh, 32);
+  // nonsense speed is stored as unknown, not rejected
+  await api('POST', '/api/driver/buses/N1/location', {
+    token: driverToken,
+    body: { latitude: 25.44, longitude: 81.84, speedKmh: 999 }
+  });
+
+  const token = await login('student', { studentId: 'S001', password: 'pass1' });
+  const res = await api('GET', '/api/student/S001/authorized-buses', { token });
+  assert.equal(res.status, 200);
+  assert.deepEqual(res.data.routes.map((r) => [r.routeName, r.stops.length]), [['North Line', 2]]);
+  assert.equal(res.data.buses[0].speedKmh, null);
+});

@@ -4,6 +4,7 @@ export interface TrackedBus {
   route: string;
   status: "active" | "inactive";
   coordinates: { lat: number; lng: number } | null;
+  speedKmh?: number | null;
   updatedAt: string | null;
 }
 
