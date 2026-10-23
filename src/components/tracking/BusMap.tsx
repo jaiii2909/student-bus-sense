@@ -99,10 +99,6 @@ const BusMap = ({ bus, nowMs, stops = [], myStop = null }: BusMapProps) => {
             </p>
           )}
 
-          <div className="pt-2 border-t border-border flex items-center justify-between text-[11px] text-muted-foreground font-mono tabular-nums">
-            <span>Fix: {bus.coordinates.lat.toFixed(4)}° N, {bus.coordinates.lng.toFixed(4)}° E</span>
-            <span className="text-foreground font-sans font-medium text-xs">Live Telemetry Active</span>
-          </div>
         </div>
       </div>
     </div>

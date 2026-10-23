@@ -223,7 +223,7 @@ const Driver = () => {
       <LoginForm
         role="driver"
         onLogin={(data) => {
-          saveSession("driver", { token: data.token });
+          saveSession("driver", { token: data.token, name: data.name });
           setLoggedIn(true);
         }}
         onBack={() => navigate("/role-selection")}
@@ -232,12 +232,14 @@ const Driver = () => {
   }
 
   const secondsSinceSent = lastSentAt ? Math.max(0, Math.round((nowMs - lastSentAt) / 1000)) : null;
+  // shown in the header; missing for the old shared driver login
+  const driverName = getSession<{ token?: string; name?: string }>("driver")?.name;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
       <AppHeader
         title="Driver In-Cab Console"
-        subtitle={busId ? `Bus ${busId} • ${selectedRoute}` : "Standby — Select Vehicle"}
+        subtitle={[driverName, busId ? `Bus ${busId} • ${selectedRoute}` : "Standby — Select Vehicle"].filter(Boolean).join(" • ")}
         roleBadge="Driver"
         onLogout={handleLogout}
       />

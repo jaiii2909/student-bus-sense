@@ -45,12 +45,6 @@ const AppHeader = ({ title, subtitle, roleBadge, onLogout, children }: AppHeader
         </div>
       </div>
 
-      {/* Operational Dispatch Status */}
-      <div className="hidden lg:flex items-center gap-2 text-xs text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 px-3 py-1 rounded-md">
-        <span className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400"></span>
-        <span className="font-medium">Prayagraj Campus Transit Network: Active</span>
-      </div>
-
       {/* Right Actions */}
       <div className="flex items-center gap-2 shrink-0">
         {children}

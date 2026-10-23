@@ -41,7 +41,7 @@ const roleMeta = {
   },
   driver: {
     title: "Driver In-Cab Verification",
-    description: "Enter vehicle driver passkey to begin live GPS broadcasting.",
+    description: "Enter your driver username and password to begin live GPS broadcasting.",
     badge: "Transport Staff",
     icon: Navigation,
   },
@@ -83,7 +83,8 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
         break;
       case 'driver':
         endpoint = '/api/driver/login';
-        body = { password };
+        // username is empty only for the old shared driver password
+        body = username.trim() ? { username: username.trim(), password } : { password };
         break;
     }
 
@@ -189,6 +190,28 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
                     autoComplete="username"
                   />
                 </div>
+              </div>
+            )}
+
+            {role === 'driver' && (
+              <div className="space-y-1.5">
+                <Label htmlFor="driver-username" className="text-xs font-semibold text-foreground">
+                  Driver Username
+                </Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
+                  <Input
+                    id="driver-username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="e.g. ramesh"
+                    className="pl-9 h-10 rounded-md border-border text-xs focus-visible:ring-primary"
+                    autoComplete="username"
+                    autoCapitalize="none"
+                  />
+                </div>
+                <p className="text-[11px] text-muted-foreground">Leave empty only if your college still uses one shared driver password.</p>
               </div>
             )}
 

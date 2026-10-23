@@ -11,7 +11,8 @@ Real-time college bus tracking. Drivers share live GPS from their phone, and stu
 ## How it works
 
 - **Students** log in with their student ID, pick one of their registered routes and their stop, and see the live location of a bus on that route with an ETA to their stop.
-- **Drivers** log in with the shared driver password, pick their route and bus, and tap *Start Sharing*. The bus shows as running until they tap *Stop*.
+- **Drivers** log in with their own username (created by the admin), pick their route and bus, and tap *Start Sharing*. The bus shows as running until they tap *Stop*. Until the first driver account exists, the old shared driver password still works.
+- Every Start to Stop is saved as a **trip** (bus, route, driver, start and end time). The admin's *Drivers & Trips* tab shows them by day. A trip with no GPS for 30 minutes is ended automatically.
 - **Admins** manage buses, routes (including stops, placed on a map) and students, assign routes to students, post announcements (for one route or all), reset student passwords, and see the live fleet map.
 - Admins can **import students from a CSV** (`studentId,name,password,routes`, routes separated by `;`, up to 500 rows), and set an optional **pass end date**. After that date the student can't log in, and open sessions end.
 - Students can turn on an alert that fires (in the app, and as a phone/browser notification when allowed) when a bus is about 5 minutes from their stop. It works while the app is open.
@@ -111,11 +112,16 @@ Login endpoints return a `token`. Every other endpoint needs `Authorization: Bea
 - `GET /announcements` – active announcements
 - `POST /announcements` – body `{message,route|null,expiresAt}` (max 280 chars, expires within 7 days)
 - `DELETE /announcements/:id`
+- `GET /drivers` – driver accounts
+- `POST /drivers` – body `{name,username,password}`
+- `PUT /drivers/:id` – body with any of `{name,active}`
+- `PUT /drivers/:id/password` – body `{newPassword}`; logs the driver out everywhere
+- `GET /trips?from=ISO&to=ISO` – trips started in that range (up to 31 days)
 - `GET /locations` – latest location per bus
 
 #### Driver (`/api/driver`)
 
-- `POST /login` – body `{password}` (common secret)
+- `POST /login` – body `{username,password}`; `{password}` alone is the old shared password and only works while no driver accounts exist
 - `POST /buses/:busId/location` – body `{latitude,longitude,speedKmh?}`; marks the bus as running
 - `POST /buses/:busId/stop` – marks the bus as not running
 

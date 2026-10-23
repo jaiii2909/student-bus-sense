@@ -370,3 +370,109 @@ test('an expired pass blocks login and ends existing sessions', async () => {
   })).status, 200);
   assert.equal((await api('POST', '/api/student/login', { body: { studentId: 'IMP2', password: 'secret2' } })).status, 200);
 });
+
+/* ---------------- driver accounts + trip log ---------------- */
+// (these run last: once a driver account exists, the shared password stops working)
+
+const Trip = require('../models/Trip');
+const todayRange = () => {
+  const from = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+  const to = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
+  return `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+};
+const ping = (token, busNumber) => api('POST', `/api/driver/buses/${busNumber}/location`, {
+  token, body: { latitude: 25.44, longitude: 81.84 }
+});
+
+test('the shared driver login records trips; Stop ends them', async () => {
+  await Trip.deleteMany({});
+  const shared = await login('driver', { password: 'driver-test' });
+  assert.equal((await ping(shared, 'N1')).status, 200);
+  assert.equal((await ping(shared, 'N1')).status, 200);
+
+  let trips = await Trip.find({});
+  assert.equal(trips.length, 1, 'repeated pings continue the same trip');
+  assert.equal(trips[0].driverName, 'Shared driver login');
+  assert.equal(trips[0].endedAt, null);
+
+  await api('POST', '/api/driver/buses/N1/stop', { token: shared });
+  trips = await Trip.find({});
+  assert.ok(trips[0].endedAt);
+  assert.equal(trips[0].endReason, 'stopped');
+});
+
+test('driver accounts: created by admin, then the shared password stops working', async () => {
+  const admin = await login('admin', { username: 'admin', password: 'new-admin-pass' });
+  const sharedToken = await login('driver', { password: 'driver-test' });
+
+  assert.equal((await api('POST', '/api/admin/drivers', {
+    token: admin, body: { name: 'Bad', username: 'a b', password: 'secret1' }
+  })).status, 400);
+  const created = await api('POST', '/api/admin/drivers', {
+    token: admin, body: { name: 'Ramesh', username: 'Ramesh', password: 'ramesh1' }
+  });
+  assert.equal(created.status, 200);
+  assert.equal(created.data.username, 'ramesh');
+  assert.equal((await api('POST', '/api/admin/drivers', {
+    token: admin, body: { name: 'Again', username: 'ramesh', password: 'ramesh1' }
+  })).status, 409);
+  await api('POST', '/api/admin/drivers', { token: admin, body: { name: 'Suresh', username: 'suresh', password: 'suresh1' } });
+
+  // shared login and tokens from it no longer work
+  assert.equal((await api('POST', '/api/driver/login', { body: { password: 'driver-test' } })).status, 401);
+  assert.equal((await ping(sharedToken, 'N1')).status, 401);
+
+  const res = await api('POST', '/api/driver/login', { body: { username: 'RAMESH', password: 'ramesh1' } });
+  assert.equal(res.status, 200);
+  assert.equal(res.data.name, 'Ramesh');
+});
+
+test('trips record the driver, end on driver change, admin switch-off and timeout', async () => {
+  await Trip.deleteMany({});
+  const admin = await login('admin', { username: 'admin', password: 'new-admin-pass' });
+  const ramesh = await login('driver', { username: 'ramesh', password: 'ramesh1' });
+  const suresh = await login('driver', { username: 'suresh', password: 'suresh1' });
+
+  await ping(ramesh, 'N1');
+  await ping(suresh, 'N1');   // another driver takes the bus
+  let trips = await Trip.find({}).sort({ startedAt: 1 });
+  assert.deepEqual(trips.map((t) => [t.driverName, t.endReason]), [['Ramesh', 'driverChange'], ['Suresh', null]]);
+
+  // admin switches the bus off
+  const bus = await Bus.findOne({ busNumber: 'N1' });
+  await api('PUT', `/api/admin/buses/${bus._id}`, { token: admin, body: { status: 'inactive' } });
+  assert.equal((await Trip.findOne({ driverName: 'Suresh' })).endReason, 'admin');
+
+  // no GPS for over 30 minutes: the next ping starts a fresh trip
+  await ping(ramesh, 'N1');
+  await Trip.updateOne({ endedAt: null }, { lastSeenAt: new Date(Date.now() - 31 * 60 * 1000) });
+  await ping(ramesh, 'N1');
+  trips = await Trip.find({ driverName: 'Ramesh' }).sort({ startedAt: 1 });
+  assert.deepEqual(trips.map((t) => t.endReason), ['driverChange', 'timeout', null]);
+
+  const list = await api('GET', `/api/admin/trips?${todayRange()}`, { token: admin });
+  assert.equal(list.status, 200);
+  assert.equal(list.data.length, 4);
+  assert.equal((await api('GET', '/api/admin/trips?from=x&to=y', { token: admin })).status, 400);
+  assert.equal((await api('GET', `/api/admin/trips?${todayRange()}`, { token: ramesh })).status, 403);
+});
+
+test('disabling a driver or resetting their password ends their logins', async () => {
+  const admin = await login('admin', { username: 'admin', password: 'new-admin-pass' });
+  const drivers = (await api('GET', '/api/admin/drivers', { token: admin })).data;
+  const suresh = drivers.find((d) => d.username === 'suresh');
+  const ramesh = drivers.find((d) => d.username === 'ramesh');
+
+  const sureshToken = await login('driver', { username: 'suresh', password: 'suresh1' });
+  await api('PUT', `/api/admin/drivers/${suresh.id}`, { token: admin, body: { active: false } });
+  assert.equal((await ping(sureshToken, 'N1')).status, 401);
+  assert.equal((await api('POST', '/api/driver/login', { body: { username: 'suresh', password: 'suresh1' } })).status, 401);
+
+  const rameshToken = await login('driver', { username: 'ramesh', password: 'ramesh1' });
+  await new Promise((resolve) => setTimeout(resolve, 1100));
+  assert.equal((await api('PUT', `/api/admin/drivers/${ramesh.id}/password`, {
+    token: admin, body: { newPassword: 'ramesh2' }
+  })).status, 200);
+  assert.equal((await ping(rameshToken, 'N1')).status, 401);
+  assert.equal((await api('POST', '/api/driver/login', { body: { username: 'ramesh', password: 'ramesh2' } })).status, 200);
+});

@@ -270,6 +270,7 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
 
   const trackedBus = filteredBuses.find((b) => b.id === selectedBus) || null;
   const activeBusesCount = filteredBuses.filter((b) => b.status === "active").length;
+  const liveBusesCount = filteredBuses.filter((b) => getLocationState(b, nowMs) === "live").length;
 
   const renderBusList = () => {
     if (isLoading) {
@@ -428,11 +429,18 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
           </div>
 
           <div className="border border-border rounded-lg bg-card p-3">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">GPS Dispatch</span>
-            <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mt-1 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-              Live Telemetry
-            </span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Live GPS</span>
+            {liveBusesCount > 0 ? (
+              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mt-1 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                {liveBusesCount} bus(es) live
+              </span>
+            ) : (
+              <span className="text-xs font-bold text-muted-foreground mt-1 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-stone-400"></span>
+                {selectedRoute ? "No live bus" : "Select a route"}
+              </span>
+            )}
           </div>
         </div>
 
@@ -578,7 +586,7 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
                       {trackedBus ? `Tracking Bus ${trackedBus.number}` : "Campus Route Map"}
                     </h2>
                     <p className="text-[11px] text-muted-foreground">
-                      {trackedBus ? `${trackedBus.route} • Live Telemetry` : "Pick an active bus to follow location"}
+                      {trackedBus ? `${trackedBus.route} • ${LOCATION_BADGE[getLocationState(trackedBus, nowMs)].label}` : "Pick an active bus to follow location"}
                     </p>
                   </div>
                 </div>

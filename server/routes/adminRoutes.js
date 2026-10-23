@@ -32,6 +32,13 @@ router.get('/students', adminCtrl.listStudents);
 router.put('/students/:id/routes', adminCtrl.updateStudentRoutes);
 router.put('/students/:id/password', adminCtrl.resetStudentPassword);
 
+// drivers and their trips
+router.get('/drivers', adminCtrl.listDrivers);
+router.post('/drivers', adminCtrl.addDriver);
+router.put('/drivers/:id', adminCtrl.updateDriver);
+router.put('/drivers/:id/password', adminCtrl.resetDriverPassword);
+router.get('/trips', adminCtrl.listTrips);
+
 // announcements
 router.get('/announcements', adminCtrl.listAnnouncements);
 router.post('/announcements', adminCtrl.addAnnouncement);

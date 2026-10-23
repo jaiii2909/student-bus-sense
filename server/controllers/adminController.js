@@ -4,6 +4,9 @@ const Bus = require('../models/Bus');
 const Student = require('../models/Student');
 const Location = require('../models/Location');
 const Announcement = require('../models/Announcement');
+const Driver = require('../models/Driver');
+const Trip = require('../models/Trip');
+const { endOpenTrip, TRIP_TIMEOUT_MS } = require('../utils/trips');
 const { SALT_ROUNDS, comparePassword, hashPassword, newPasswordError } = require('../utils/passwords');
 const { signToken } = require('../middleware/auth');
 const { sendError } = require('../utils/errors');
@@ -149,6 +152,7 @@ const updateBus = async (req, res) => {
   try {
     const bus = await Bus.findByIdAndUpdate(id, changes, { new: true, runValidators: true });
     if (!bus) return res.status(404).json({ error: 'Bus not found' });
+    if (status === 'inactive') await endOpenTrip(bus._id, 'admin');
 
     const loc = await Location.findOne({ busId: bus._id });
     emitBusUpdate(req.app.locals.io, bus, loc);
@@ -164,6 +168,8 @@ const deleteBus = async (req, res) => {
     const bus = await Bus.findByIdAndDelete(id);
     if (!bus) return res.status(404).json({ error: 'Bus not found' });
     await Location.deleteOne({ busId: bus._id });
+    // trips stay in the log; just close a running one
+    await endOpenTrip(bus._id, 'admin');
     res.json({ success: true });
   } catch (err) {
     sendError(res, err);
@@ -360,6 +366,98 @@ const deleteAnnouncement = async (req, res) => {
   }
 };
 
+/* ---------------- DRIVERS ---------------- */
+const toDriverPayload = (d) => ({ id: d._id.toString(), name: d.name, username: d.username, active: d.active });
+
+const listDrivers = async (req, res) => {
+  try {
+    const drivers = await Driver.find().sort({ name: 1 });
+    res.json(drivers.map(toDriverPayload));
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+// body: { name, username, password }
+const addDriver = async (req, res) => {
+  const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
+  const username = typeof req.body.username === 'string' ? req.body.username.trim().toLowerCase() : '';
+  if (!name || !/^[a-z0-9._-]{3,30}$/.test(username)) {
+    return res.status(400).json({ error: 'Name is required; username must be 3-30 letters, numbers, dots or dashes' });
+  }
+  const ruleError = newPasswordError(req.body.password, 6);
+  if (ruleError) return res.status(400).json({ error: ruleError });
+
+  try {
+    const driver = await Driver.create({ name, username, password: await hashPassword(req.body.password) });
+    res.json(toDriverPayload(driver));
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+// body: any of { name, active }
+const updateDriver = async (req, res) => {
+  const changes = {};
+  if (typeof req.body.name === 'string' && req.body.name.trim()) changes.name = req.body.name.trim();
+  if (typeof req.body.active === 'boolean') changes.active = req.body.active;
+  try {
+    const driver = await Driver.findByIdAndUpdate(req.params.id, changes, { new: true, runValidators: true });
+    if (!driver) return res.status(404).json({ error: 'Driver not found' });
+    res.json(toDriverPayload(driver));
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+// admin sets a new password for a driver; the driver's existing logins stop working
+const resetDriverPassword = async (req, res) => {
+  const ruleError = newPasswordError(req.body.newPassword, 6);
+  if (ruleError) return res.status(400).json({ error: ruleError });
+  try {
+    const driver = await Driver.findById(req.params.id);
+    if (!driver) return res.status(404).json({ error: 'Driver not found' });
+    driver.password = await hashPassword(req.body.newPassword);
+    driver.passwordChangedAt = new Date();
+    await driver.save();
+    res.json({ success: true });
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+/* ---------------- TRIPS ---------------- */
+const MAX_TRIP_RANGE_MS = 31 * 24 * 60 * 60 * 1000;
+
+// query: ?from=ISO&to=ISO (the frontend sends the start and end of the chosen day)
+const listTrips = async (req, res) => {
+  const from = new Date(req.query.from);
+  const to = new Date(req.query.to);
+  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || to <= from || to - from > MAX_TRIP_RANGE_MS) {
+    return res.status(400).json({ error: 'Send a valid from/to range of up to 31 days' });
+  }
+  try {
+    const trips = await Trip.find({ startedAt: { $gte: from, $lt: to } }).sort({ startedAt: -1 }).limit(500);
+    const now = Date.now();
+    res.json(trips.map((t) => {
+      // a trip with no GPS for a while has effectively ended, even if Stop wasn't pressed
+      const timedOut = !t.endedAt && now - t.lastSeenAt.getTime() > TRIP_TIMEOUT_MS;
+      return {
+        id: t._id.toString(),
+        busNumber: t.busNumber,
+        route: t.route,
+        driverName: t.driverName,
+        startedAt: t.startedAt,
+        endedAt: t.endedAt || (timedOut ? t.lastSeenAt : null),
+        endReason: t.endReason || (timedOut ? 'timeout' : null),
+        lastSeenAt: t.lastSeenAt
+      };
+    }));
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
 // admin changes their own password
 const changeOwnPassword = async (req, res) => {
   const { currentPassword, newPassword } = req.body;
@@ -417,5 +515,10 @@ module.exports = {
   listStudents,
   updateStudentRoutes,
   importStudents,
+  listDrivers,
+  addDriver,
+  updateDriver,
+  resetDriverPassword,
+  listTrips,
   viewLocations
 };

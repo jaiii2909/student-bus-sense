@@ -5,7 +5,7 @@ const { requireRole } = require('../middleware/auth');
 const { loginLimiter } = require('../middleware/rateLimit');
 
 router.post('/login', loginLimiter, driverCtrl.login);
-router.post('/buses/:busId/location', requireRole('driver'), driverCtrl.shareLocation);
-router.post('/buses/:busId/stop', requireRole('driver'), driverCtrl.stopSharing);
+router.post('/buses/:busId/location', requireRole('driver'), driverCtrl.requireActiveDriver, driverCtrl.shareLocation);
+router.post('/buses/:busId/stop', requireRole('driver'), driverCtrl.requireActiveDriver, driverCtrl.stopSharing);
 
 module.exports = router;

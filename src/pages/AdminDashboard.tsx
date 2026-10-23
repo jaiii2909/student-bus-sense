@@ -47,17 +47,20 @@ import {
   RefreshCw,
   ShieldCheck,
   Check,
-  Megaphone
+  Megaphone,
+  IdCard
 } from "lucide-react";
 import axios from "axios";
 import LoginForm from "@/components/auth/LoginForm";
 import AppHeader from "@/components/AppHeader";
 import MapView from "@/components/LazyMapView";
 import RouteStopsDialog from "@/components/admin/RouteStopsDialog";
-import ResetStudentPasswordDialog from "@/components/admin/ResetStudentPasswordDialog";
+import ResetPasswordDialog from "@/components/admin/ResetPasswordDialog";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import AnnouncementsPanel from "@/components/admin/AnnouncementsPanel";
 import ImportStudentsDialog from "@/components/admin/ImportStudentsDialog";
+import DriversPanel from "@/components/admin/DriversPanel";
+import TripsPanel from "@/components/admin/TripsPanel";
 import { endOfDayIso, toDateInput } from "@/lib/csv";
 import { Stop } from "@/lib/eta";
 import { useToast } from "@/hooks/use-toast";
@@ -463,7 +466,7 @@ const AdminDashboard = () => {
         {/* Tabbed Views */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <div className="flex items-center justify-between border-b border-border pb-3 flex-wrap gap-2">
-            <TabsList className="bg-stone-100 dark:bg-stone-800 p-1 rounded-md h-10 border border-border">
+            <TabsList className="bg-stone-100 dark:bg-stone-800 p-1 rounded-md h-10 border border-border max-w-full overflow-x-auto justify-start">
               <TabsTrigger value="radar" className="rounded text-xs font-semibold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground">
                 <Radio className="w-3.5 h-3.5 text-primary" />
                 <span>Fleet Radar</span>
@@ -483,6 +486,10 @@ const AdminDashboard = () => {
               <TabsTrigger value="announcements" className="rounded text-xs font-semibold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground">
                 <Megaphone className="w-3.5 h-3.5" />
                 <span>Announcements</span>
+              </TabsTrigger>
+              <TabsTrigger value="drivers" className="rounded text-xs font-semibold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground">
+                <IdCard className="w-3.5 h-3.5" />
+                <span>Drivers & Trips</span>
               </TabsTrigger>
             </TabsList>
 
@@ -834,6 +841,12 @@ const AdminDashboard = () => {
             <AnnouncementsPanel routeNames={routes.map((r) => r.routeName)} />
           </TabsContent>
 
+          {/* TAB 6: DRIVERS & TRIPS */}
+          <TabsContent value="drivers" className="m-0 focus-visible:ring-0 space-y-4">
+            <DriversPanel />
+            <TripsPanel />
+          </TabsContent>
+
         </Tabs>
       </main>
 
@@ -1003,7 +1016,11 @@ const AdminDashboard = () => {
       </Dialog>
 
       {/* RESET STUDENT PASSWORD */}
-      <ResetStudentPasswordDialog student={resetStudent} onClose={() => setResetStudent(null)} />
+      <ResetPasswordDialog
+        person={resetStudent ? { name: resetStudent.name, detail: resetStudent.studentId } : null}
+        endpoint={resetStudent ? `/api/admin/students/${resetStudent._id}/password` : null}
+        onClose={() => setResetStudent(null)}
+      />
 
       {/* ROUTE STOPS EDITOR */}
       <RouteStopsDialog

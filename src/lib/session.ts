@@ -19,7 +19,7 @@ export const getSession = <T extends Session = Session>(role: Role): T | null =>
   }
 };
 
-export const saveSession = (role: Role, data: Session) => {
+export const saveSession = <T extends Session>(role: Role, data: T) => {
   try {
     localStorage.setItem(KEYS[role], JSON.stringify(data));
   } catch {
