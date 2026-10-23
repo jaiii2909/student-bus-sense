@@ -46,13 +46,17 @@ import {
   Loader2,
   RefreshCw,
   ShieldCheck,
-  Check
+  Check,
+  Megaphone
 } from "lucide-react";
 import axios from "axios";
 import LoginForm from "@/components/auth/LoginForm";
 import AppHeader from "@/components/AppHeader";
 import MapView from "@/components/LazyMapView";
 import RouteStopsDialog from "@/components/admin/RouteStopsDialog";
+import ResetStudentPasswordDialog from "@/components/admin/ResetStudentPasswordDialog";
+import ChangePasswordDialog from "@/components/ChangePasswordDialog";
+import AnnouncementsPanel from "@/components/admin/AnnouncementsPanel";
 import { Stop } from "@/lib/eta";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/utils";
@@ -105,6 +109,7 @@ const AdminDashboard = () => {
   const [editingBus, setEditingBus] = useState<Bus | null>(null);
   const [editingRoute, setEditingRoute] = useState<Route | null>(null);
   const [stopsRoute, setStopsRoute] = useState<Route | null>(null);
+  const [resetStudent, setResetStudent] = useState<Student | null>(null);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
   const [studentSearch, setStudentSearch] = useState("");
@@ -403,7 +408,9 @@ const AdminDashboard = () => {
         subtitle="United Group of Institutions • Transport Control Registry" 
         roleBadge="Admin" 
         onLogout={handleLogout} 
-      />
+      >
+        <ChangePasswordDialog endpoint="/api/admin/password" minLength={8} />
+      </AppHeader>
 
       <main className="container mx-auto px-4 py-6 max-w-6xl flex-1 space-y-6">
         
@@ -459,6 +466,10 @@ const AdminDashboard = () => {
               <TabsTrigger value="students" className="rounded text-xs font-semibold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground">
                 <Users className="w-3.5 h-3.5" />
                 <span>Student Directory ({students.length})</span>
+              </TabsTrigger>
+              <TabsTrigger value="announcements" className="rounded text-xs font-semibold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground">
+                <Megaphone className="w-3.5 h-3.5" />
+                <span>Announcements</span>
               </TabsTrigger>
             </TabsList>
 
@@ -778,6 +789,14 @@ const AdminDashboard = () => {
                           >
                             Manage Pass
                           </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setResetStudent(student)}
+                            className="h-7 text-xs rounded ml-1"
+                          >
+                            Reset Password
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
@@ -785,6 +804,11 @@ const AdminDashboard = () => {
                 </TableBody>
               </Table>
             </div>
+          </TabsContent>
+
+          {/* TAB 5: ANNOUNCEMENTS */}
+          <TabsContent value="announcements" className="m-0 focus-visible:ring-0">
+            <AnnouncementsPanel routeNames={routes.map((r) => r.routeName)} />
           </TabsContent>
 
         </Tabs>
@@ -942,6 +966,9 @@ const AdminDashboard = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* RESET STUDENT PASSWORD */}
+      <ResetStudentPasswordDialog student={resetStudent} onClose={() => setResetStudent(null)} />
 
       {/* ROUTE STOPS EDITOR */}
       <RouteStopsDialog

@@ -196,3 +196,114 @@ test('a student gets the stops of their routes and the bus speed', async () => {
   assert.deepEqual(res.data.routes.map((r) => [r.routeName, r.stops.length]), [['North Line', 2]]);
   assert.equal(res.data.buses[0].speedKmh, null);
 });
+
+/* ---------------- announcements ---------------- */
+
+const inHours = (h) => new Date(Date.now() + h * 60 * 60 * 1000).toISOString();
+
+test('announcements: admin creates them, students only see their routes and all-route ones', async () => {
+  const admin = await login('admin', { username: 'admin', password: 'admin-pass' });
+
+  const mine = await api('POST', '/api/admin/announcements', {
+    token: admin, body: { message: 'N1 delayed 10 min', route: 'North Line', expiresAt: inHours(2) }
+  });
+  assert.equal(mine.status, 200);
+  const all = await api('POST', '/api/admin/announcements', {
+    token: admin, body: { message: 'No buses Monday', route: null, expiresAt: inHours(24) }
+  });
+  assert.equal(all.status, 200);
+
+  assert.equal((await api('POST', '/api/admin/announcements', {
+    token: admin, body: { message: 'x', route: 'Nowhere', expiresAt: inHours(1) }
+  })).status, 400);
+  assert.equal((await api('POST', '/api/admin/announcements', {
+    token: admin, body: { message: 'x', route: null, expiresAt: inHours(-1) }
+  })).status, 400);
+  assert.equal((await api('POST', '/api/admin/announcements', {
+    token: admin, body: { message: '', route: null, expiresAt: inHours(1) }
+  })).status, 400);
+
+  // already expired (TTL cleanup is not instant) must not be shown
+  const Announcement = mongoose.model('Announcement');
+  await Announcement.create({ message: 'old news', route: null, expiresAt: new Date(Date.now() - 1000) });
+
+  const s1 = await login('student', { studentId: 'S001', password: 'pass1' });
+  const res1 = await api('GET', '/api/student/S001/authorized-buses', { token: s1 });
+  assert.deepEqual(res1.data.announcements.map((a) => a.message).sort(), ['N1 delayed 10 min', 'No buses Monday']);
+
+  // S002 has no routes left, so only the all-route message
+  const s2 = await login('student', { studentId: 'S002', password: 'pass2' });
+  const res2 = await api('GET', '/api/student/S002/authorized-buses', { token: s2 });
+  assert.deepEqual(res2.data.announcements.map((a) => a.message), ['No buses Monday']);
+
+  // students cannot post; admin can delete
+  assert.equal((await api('POST', '/api/admin/announcements', {
+    token: s1, body: { message: 'hi', route: null, expiresAt: inHours(1) }
+  })).status, 403);
+  assert.equal((await api('DELETE', `/api/admin/announcements/${mine.data.id}`, { token: admin })).status, 200);
+  const list = await api('GET', '/api/admin/announcements', { token: admin });
+  assert.deepEqual(list.data.map((a) => a.message), ['No buses Monday']);
+});
+
+/* ---------------- passwords ---------------- */
+
+test('a student can change their own password', async () => {
+  const token = await login('student', { studentId: 'S001', password: 'pass1' });
+
+  const wrong = await api('POST', '/api/student/password', {
+    token, body: { currentPassword: 'nope', newPassword: 'newpass1' }
+  });
+  assert.equal(wrong.status, 401);
+  const short = await api('POST', '/api/student/password', {
+    token, body: { currentPassword: 'pass1', newPassword: '123' }
+  });
+  assert.equal(short.status, 400);
+
+  const ok = await api('POST', '/api/student/password', {
+    token, body: { currentPassword: 'pass1', newPassword: 'newpass1' }
+  });
+  assert.equal(ok.status, 200);
+  // the returned token keeps this device logged in
+  assert.equal((await api('GET', '/api/student/S001/authorized-buses', { token: ok.data.token })).status, 200);
+
+  assert.equal((await api('POST', '/api/student/login', { body: { studentId: 'S001', password: 'pass1' } })).status, 401);
+  assert.equal((await api('POST', '/api/student/login', { body: { studentId: 'S001', password: 'newpass1' } })).status, 200);
+});
+
+test('an admin reset logs the student out everywhere', async () => {
+  const oldToken = await login('student', { studentId: 'S001', password: 'newpass1' });
+  const admin = await login('admin', { username: 'admin', password: 'admin-pass' });
+  const student = await Student.findOne({ studentId: 'S001' });
+
+  // students cannot reset passwords
+  assert.equal((await api('PUT', `/api/admin/students/${student._id}/password`, {
+    token: oldToken, body: { newPassword: 'reset123' }
+  })).status, 403);
+
+  // make sure the reset happens in a later second than the old login
+  await new Promise((resolve) => setTimeout(resolve, 1100));
+  const reset = await api('PUT', `/api/admin/students/${student._id}/password`, {
+    token: admin, body: { newPassword: 'reset123' }
+  });
+  assert.equal(reset.status, 200);
+
+  assert.equal((await api('GET', '/api/student/S001/authorized-buses', { token: oldToken })).status, 401);
+  assert.equal((await api('POST', '/api/student/login', { body: { studentId: 'S001', password: 'reset123' } })).status, 200);
+});
+
+test('an admin can change their own password', async () => {
+  const token = await login('admin', { username: 'admin', password: 'admin-pass' });
+
+  assert.equal((await api('POST', '/api/admin/password', {
+    token, body: { currentPassword: 'wrong', newPassword: 'new-admin-pass' }
+  })).status, 401);
+  assert.equal((await api('POST', '/api/admin/password', {
+    token, body: { currentPassword: 'admin-pass', newPassword: 'short' }
+  })).status, 400);
+  assert.equal((await api('POST', '/api/admin/password', {
+    token, body: { currentPassword: 'admin-pass', newPassword: 'new-admin-pass' }
+  })).status, 200);
+
+  assert.equal((await api('POST', '/api/admin/login', { body: { username: 'admin', password: 'admin-pass' } })).status, 401);
+  assert.equal((await api('POST', '/api/admin/login', { body: { username: 'admin', password: 'new-admin-pass' } })).status, 200);
+});

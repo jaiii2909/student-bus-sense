@@ -9,6 +9,9 @@ router.post('/login', loginLimiter, adminCtrl.login);
 // everything below needs an admin token
 router.use(requireRole('admin'));
 
+// failed attempts count toward the login limit
+router.post('/password', loginLimiter, adminCtrl.changeOwnPassword);
+
 // route management
 router.post('/routes', adminCtrl.addRoute);
 router.get('/routes', adminCtrl.listRoutes);
@@ -26,6 +29,12 @@ router.delete('/buses/:id', adminCtrl.deleteBus);
 router.post('/students', adminCtrl.addStudent);
 router.get('/students', adminCtrl.listStudents);
 router.put('/students/:id/routes', adminCtrl.updateStudentRoutes);
+router.put('/students/:id/password', adminCtrl.resetStudentPassword);
+
+// announcements
+router.get('/announcements', adminCtrl.listAnnouncements);
+router.post('/announcements', adminCtrl.addAnnouncement);
+router.delete('/announcements/:id', adminCtrl.deleteAnnouncement);
 
 // monitoring
 router.get('/locations', adminCtrl.viewLocations);

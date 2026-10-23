@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import AppHeader from "./AppHeader";
+import ChangePasswordDialog from "./ChangePasswordDialog";
+import AnnouncementBanner, { Announcement } from "./AnnouncementBanner";
 import BusMap from "./tracking/BusMap";
 import { TrackedBus, LOCATION_BADGE, getLocationState, formatLastUpdated } from "@/lib/busStatus";
 import { connectBusSocket } from "@/lib/socket";
@@ -33,12 +35,14 @@ interface StudentData {
 interface DashboardProps {
   studentData: StudentData;
   onLogout: () => void;
+  onTokenChange: (token: string) => void;
 }
 
 interface AuthorizedBusesResponse {
   studentId: string;
   registeredRoutes: string[];
   routes?: { routeName: string; stops: Stop[] }[];
+  announcements?: Announcement[];
   buses: TrackedBus[];
 }
 
@@ -69,12 +73,21 @@ const EmptyState = ({ icon: Icon, title, text }: { icon: LucideIcon; title: stri
   </div>
 );
 
-const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
+const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => {
   const [selectedBus, setSelectedBusState] = useState<string | null>(() => readStored("selectedBus"));
   const [selectedRoute, setSelectedRouteState] = useState<string | null>(() => readStored("selectedRoute"));
   const [buses, setBuses] = useState<TrackedBus[]>([]);
   const [authorizedRoutes, setAuthorizedRoutes] = useState<string[]>(studentData.registeredRoutes || []);
   const [stopsByRoute, setStopsByRoute] = useState<Record<string, Stop[]>>({});
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  // dismissed announcement ids, remembered on this device
+  const [dismissedIds, setDismissedIds] = useState<string[]>(() => {
+    try {
+      return JSON.parse(readStored("dismissedAnnouncements") || "[]");
+    } catch {
+      return [];
+    }
+  });
   // the student's stop per route, remembered on this device
   const [myStopName, setMyStopName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -101,6 +114,7 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
       .then((res) => {
         setBuses(res.data.buses || []);
         setAuthorizedRoutes(res.data.registeredRoutes || []);
+        setAnnouncements(res.data.announcements || []);
         setStopsByRoute(
           Object.fromEntries((res.data.routes || []).map((r) => [r.routeName, r.stops || []]))
         );
@@ -123,6 +137,12 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
     const socket = connectBusSocket(studentData.token);
     socket.on("busUpdate", (update: TrackedBus) => {
       setBuses((prev) => prev.map((bus) => (bus.id === update.id ? update : bus)));
+    });
+    socket.on("announcement", (item: Announcement) => {
+      setAnnouncements((prev) => (prev.some((a) => a.id === item.id) ? prev : [item, ...prev]));
+    });
+    socket.on("announcementDeleted", ({ id }: { id: string }) => {
+      setAnnouncements((prev) => prev.filter((a) => a.id !== id));
     });
     return () => {
       socket.disconnect();
@@ -175,6 +195,17 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
     if (window.innerWidth < 1024) {
       mapRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
+  };
+
+  const visibleAnnouncements = announcements.filter(
+    (a) => !dismissedIds.includes(a.id) && new Date(a.expiresAt).getTime() > nowMs
+  );
+
+  const handleDismissAnnouncement = (id: string) => {
+    // keep the list short: only ids of announcements that still exist
+    const next = [...dismissedIds.filter((d) => announcements.some((a) => a.id === d)), id];
+    setDismissedIds(next);
+    writeStored("dismissedAnnouncements", JSON.stringify(next));
   };
 
   const handleLogout = () => {
@@ -304,10 +335,21 @@ const Dashboard = ({ studentData, onLogout }: DashboardProps) => {
         subtitle={`Pass: ${studentData.name} • ID: ${studentData.studentId || ""}`}
         roleBadge="Student"
         onLogout={handleLogout}
-      />
+      >
+        <ChangePasswordDialog
+          endpoint="/api/student/password"
+          minLength={6}
+          onChanged={(data) => data.token && onTokenChange(data.token)}
+        />
+      </AppHeader>
 
       <main className="container mx-auto px-4 py-6 max-w-6xl flex-1 space-y-5">
-        
+        <AnnouncementBanner
+          announcements={visibleAnnouncements}
+          nowMs={nowMs}
+          onDismiss={handleDismissAnnouncement}
+        />
+
         {/* Short Summary Strip of Key Metrics with Clear Hierarchy */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="border border-border rounded-lg bg-card p-3">

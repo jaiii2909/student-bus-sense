@@ -17,8 +17,20 @@ const comparePassword = async (plainTextPassword, storedPassword) => {
   return bcrypt.compare(plainTextPassword, storedPassword);
 };
 
+// returns an error message, or null when the new password is acceptable
+const newPasswordError = (password, minLength) => {
+  if (typeof password !== 'string' || password.length < minLength) {
+    return `New password must be at least ${minLength} characters`;
+  }
+  if (password.length > 72) {
+    return 'New password must be at most 72 characters';
+  }
+  return null;
+};
+
 module.exports = {
   hashPassword,
   comparePassword,
-  isBcryptHash
+  isBcryptHash,
+  newPasswordError
 };

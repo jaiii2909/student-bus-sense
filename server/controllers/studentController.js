@@ -2,8 +2,9 @@ const Student = require('../models/Student');
 const Bus = require('../models/Bus');
 const Location = require('../models/Location');
 const Route = require('../models/Route');
-const { comparePassword } = require('../utils/passwords');
-const { signToken } = require('../middleware/auth');
+const Announcement = require('../models/Announcement');
+const { comparePassword, hashPassword, newPasswordError } = require('../utils/passwords');
+const { signToken, isTokenOutdated } = require('../middleware/auth');
 const { sendError } = require('../utils/errors');
 const { toBusPayload } = require('../utils/busPayload');
 
@@ -49,6 +50,10 @@ const viewAuthorizedBuses = async (req, res) => {
     if (!student) {
       return res.status(404).json({ error: 'Student not found' });
     }
+    // password was reset or changed since this login
+    if (isTokenOutdated(req.user, student.passwordChangedAt)) {
+      return res.status(401).json({ error: 'Please log in again' });
+    }
 
     const buses = await Bus.find({ route: { $in: student.registeredRoutes } });
     const busIds = buses.map((b) => b._id);
@@ -60,10 +65,17 @@ const viewAuthorizedBuses = async (req, res) => {
     // stops of the student's routes, for "my stop" and ETA
     const routes = await Route.find({ routeName: { $in: student.registeredRoutes } });
 
+    // active announcements for the student's routes and for everyone
+    const announcements = await Announcement.find({
+      expiresAt: { $gt: new Date() },
+      $or: [{ route: null }, { route: { $in: student.registeredRoutes } }]
+    }).sort({ createdAt: -1 }).limit(10);
+
     res.json({
       studentId: student.studentId,
       registeredRoutes: student.registeredRoutes,
       routes: routes.map((r) => ({ routeName: r.routeName, stops: r.stops })),
+      announcements: announcements.map((a) => a.toPayload()),
       buses: buses.map((bus) => toBusPayload(bus, locationByBusId.get(bus._id.toString())))
     });
   } catch (err) {
@@ -71,4 +83,24 @@ const viewAuthorizedBuses = async (req, res) => {
   }
 };
 
-module.exports = { login, viewBuses, viewAuthorizedBuses };
+// student changes their own password; returns a fresh token for this device
+const changePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const ruleError = newPasswordError(newPassword, 6);
+  if (ruleError) return res.status(400).json({ error: ruleError });
+
+  try {
+    const student = await Student.findOne({ studentId: req.user.studentId });
+    if (!student || !(await comparePassword(currentPassword, student.password))) {
+      return res.status(401).json({ error: 'Current password is wrong' });
+    }
+    student.password = await hashPassword(newPassword);
+    student.passwordChangedAt = new Date();
+    await student.save();
+    res.json({ success: true, token: signToken({ role: 'student', studentId: student.studentId }) });
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+module.exports = { login, viewBuses, viewAuthorizedBuses, changePassword };

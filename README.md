@@ -12,7 +12,8 @@ Real-time college bus tracking. Drivers share live GPS from their phone, and stu
 
 - **Students** log in with their student ID, pick one of their registered routes and their stop, and see the live location of a bus on that route with an ETA to their stop.
 - **Drivers** log in with the shared driver password, pick their route and bus, and tap *Start Sharing*. The bus shows as running until they tap *Stop*.
-- **Admins** manage buses, routes (including stops, placed on a map) and students, assign routes to students, and see the live fleet map.
+- **Admins** manage buses, routes (including stops, placed on a map) and students, assign routes to students, post announcements (for one route or all), reset student passwords, and see the live fleet map.
+- Students and admins can change their own password. When an admin resets a student's password, that student is logged out on every device.
 
 ```
 Driver phone --GPS every 5s--> Express API --> MongoDB
@@ -101,6 +102,11 @@ Login endpoints return a `token`. Every other endpoint needs `Authorization: Bea
 - `GET /students` – list students
 - `POST /students` – body `{studentId,name,password,registeredRoutes}`
 - `PUT /students/:id/routes` – body `{registeredRoutes}`
+- `PUT /students/:id/password` – body `{newPassword}` (min 6); logs the student out everywhere
+- `POST /password` – body `{currentPassword,newPassword}` (min 8), the admin's own password
+- `GET /announcements` – active announcements
+- `POST /announcements` – body `{message,route|null,expiresAt}` (max 280 chars, expires within 7 days)
+- `DELETE /announcements/:id`
 - `GET /locations` – latest location per bus
 
 #### Driver (`/api/driver`)
@@ -112,10 +118,11 @@ Login endpoints return a `token`. Every other endpoint needs `Authorization: Bea
 #### Student (`/api/student`)
 
 - `POST /login` – body `{studentId,password}`
-- `GET /:studentId/authorized-buses` – buses on the student's routes with their latest location, plus each route's stops
+- `GET /:studentId/authorized-buses` – buses on the student's routes with their latest location, plus each route's stops and active announcements
+- `POST /password` – body `{currentPassword,newPassword}` (min 6); returns a new `token`
 
 #### Live updates (Socket.io)
 
-Connect with `{ auth: { token } }`. Students receive `busUpdate` events for buses on their own routes; admins receive all of them.
+Connect with `{ auth: { token } }`. Students receive `busUpdate` events for buses on their own routes; admins receive all of them. Students also receive `announcement` and `announcementDeleted` events for their routes and all-route messages.
 
 ---

@@ -36,4 +36,9 @@ const requireRole = (...roles) => (req, res, next) => {
   next();
 };
 
-module.exports = { signToken, verifyToken, requireRole };
+// true when the token was issued before the password was last changed
+// (JWT `iat` is in whole seconds, so compare in seconds)
+const isTokenOutdated = (user, passwordChangedAt) =>
+  !!passwordChangedAt && user.iat < Math.floor(new Date(passwordChangedAt).getTime() / 1000);
+
+module.exports = { signToken, verifyToken, requireRole, isTokenOutdated };

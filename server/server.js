@@ -7,7 +7,7 @@ const path = require('path');
 // always read server/.env, even when started from the project root
 require("dotenv").config({ path: path.join(__dirname, '.env') });
 
-const { verifyToken, requireRole } = require('./middleware/auth');
+const { verifyToken, requireRole, isTokenOutdated } = require('./middleware/auth');
 const { sendError } = require('./utils/errors');
 const Bus = require('./models/Bus');
 const Student = require('./models/Student');
@@ -70,7 +70,10 @@ io.on('connection', async (socket) => {
       socket.join('admin');
     } else if (user.role === 'student') {
       const student = await Student.findOne({ studentId: user.studentId });
-      (student ? student.registeredRoutes : []).forEach((route) => socket.join(`route:${route}`));
+      if (!student || isTokenOutdated(user, student.passwordChangedAt)) return socket.disconnect(true);
+      // 'students' receives announcements meant for every route
+      socket.join('students');
+      student.registeredRoutes.forEach((route) => socket.join(`route:${route}`));
     }
   } catch (err) {
     console.error('Socket join error:', err);

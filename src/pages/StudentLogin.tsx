@@ -38,8 +38,16 @@ const StudentLogin = () => {
     clearSession("student");
   };
 
+  // after a password change the old token stops working, so keep the new one
+  const handleTokenChange = (token: string) => {
+    if (!studentData) return;
+    const sessionData = { ...studentData, token };
+    setStudentData(sessionData);
+    saveSession("student", sessionData);
+  };
+
   if (studentData) {
-    return <Dashboard studentData={studentData} onLogout={handleLogout} />;
+    return <Dashboard studentData={studentData} onLogout={handleLogout} onTokenChange={handleTokenChange} />;
   }
 
   return (

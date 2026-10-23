@@ -3,7 +3,8 @@ const Route = require('../models/Route');
 const Bus = require('../models/Bus');
 const Student = require('../models/Student');
 const Location = require('../models/Location');
-const { comparePassword, hashPassword } = require('../utils/passwords');
+const Announcement = require('../models/Announcement');
+const { comparePassword, hashPassword, newPasswordError } = require('../utils/passwords');
 const { signToken } = require('../middleware/auth');
 const { sendError } = require('../utils/errors');
 const { toBusPayload, emitBusUpdate } = require('../utils/busPayload');
@@ -59,6 +60,7 @@ const updateRoute = async (req, res) => {
         { registeredRoutes: oldRoute.routeName },
         { $set: { 'registeredRoutes.$': route.routeName } }
       );
+      await Announcement.updateMany({ route: oldRoute.routeName }, { route: route.routeName });
     }
     res.json(route);
   } catch (err) {
@@ -109,6 +111,7 @@ const deleteRoute = async (req, res) => {
 
     await route.deleteOne();
     await Student.updateMany({}, { $pull: { registeredRoutes: route.routeName } });
+    await Announcement.deleteMany({ route: route.routeName });
     res.json({ success: true });
   } catch (err) {
     sendError(res, err);
@@ -224,8 +227,105 @@ const viewLocations = async (req, res) => {
   }
 };
 
+/* ---------------- ANNOUNCEMENTS ---------------- */
+const MAX_ANNOUNCEMENT_DAYS = 7;
+
+// students on the route get it live; "all routes" goes to every student
+const announcementRoom = (route) => (route ? `route:${route}` : 'students');
+
+const listAnnouncements = async (req, res) => {
+  try {
+    const items = await Announcement.find({ expiresAt: { $gt: new Date() } }).sort({ createdAt: -1 });
+    res.json(items.map((a) => a.toPayload()));
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+// body: { message, route (name or null for all), expiresAt (ISO date) }
+const addAnnouncement = async (req, res) => {
+  const message = typeof req.body.message === 'string' ? req.body.message.trim() : '';
+  const route = req.body.route || null;
+  const expiresAt = new Date(req.body.expiresAt);
+  const now = Date.now();
+
+  if (!message || message.length > 280) {
+    return res.status(400).json({ error: 'Message must be 1 to 280 characters' });
+  }
+  if (Number.isNaN(expiresAt.getTime()) || expiresAt.getTime() <= now ||
+      expiresAt.getTime() > now + MAX_ANNOUNCEMENT_DAYS * 24 * 60 * 60 * 1000) {
+    return res.status(400).json({ error: `Expiry must be in the next ${MAX_ANNOUNCEMENT_DAYS} days` });
+  }
+
+  try {
+    if (route && !(await Route.exists({ routeName: route }))) {
+      return res.status(400).json({ error: 'Route not found' });
+    }
+    const announcement = await Announcement.create({ message, route, expiresAt });
+    const io = req.app.locals.io;
+    if (io) io.to(announcementRoom(route)).emit('announcement', announcement.toPayload());
+    res.json(announcement.toPayload());
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+const deleteAnnouncement = async (req, res) => {
+  try {
+    const announcement = await Announcement.findByIdAndDelete(req.params.id);
+    if (!announcement) return res.status(404).json({ error: 'Announcement not found' });
+    const io = req.app.locals.io;
+    if (io) io.to(announcementRoom(announcement.route)).emit('announcementDeleted', { id: announcement._id.toString() });
+    res.json({ success: true });
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+// admin changes their own password
+const changeOwnPassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const ruleError = newPasswordError(newPassword, 8);
+  if (ruleError) return res.status(400).json({ error: ruleError });
+
+  try {
+    const admin = await Admin.findOne({ username: req.user.username });
+    if (!admin || !(await comparePassword(currentPassword, admin.password))) {
+      return res.status(401).json({ error: 'Current password is wrong' });
+    }
+    admin.password = await hashPassword(newPassword);
+    await admin.save();
+    res.json({ success: true });
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+// admin sets a new password for a student; the student's existing logins stop working
+const resetStudentPassword = async (req, res) => {
+  const { newPassword } = req.body;
+  const ruleError = newPasswordError(newPassword, 6);
+  if (ruleError) return res.status(400).json({ error: ruleError });
+
+  try {
+    const student = await Student.findById(req.params.id);
+    if (!student) return res.status(404).json({ error: 'Student not found' });
+    student.password = await hashPassword(newPassword);
+    student.passwordChangedAt = new Date();
+    await student.save();
+    res.json({ success: true });
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
 module.exports = {
   login,
+  changeOwnPassword,
+  resetStudentPassword,
+  listAnnouncements,
+  addAnnouncement,
+  deleteAnnouncement,
   addRoute,
   updateRoute,
   updateRouteStops,
