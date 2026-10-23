@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Bus, Eye, EyeOff, Lock, User, ShieldCheck, Navigation, Loader2 } from "lucide-react";
@@ -11,7 +10,6 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 type Role = 'student' | 'admin' | 'driver';
 
-// what the login endpoints return (student fields only for students)
 interface LoginResponse {
   token: string;
   name: string;
@@ -41,7 +39,7 @@ const roleMeta = {
   },
   driver: {
     title: "Driver In-Cab Verification",
-    description: "Enter your driver username and password to begin live GPS broadcasting.",
+    description: "Enter your driver username and passkey to begin live GPS broadcasting.",
     badge: "Transport Staff",
     icon: Navigation,
   },
@@ -53,11 +51,9 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  // the free server sleeps when idle; tell the user if login is slow
   const [isWakingServer, setIsWakingServer] = useState(false);
   const { toast } = useToast();
 
-  // start waking the server as soon as the login screen opens
   useEffect(() => {
     axios.get("/api/health").catch(() => {});
   }, []);
@@ -83,7 +79,6 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
         break;
       case 'driver':
         endpoint = '/api/driver/login';
-        // username is empty only for the old shared driver password
         body = username.trim() ? { username: username.trim(), password } : { password };
         break;
     }
@@ -117,8 +112,11 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4 font-sans">
-      <div className="w-full max-w-md space-y-6">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4 font-sans relative overflow-hidden">
+      {/* Background ambient lighting */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-primary/5 dark:bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="w-full max-w-md space-y-6 relative z-10">
         
         {/* Top Controls */}
         <div className="flex items-center justify-between">
@@ -126,7 +124,7 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
             variant="ghost"
             size="sm"
             onClick={onBack}
-            className="text-stone-600 dark:text-stone-300 hover:text-foreground text-xs font-semibold -ml-2"
+            className="text-muted-foreground hover:text-foreground text-xs font-semibold -ml-2 rounded-lg"
           >
             <ArrowLeft className="w-4 h-4 mr-1.5" />
             Back
@@ -135,13 +133,13 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
         </div>
 
         {/* Auth Card */}
-        <div className="border border-border rounded-xl bg-card shadow-sm p-6 sm:p-8 space-y-6">
-          <div className="space-y-2 text-left">
-            <div className="inline-flex items-center gap-2 px-2 py-0.5 rounded border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 text-stone-700 dark:text-stone-300 text-[10px] font-bold uppercase tracking-wider">
-              <IconComponent className="w-3.5 h-3.5 text-primary" />
+        <div className="border border-border/80 rounded-2xl bg-card shadow-xl p-7 sm:p-9 space-y-6">
+          <div className="space-y-2.5 text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/20 bg-primary/5 text-primary text-[10px] font-bold uppercase tracking-wider">
+              <IconComponent className="w-3.5 h-3.5" />
               <span>{meta.badge}</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
+            <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
               {meta.title}
             </h1>
             <p className="text-xs text-muted-foreground leading-relaxed">
@@ -156,14 +154,14 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
                   Student Enrollment Number
                 </Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
+                  <User className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="studentId"
                     type="text"
                     value={studentId}
                     onChange={(e) => setStudentId(e.target.value)}
                     placeholder="e.g. UGI-2023-CS-104"
-                    className="pl-9 h-10 rounded-md border-border text-xs focus-visible:ring-primary"
+                    className="pl-10 h-10 rounded-xl border-border text-xs focus-visible:ring-primary"
                     required
                     autoComplete="username"
                   />
@@ -178,14 +176,14 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
                   Administrator Username
                 </Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
+                  <User className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="username"
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="e.g. transport_admin"
-                    className="pl-9 h-10 rounded-md border-border text-xs focus-visible:ring-primary"
+                    className="pl-10 h-10 rounded-xl border-border text-xs focus-visible:ring-primary"
                     required
                     autoComplete="username"
                   />
@@ -199,14 +197,14 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
                   Driver Username
                 </Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
+                  <User className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="driver-username"
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="e.g. ramesh"
-                    className="pl-9 h-10 rounded-md border-border text-xs focus-visible:ring-primary"
+                    className="pl-10 h-10 rounded-xl border-border text-xs focus-visible:ring-primary"
                     autoComplete="username"
                     autoCapitalize="none"
                   />
@@ -222,21 +220,21 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
                 </Label>
               </div>
               <div className="relative">
-                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-stone-400" />
+                <Lock className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={role === 'driver' ? "Enter assigned driver passkey" : "Enter password"}
-                  className="pl-9 pr-10 h-10 rounded-md border-border text-xs focus-visible:ring-primary"
+                  className="pl-10 pr-10 h-10 rounded-xl border-border text-xs focus-visible:ring-primary"
                   required
                   autoComplete="current-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-stone-400 hover:text-foreground transition-colors"
+                  className="absolute right-3.5 top-3 text-muted-foreground hover:text-foreground transition-colors"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -247,7 +245,7 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full h-10 rounded-md font-semibold text-xs mt-2"
+              className="w-full h-11 rounded-xl font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs mt-3 transition-all"
             >
               {isLoading ? (
                 <>
@@ -259,13 +257,13 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
               )}
             </Button>
             {isWakingServer && (
-              <p className="text-[11px] text-muted-foreground text-center" role="status">
-                Waking up the server, this can take up to a minute...
+              <p className="text-[11px] text-muted-foreground text-center animate-pulse" role="status">
+                Waking up the cloud server, this can take up to a minute...
               </p>
             )}
           </form>
 
-          <div className="pt-4 border-t border-border text-[11px] text-muted-foreground text-center">
+          <div className="pt-4 border-t border-border/80 text-[11px] text-muted-foreground text-center">
             Need transport pass clearance? Visit the Transport Desk at Campus Gate 1.
           </div>
         </div>

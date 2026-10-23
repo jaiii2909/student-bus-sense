@@ -18,21 +18,26 @@ export const getLocationState = (bus: TrackedBus, nowMs: number): LocationState 
   return ageMs > STALE_THRESHOLD_MS ? "stale" : "live";
 };
 
-export const LOCATION_BADGE: Record<LocationState, { label: string; className: string; dotClass: string }> = {
+export const LOCATION_BADGE: Record<
+  LocationState,
+  { label: string; className: string; dotClass: string; pingClass?: string }
+> = {
   live: { 
-    label: "On Route", 
-    className: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800",
-    dotClass: "bg-emerald-600 dark:bg-emerald-400"
+    label: "Live Tracking", 
+    className: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 dark:border-emerald-500/40",
+    dotClass: "bg-emerald-500",
+    pingClass: "bg-emerald-400"
   },
   stale: { 
-    label: "Signal Delayed", 
-    className: "bg-amber-50 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200 dark:border-amber-800",
-    dotClass: "bg-amber-600 dark:bg-amber-400"
+    label: "Delayed Signal", 
+    className: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30 dark:border-amber-500/40",
+    dotClass: "bg-amber-500",
+    pingClass: "bg-amber-400"
   },
   offline: { 
     label: "At Depot", 
-    className: "bg-stone-100 text-stone-600 dark:bg-stone-800 dark:text-stone-400 border border-stone-200 dark:border-stone-700",
-    dotClass: "bg-stone-400"
+    className: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700",
+    dotClass: "bg-slate-400"
   },
 };
 

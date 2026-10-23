@@ -3,101 +3,105 @@
 @tailwind utilities;
 
 /* 
- * Educational Campus Transport Design System
+ * Modern Mobility-Tech & SaaS Transportation Platform Design System
  * Palette:
- * - Canvas Background: #FAF9F5 (Warm off-white, paper/schedule feel)
- * - Raised Surface: #FFFFFF (Clean card canvas with 1px stone border)
- * - Deep Text: #1C1917 (Warm tinted near-black, Stone 900)
- * - Primary Action: #D97706 (School Bus Amber / Ochre)
- * - Secondary Authority: #1E293B (Collegiate Oxford Navy)
- * - Accent: #15803D (Transit Green / Live On Schedule)
- * - Destructive: #B91C1C (Signal Crimson / Alert)
- * - Divider/Border: #E7E5E4 (Stone 200, 1px flat edge)
+ * - Canvas Background (Light): #F8FAFC (Clean slate cool off-white)
+ * - Canvas Background (Dark): #090D16 (Deep obsidian midnight navy)
+ * - Raised Surface (Light): #FFFFFF (Crisp white card with soft shadow)
+ * - Raised Surface (Dark): #0F172A (Deep slate navy card with refined border)
+ * - Deep Text: #0F172A / #F8FAFC
+ * - Primary Action: #2563EB (High-contrast Royal Blue)
+ * - Secondary Authority: #0F172A (Deep Oxford Navy)
+ * - Live Tracking Accent: #06B6D4 (Electric Cyan / Teal Telemetry)
+ * - Status Green: #10B981 (Emerald On-Route)
+ * - Status Amber: #F59E0B (Signal Delayed)
+ * - Status Rose: #EF4444 (Alert / Depot / Inactive)
+ * - Divider/Border: #E2E8F0 (Light) / #1E293B (Dark)
  */
 
 @layer base {
   :root {
-    --background: 43 33% 97%;       /* #FAF9F5 warm off-white */
-    --foreground: 24 10% 10%;       /* #1C1917 deep warm charcoal */
+    --background: 210 40% 98%;       /* #F8FAFC clean cool slate off-white */
+    --foreground: 222 47% 11%;       /* #0F172A deep navy slate */
 
-    --card: 0 0% 100%;             /* #FFFFFF flat white */
-    --card-foreground: 24 10% 10%;
+    --card: 0 0% 100%;               /* #FFFFFF pure white */
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 24 10% 10%;
+    --popover-foreground: 222 47% 11%;
 
-    /* School Bus Amber / Ochre */
-    --primary: 38 92% 44%;         /* #D97706 */
+    /* Royal Blue Primary Action */
+    --primary: 221 83% 53%;         /* #2563EB */
     --primary-foreground: 0 0% 100%;
 
-    /* Collegiate Oxford Navy */
-    --secondary: 222 47% 18%;      /* #1E293B */
-    --secondary-foreground: 43 33% 97%;
+    /* Deep Navy Authority */
+    --secondary: 222 47% 15%;        /* #131B2E */
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 48 20% 95%;           /* #F5F4EE warm stone tint */
-    --muted-foreground: 25 5% 45%; /* #78716C */
+    --muted: 214 32% 95%;           /* #F1F5F9 */
+    --muted-foreground: 215 16% 47%; /* #64748B */
 
-    /* Transit On-Schedule Green */
-    --accent: 142 71% 29%;         /* #15803D */
-    --accent-foreground: 0 0% 100%;
+    /* Electric Cyan Live Telemetry Accent */
+    --accent: 189 94% 43%;          /* #06B6D4 */
+    --accent-foreground: 222 47% 11%;
 
-    /* Signal Crimson */
-    --destructive: 0 74% 42%;      /* #B91C1C */
+    /* Signal Crimson Destructive */
+    --destructive: 0 84% 60%;       /* #EF4444 */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 28 7% 90%;           /* #E7E5E4 stone-200 */
-    --input: 28 7% 90%;
-    --ring: 38 92% 44%;
+    --border: 214 32% 91%;          /* #E2E8F0 */
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
 
-    --radius: 0.625rem;            /* 10px clean radius */
+    --radius: 0.75rem;              /* 12px clean modern SaaS radius */
 
-    --sidebar-background: 43 33% 97%;
-    --sidebar-foreground: 24 10% 10%;
-    --sidebar-primary: 38 92% 44%;
+    --sidebar-background: 210 40% 98%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 221 83% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 48 20% 95%;
-    --sidebar-accent-foreground: 24 10% 10%;
-    --sidebar-border: 28 7% 90%;
-    --sidebar-ring: 38 92% 44%;
+    --sidebar-accent: 214 32% 95%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 221 83% 53%;
   }
 
   .dark {
-    --background: 30 7% 7%;        /* #121110 deep warm stone */
-    --foreground: 43 33% 96%;      /* #FAF9F5 */
+    --background: 224 71% 4%;        /* #080B11 obsidian midnight navy */
+    --foreground: 210 40% 98%;       /* #F8FAFC */
 
-    --card: 24 10% 11%;            /* #1C1A18 */
-    --card-foreground: 43 33% 96%;
+    --card: 222 47% 9%;             /* #0C121E deep navy surface */
+    --card-foreground: 210 40% 98%;
 
-    --popover: 24 10% 11%;
-    --popover-foreground: 43 33% 96%;
+    --popover: 222 47% 9%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 38 92% 50%;         /* #F59E0B bright bus amber */
-    --primary-foreground: 24 10% 10%;
+    --primary: 217 91% 60%;          /* #3B82F6 vibrant royal blue */
+    --primary-foreground: 224 71% 4%;
 
-    --secondary: 217 33% 22%;      /* #273449 */
-    --secondary-foreground: 43 33% 96%;
+    --secondary: 222 47% 16%;       /* #172134 */
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 24 8% 16%;            /* #292624 */
-    --muted-foreground: 25 6% 65%; /* #A8A29E */
+    --muted: 222 47% 13%;           /* #131C2C */
+    --muted-foreground: 215 20% 65%; /* #94A3B8 */
 
-    --accent: 142 60% 36%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 187 92% 50%;          /* #06B6D4 glowing cyan */
+    --accent-foreground: 224 71% 4%;
 
-    --destructive: 0 68% 50%;
+    --destructive: 0 84% 60%;       /* #EF4444 */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 20 6% 18%;           /* #302C29 */
-    --input: 20 6% 18%;
-    --ring: 38 92% 50%;
+    --border: 217 33% 17%;          /* #1E293B */
+    --input: 217 33% 17%;
+    --ring: 217 91% 60%;
 
-    --sidebar-background: 30 7% 9%;
-    --sidebar-foreground: 43 33% 96%;
-    --sidebar-primary: 38 92% 50%;
-    --sidebar-primary-foreground: 24 10% 10%;
-    --sidebar-accent: 24 8% 16%;
-    --sidebar-accent-foreground: 43 33% 96%;
-    --sidebar-border: 20 6% 18%;
-    --sidebar-ring: 38 92% 50%;
+    --sidebar-background: 224 71% 5%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 224 71% 4%;
+    --sidebar-accent: 222 47% 13%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-ring: 217 91% 60%;
   }
 }
 
@@ -116,9 +120,29 @@
   }
 }
 
-/* Tabular numerals for timetables, bus IDs, coordinates, and clock meters */
+/* Tabular numerals for timetables, coordinates, speeds, and clock meters */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+}
+
+/* Glassmorphism & SaaS Card elevations */
+.saas-card {
+  @apply bg-card text-card-foreground border border-border/80 shadow-[0_2px_12px_-3px_rgba(15,23,42,0.06)] dark:shadow-[0_4px_24px_-4px_rgba(0,0,0,0.45)] transition-all duration-200;
+}
+
+.saas-card-interactive {
+  @apply bg-card text-card-foreground border border-border/80 shadow-[0_2px_10px_-3px_rgba(15,23,42,0.05)] hover:shadow-[0_8px_24px_-4px_rgba(15,23,42,0.1)] hover:border-primary/40 dark:hover:border-primary/50 transition-all duration-200;
+}
+
+.saas-glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.dark .saas-glass {
+  background: rgba(12, 18, 30, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 /* Wayfinding dashed transit line */
@@ -126,21 +150,57 @@
   background-image: repeating-linear-gradient(
     to bottom,
     hsl(var(--border)),
-    hsl(var(--border)) 4px,
-    transparent 4px,
-    transparent 8px
+    hsl(var(--border)) 5px,
+    transparent 5px,
+    transparent 10px
   );
+}
+
+/* Live Telemetry Radar Pulse */
+@keyframes radar-ripple {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.9;
+  }
+  70% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+.animate-radar-ripple {
+  animation: radar-ripple 2.2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}
+
+/* Live GPS Blip Indicator */
+@keyframes telemetry-blip {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+}
+
+.animate-telemetry-blip {
+  animation: telemetry-blip 1.8s ease-in-out infinite;
 }
 
 /* Subtle bus pulse indicator (respects reduced motion) */
 @media (prefers-reduced-motion: no-preference) {
   @keyframes transit-pulse {
     0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.15); opacity: 0.75; }
+    50% { transform: scale(1.12); opacity: 0.8; }
     100% { transform: scale(1); opacity: 1; }
   }
   .animate-bus-pulse {
-    animation: transit-pulse 2.5s ease-in-out infinite;
+    animation: transit-pulse 2.2s ease-in-out infinite;
   }
 }
 

@@ -12,7 +12,9 @@ import {
   Wifi, 
   Sun, 
   Activity,
-  ArrowRight
+  ArrowRight,
+  ShieldCheck,
+  Gauge
 } from "lucide-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -59,6 +61,7 @@ const Driver = () => {
   const [allBuses, setAllBuses] = useState<ApiBus[]>([]);
   const [isLoadingFleet, setIsLoadingFleet] = useState(false);
   const [lastSentAt, setLastSentAt] = useState<number | null>(null);
+  const [currentSpeedKmh, setCurrentSpeedKmh] = useState<number | null>(null);
   const [sendFailed, setSendFailed] = useState(false);
   const [nowMs, setNowMs] = useState(Date.now());
   const [wakeLockActive, setWakeLockActive] = useState(false);
@@ -152,6 +155,7 @@ const Driver = () => {
     setWasInterrupted(false);
     setSendFailed(false);
     setLastSentAt(null);
+    setCurrentSpeedKmh(null);
     lastSendAttemptRef.current = 0;
     writeStored(SHARING_FLAG_KEY, "1");
     requestWakeLock();
@@ -159,12 +163,13 @@ const Driver = () => {
     watchIdRef.current = navigator.geolocation.watchPosition(
       async (position) => {
         const now = Date.now();
+        const { latitude, longitude, speed } = position.coords;
+        const speedKmh = typeof speed === "number" && speed >= 0 ? Math.round(speed * 3.6) : null;
+        setCurrentSpeedKmh(speedKmh);
+
         if (now - lastSendAttemptRef.current < SEND_INTERVAL_MS) return;
         lastSendAttemptRef.current = now;
 
-        const { latitude, longitude, speed } = position.coords;
-        // GPS speed is in m/s and missing on some devices; used for student ETA
-        const speedKmh = typeof speed === "number" && speed >= 0 ? Math.round(speed * 3.6) : null;
         try {
           await axios.post(`/api/driver/buses/${busId}/location`, { latitude, longitude, speedKmh });
           setLastSentAt(Date.now());
@@ -232,52 +237,56 @@ const Driver = () => {
   }
 
   const secondsSinceSent = lastSentAt ? Math.max(0, Math.round((nowMs - lastSentAt) / 1000)) : null;
-  // shown in the header; missing for the old shared driver login
   const driverName = getSession<{ token?: string; name?: string }>("driver")?.name;
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
       <AppHeader
-        title="Driver In-Cab Console"
+        title="Driver In-Cab Broadcast Console"
         subtitle={[driverName, busId ? `Bus ${busId} • ${selectedRoute}` : "Standby — Select Vehicle"].filter(Boolean).join(" • ")}
         roleBadge="Driver"
         onLogout={handleLogout}
       />
 
-      <main className="container mx-auto max-w-lg p-4 sm:p-6 flex-1 flex flex-col justify-center space-y-4">
+      <main className="container mx-auto max-w-md p-4 sm:p-6 flex-1 flex flex-col justify-center space-y-4">
         
         {/* Main In-Cab Control Card */}
-        <div className="border border-border rounded-xl bg-card shadow-sm overflow-hidden">
+        <div className="border border-border/80 rounded-2xl bg-card shadow-lg overflow-hidden transition-all">
           
           {/* Status HUD Header */}
-          <div className={`p-6 text-center border-b ${
+          <div className={`p-6 sm:p-8 text-center border-b transition-colors ${
             isSharing
-              ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800"
-              : "bg-stone-50 dark:bg-stone-900 border-border"
+              ? "bg-emerald-500/10 dark:bg-emerald-950/40 border-emerald-500/30"
+              : "bg-slate-50 dark:bg-slate-900/60 border-border/80"
           }`}>
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <span className={`w-3 h-3 rounded-full ${isSharing ? "bg-emerald-600 animate-bus-pulse" : "bg-stone-400"}`}></span>
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <span className="relative flex h-3 w-3">
+                {isSharing && (
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                )}
+                <span className={`relative inline-flex rounded-full h-3 w-3 ${isSharing ? "bg-emerald-500" : "bg-slate-400"}`} />
+              </span>
               <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                {isSharing ? "Broadcasting Vehicle Position" : "Vehicle Stationary / Standby"}
+                {isSharing ? "Broadcasting Live GPS Telemetry" : "Vehicle Stationary / Standby"}
               </span>
             </div>
 
-            <h1 className="text-xl sm:text-2xl font-extrabold text-foreground tracking-tight">
-              {isSharing ? `Bus ${busId} is Live` : "Prepare Trip Dispatch"}
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+              {isSharing ? `Bus ${busId} is Live` : "Trip Telemetry Dispatch"}
             </h1>
             
-            <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
+            <p className="text-xs text-muted-foreground mt-1.5 max-w-xs mx-auto leading-relaxed">
               {isSharing
-                ? "Students on this route are now tracking your live location on their map."
-                : "Select route and bus number below, mount device on dashboard, and start trip."}
+                ? "Students on this corridor are tracking your vehicle on their interactive map."
+                : "Select corridor and vehicle number below, mount device on dashboard holder, and start trip."}
             </p>
           </div>
 
           <div className="p-6 space-y-5">
             
             {wasInterrupted && !isSharing && (
-              <div className="flex items-start gap-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 p-3 text-xs text-amber-800 dark:text-amber-300">
-                <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+              <div className="flex items-start gap-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 p-3.5 text-xs text-amber-800 dark:text-amber-300">
+                <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
                 <span>Broadcasting stopped when the browser closed. Tap start to resume your scheduled trip.</span>
               </div>
             )}
@@ -292,7 +301,7 @@ const Driver = () => {
                 onValueChange={handleRouteChange}
                 disabled={isSharing || isLoadingFleet}
               >
-                <SelectTrigger className="w-full h-11 text-xs font-semibold rounded-md border-border">
+                <SelectTrigger className="w-full h-11 text-xs font-semibold rounded-xl border-border bg-card">
                   <SelectValue placeholder={isLoadingFleet ? "Loading routes..." : "Choose route corridor"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -312,7 +321,7 @@ const Driver = () => {
                   Select Vehicle Number
                 </Label>
                 <Select value={busId} onValueChange={handleBusChange} disabled={isSharing}>
-                  <SelectTrigger className="w-full h-11 text-xs font-semibold rounded-md border-border">
+                  <SelectTrigger className="w-full h-11 text-xs font-semibold rounded-xl border-border bg-card">
                     <SelectValue placeholder="Select assigned bus" />
                   </SelectTrigger>
                   <SelectContent>
@@ -328,59 +337,70 @@ const Driver = () => {
 
             {/* Live Telemetry Strip */}
             {isSharing && (
-              <div className="border border-border rounded-lg bg-stone-50 dark:bg-stone-900 p-3.5 space-y-2 text-xs">
+              <div className="border border-border/80 rounded-xl bg-slate-50 dark:bg-slate-900/60 p-4 space-y-2.5 text-xs shadow-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground flex items-center gap-1.5">
-                    <Wifi className="w-3.5 h-3.5" /> Mobile Signal
+                    <Wifi className="w-3.5 h-3.5 text-accent" /> Mobile Telemetry
                   </span>
-                  <span className={`font-semibold ${sendFailed ? "text-destructive" : "text-emerald-700 dark:text-emerald-400"}`}>
+                  <span className={`font-semibold ${sendFailed ? "text-destructive" : "text-emerald-600 dark:text-emerald-400 font-mono"}`}>
                     {sendFailed ? "Retry in progress" : "Connected (HTTP 200)"}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground flex items-center gap-1.5">
-                    <Activity className="w-3.5 h-3.5" /> GPS Transmission
+                    <Activity className="w-3.5 h-3.5 text-primary" /> GPS Sync Rate
                   </span>
                   <span className="font-mono tabular-nums font-bold text-foreground">
                     {secondsSinceSent === null ? "Fixing coordinates..." : `Ping sent ${secondsSinceSent}s ago`}
                   </span>
                 </div>
 
+                {currentSpeedKmh !== null && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground flex items-center gap-1.5">
+                      <Gauge className="w-3.5 h-3.5 text-accent" /> Speed Radar
+                    </span>
+                    <span className="font-mono font-bold text-foreground">
+                      {currentSpeedKmh} km/h
+                    </span>
+                  </div>
+                )}
+
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground flex items-center gap-1.5">
-                    <Sun className="w-3.5 h-3.5 text-amber-600" /> Screen Lock
+                    <Sun className="w-3.5 h-3.5 text-amber-500" /> Screen Lock
                   </span>
-                  <span className="font-medium text-foreground">
-                    {wakeLockActive ? "Wake-Lock Active (Screen on)" : "Auto Sleep"}
+                  <span className="font-semibold text-foreground">
+                    {wakeLockActive ? "Wake-Lock Active (Screen on)" : "Standard Sleep"}
                   </span>
                 </div>
               </div>
             )}
 
-            {/* Giant Action Button (Min 56px height) */}
+            {/* Giant Action Button (Min 56px height for in-cab safety) */}
             {!isSharing ? (
               <Button
                 onClick={startSharingLocation}
                 disabled={!busId}
-                className="w-full h-14 rounded-lg font-bold text-sm shadow-none disabled:opacity-50"
+                className="w-full h-14 rounded-xl font-bold text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all disabled:opacity-50"
               >
-                <Radio className="w-4 h-4 mr-2" />
+                <Radio className="w-5 h-5 mr-2 animate-pulse" />
                 START LOCATION BROADCAST
               </Button>
             ) : (
               <Button
                 onClick={stopSharingLocation}
                 variant="destructive"
-                className="w-full h-14 rounded-lg font-bold text-sm shadow-none"
+                className="w-full h-14 rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all"
               >
-                <StopCircle className="w-4 h-4 mr-2" />
+                <StopCircle className="w-5 h-5 mr-2" />
                 STOP SHARING LOCATION
               </Button>
             )}
 
-            <p className="text-[11px] text-center text-muted-foreground">
-              Keep this screen visible on your dashboard holder while driving.
+            <p className="text-[11px] text-center text-muted-foreground leading-relaxed">
+              Mount your phone in a dashboard holder and keep this broadcast active while in transit.
             </p>
           </div>
         </div>

@@ -431,63 +431,63 @@ const AdminDashboard = () => {
       <main className="container mx-auto px-4 py-6 max-w-6xl flex-1 space-y-6">
         
         {/* Short Summary Strip with Strong Hierarchy */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
           {/* Prominent Primary Metric */}
-          <div className="border border-border rounded-lg bg-card p-4">
+          <div className="border border-border/80 rounded-xl bg-card p-4 shadow-xs hover:border-primary/40 transition-all">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Active Vehicles</span>
             <div className="flex items-baseline gap-2 mt-1">
               <span className="text-2xl font-extrabold text-foreground tabular-nums">{activeBusesCount}</span>
               <span className="text-xs text-muted-foreground font-medium">/ {buses.length} total buses</span>
             </div>
-            <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold block mt-1">
+            <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold block mt-1">
               {activeBusesCount > 0 ? "Operating on campus corridors" : "All vehicles at depot"}
             </span>
           </div>
 
-          <div className="border border-border rounded-lg bg-card p-4">
+          <div className="border border-border/80 rounded-xl bg-card p-4 shadow-xs hover:border-primary/40 transition-all">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Campus Corridors</span>
             <div className="text-2xl font-extrabold text-foreground tabular-nums mt-1">{routes.length}</div>
             <span className="text-[11px] text-muted-foreground block mt-1">Configured transit lines</span>
           </div>
 
-          <div className="border border-border rounded-lg bg-card p-4">
+          <div className="border border-border/80 rounded-xl bg-card p-4 shadow-xs hover:border-primary/40 transition-all">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Enrolled Commuters</span>
             <div className="text-2xl font-extrabold text-foreground tabular-nums mt-1">{students.length}</div>
             <span className="text-[11px] text-muted-foreground block mt-1">Verified student passes</span>
           </div>
 
-          <div className="border border-border rounded-lg bg-card p-4">
+          <div className="border border-border/80 rounded-xl bg-card p-4 shadow-xs hover:border-primary/40 transition-all">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Live Telemetry Fixes</span>
-            <div className="text-2xl font-extrabold text-emerald-700 dark:text-emerald-400 tabular-nums mt-1">{busesWithLocation.length}</div>
+            <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums mt-1">{busesWithLocation.length}</div>
             <span className="text-[11px] text-muted-foreground block mt-1">Transmitting in-cab signals</span>
           </div>
         </div>
 
         {/* Tabbed Views */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <div className="flex items-center justify-between border-b border-border pb-3 flex-wrap gap-2">
-            <TabsList className="bg-stone-100 dark:bg-stone-800 p-1 rounded-md h-10 border border-border max-w-full overflow-x-auto justify-start">
-              <TabsTrigger value="radar" className="rounded text-xs font-semibold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground">
+          <div className="flex items-center justify-between border-b border-border/80 pb-3 flex-wrap gap-2">
+            <TabsList className="bg-slate-100 dark:bg-slate-900 p-1.5 rounded-xl h-11 border border-border/80 max-w-full overflow-x-auto justify-start">
+              <TabsTrigger value="radar" className="rounded-lg text-xs font-bold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs">
                 <Radio className="w-3.5 h-3.5 text-primary" />
                 <span>Fleet Radar</span>
               </TabsTrigger>
-              <TabsTrigger value="buses" className="rounded text-xs font-semibold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground">
-                <BusIcon className="w-3.5 h-3.5" />
+              <TabsTrigger value="buses" className="rounded-lg text-xs font-bold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs">
+                <BusIcon className="w-3.5 h-3.5 text-accent" />
                 <span>Buses ({buses.length})</span>
               </TabsTrigger>
-              <TabsTrigger value="routes" className="rounded text-xs font-semibold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground">
+              <TabsTrigger value="routes" className="rounded-lg text-xs font-bold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs">
                 <RouteIcon className="w-3.5 h-3.5" />
                 <span>Routes ({routes.length})</span>
               </TabsTrigger>
-              <TabsTrigger value="students" className="rounded text-xs font-semibold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground">
+              <TabsTrigger value="students" className="rounded-lg text-xs font-bold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs">
                 <Users className="w-3.5 h-3.5" />
                 <span>Student Directory ({students.length})</span>
               </TabsTrigger>
-              <TabsTrigger value="announcements" className="rounded text-xs font-semibold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground">
+              <TabsTrigger value="announcements" className="rounded-lg text-xs font-bold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs">
                 <Megaphone className="w-3.5 h-3.5" />
                 <span>Announcements</span>
               </TabsTrigger>
-              <TabsTrigger value="drivers" className="rounded text-xs font-semibold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground">
+              <TabsTrigger value="drivers" className="rounded-lg text-xs font-bold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs">
                 <IdCard className="w-3.5 h-3.5" />
                 <span>Drivers & Trips</span>
               </TabsTrigger>
@@ -498,17 +498,17 @@ const AdminDashboard = () => {
               size="sm"
               onClick={fetchAll}
               disabled={isRefreshing}
-              className="text-xs h-8 rounded-md border-border gap-1.5"
+              className="text-xs h-9 rounded-xl border-border gap-1.5 font-semibold hover:bg-slate-100 dark:hover:bg-slate-800"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-primary" : ""}`} />
               <span>Refresh Telemetry</span>
             </Button>
           </div>
 
           {/* TAB 1: FLEET RADAR MAP */}
           <TabsContent value="radar" className="m-0 focus-visible:ring-0">
-            <div className="border border-border rounded-lg bg-card overflow-hidden">
-              <div className="p-3.5 border-b border-border bg-stone-50 dark:bg-stone-900/60 flex items-center justify-between">
+            <div className="border border-border/80 rounded-2xl bg-card overflow-hidden shadow-xs">
+              <div className="p-4 border-b border-border/80 bg-slate-50/70 dark:bg-slate-900/50 flex items-center justify-between">
                 <div>
                   <h2 className="text-xs font-bold text-foreground">Prayagraj Campus Fleet Radar</h2>
                   <p className="text-[11px] text-muted-foreground">
@@ -530,14 +530,17 @@ const AdminDashboard = () => {
                     markers={busesWithLocation.map((l) => ({
                       id: l.id,
                       position: l.coordinates!,
-                      title: `Bus ${l.number} • ${l.route}`
+                      title: `Bus ${l.number} • ${l.route}`,
+                      kind: "bus" as const,
+                      busNumber: l.number,
+                      isLive: l.status === "active",
                     }))}
                     zoom={13}
                   />
                 ) : (
-                  <div className="h-full flex items-center justify-center bg-stone-50 dark:bg-stone-900/50 p-6 text-center">
+                  <div className="h-full flex items-center justify-center bg-slate-50/70 dark:bg-slate-900/50 p-6 text-center">
                     <div className="max-w-xs space-y-2">
-                      <div className="w-10 h-10 rounded-md bg-stone-200 dark:bg-stone-800 flex items-center justify-center mx-auto text-stone-500">
+                      <div className="w-10 h-10 rounded-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-muted-foreground">
                         <MapPin className="w-5 h-5" />
                       </div>
                       <h3 className="text-sm font-bold text-foreground">Fleet in Depot</h3>
@@ -554,14 +557,14 @@ const AdminDashboard = () => {
           {/* TAB 2: BUS VEHICLES */}
           <TabsContent value="buses" className="m-0 focus-visible:ring-0">
             <div className="border border-border rounded-lg bg-card overflow-hidden">
-              <div className="p-4 border-b border-border bg-stone-50 dark:bg-stone-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="p-4 border-b border-border bg-slate-50/70 dark:bg-slate-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">Registered Bus Vehicles</h2>
                   <p className="text-[11px] text-muted-foreground">Manage bus numbers, assigned routes, and operational status</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="relative">
-                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-stone-400" />
+                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted-foreground" />
                     <Input
                       placeholder="Search bus or route..."
                       value={busSearch}
@@ -601,7 +604,7 @@ const AdminDashboard = () => {
                     </TableRow>
                   ) : (
                     visibleBuses.map((bus) => (
-                      <TableRow key={bus._id} className="border-border hover:bg-stone-50/50 dark:hover:bg-stone-900/30">
+                      <TableRow key={bus._id} className="border-border hover:bg-slate-50/60 dark:hover:bg-slate-900/40">
                         <TableCell className="font-bold text-xs text-foreground">Bus {bus.busNumber}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{bus.route}</TableCell>
                         <TableCell>
@@ -621,7 +624,7 @@ const AdminDashboard = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEditBus(bus)}
-                            className="h-7 w-7 p-0 rounded text-stone-500 hover:text-foreground mr-1"
+                            className="h-7 w-7 p-0 rounded text-muted-foreground hover:text-foreground mr-1"
                             title="Edit vehicle"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -630,7 +633,7 @@ const AdminDashboard = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteBus(bus)}
-                            className="h-7 w-7 p-0 rounded text-stone-500 hover:text-destructive"
+                            className="h-7 w-7 p-0 rounded text-muted-foreground hover:text-destructive"
                             title="Delete vehicle"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -647,7 +650,7 @@ const AdminDashboard = () => {
           {/* TAB 3: TRANSIT CORRIDORS (ROUTES) */}
           <TabsContent value="routes" className="m-0 focus-visible:ring-0">
             <div className="border border-border rounded-lg bg-card overflow-hidden">
-              <div className="p-4 border-b border-border bg-stone-50 dark:bg-stone-900/60 flex items-center justify-between">
+              <div className="p-4 border-b border-border bg-slate-50/70 dark:bg-slate-900/50 flex items-center justify-between">
                 <div>
                   <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">Campus Transit Corridors</h2>
                   <p className="text-[11px] text-muted-foreground">Manage designated university transit lines</p>
@@ -685,7 +688,7 @@ const AdminDashboard = () => {
                     routes.map((route) => {
                       const assignedBuses = buses.filter((b) => b.route === route.routeName);
                       return (
-                        <TableRow key={route._id} className="border-border hover:bg-stone-50/50 dark:hover:bg-stone-900/30">
+                        <TableRow key={route._id} className="border-border hover:bg-slate-50/60 dark:hover:bg-slate-900/40">
                           <TableCell className="font-bold text-xs text-foreground">{route.routeName}</TableCell>
                           <TableCell>
                             <span className="text-xs font-mono text-muted-foreground">
@@ -708,7 +711,7 @@ const AdminDashboard = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleEditRoute(route)}
-                              className="h-7 w-7 p-0 rounded text-stone-500 hover:text-foreground mr-1"
+                              className="h-7 w-7 p-0 rounded text-muted-foreground hover:text-foreground mr-1"
                               title="Edit route"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
@@ -717,7 +720,7 @@ const AdminDashboard = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteRoute(route)}
-                              className="h-7 w-7 p-0 rounded text-stone-500 hover:text-destructive"
+                              className="h-7 w-7 p-0 rounded text-muted-foreground hover:text-destructive"
                               title="Delete route"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -735,14 +738,14 @@ const AdminDashboard = () => {
           {/* TAB 4: STUDENT PASS DIRECTORY */}
           <TabsContent value="students" className="m-0 focus-visible:ring-0">
             <div className="border border-border rounded-lg bg-card overflow-hidden">
-              <div className="p-4 border-b border-border bg-stone-50 dark:bg-stone-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="p-4 border-b border-border bg-slate-50/70 dark:bg-slate-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">Student Pass Directory</h2>
                   <p className="text-[11px] text-muted-foreground">Enroll commuters and assign authorized corridor passes</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="relative">
-                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-stone-400" />
+                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted-foreground" />
                     <Input
                       placeholder="Search ID or name..."
                       value={studentSearch}
@@ -779,7 +782,7 @@ const AdminDashboard = () => {
                     </TableRow>
                   ) : (
                     visibleStudents.map((student) => (
-                      <TableRow key={student._id} className="border-border hover:bg-stone-50/50 dark:hover:bg-stone-900/30">
+                      <TableRow key={student._id} className="border-border hover:bg-slate-50/60 dark:hover:bg-slate-900/40">
                         <TableCell className="font-mono font-bold text-xs text-foreground">
                           {student.studentId}
                         </TableCell>
@@ -800,7 +803,7 @@ const AdminDashboard = () => {
                                 <Badge 
                                   key={`${student._id}-${r}`} 
                                   variant="outline"
-                                  className="text-[10px] font-semibold px-1.5 py-0 rounded border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800"
+                                  className="text-[10px] font-semibold px-1.5 py-0 rounded border-border/80 bg-slate-50 dark:bg-slate-900"
                                 >
                                   {r}
                                 </Badge>
@@ -975,7 +978,7 @@ const AdminDashboard = () => {
 
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold">Authorized Corridor Routes</Label>
-              <div className="border border-border rounded-md p-3 max-h-44 overflow-y-auto space-y-2 bg-stone-50 dark:bg-stone-900">
+              <div className="border border-border rounded-md p-3 max-h-44 overflow-y-auto space-y-2 bg-slate-50 dark:bg-slate-900/60">
                 {routes.length === 0 ? (
                   <p className="text-xs text-muted-foreground">No corridors configured</p>
                 ) : (

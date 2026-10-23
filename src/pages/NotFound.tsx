@@ -16,17 +16,19 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4 font-sans relative">
-      <div className="absolute top-4 right-4">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4 font-sans relative overflow-hidden">
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[300px] bg-primary/5 dark:bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="absolute top-4 right-4 z-20">
         <ThemeToggle />
       </div>
 
-      <div className="w-full max-w-sm border border-border rounded-xl bg-card shadow-sm p-6 text-center space-y-4">
-        <div className="w-10 h-10 rounded-md bg-stone-100 dark:bg-stone-800 flex items-center justify-center mx-auto text-primary">
-          <Bus className="w-5 h-5" />
+      <div className="w-full max-w-sm border border-border/80 rounded-2xl bg-card shadow-xl p-8 text-center space-y-4 relative z-10">
+        <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto shadow-xs border border-primary/20">
+          <Bus className="w-6 h-6" />
         </div>
         <div className="space-y-1">
-          <span className="text-3xl font-extrabold text-foreground tabular-nums">404</span>
+          <span className="text-4xl font-extrabold text-foreground tabular-nums tracking-tight">404</span>
           <h1 className="text-base font-bold text-foreground">Transit Stop Not Found</h1>
           <p className="text-xs text-muted-foreground leading-relaxed">
             The page or route you attempted to access is not on the university transit schedule.
@@ -34,7 +36,7 @@ const NotFound = () => {
         </div>
         <Button 
           onClick={() => navigate("/")} 
-          className="rounded-md w-full h-9 text-xs font-semibold"
+          className="rounded-xl w-full h-10 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all mt-2"
         >
           <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
           Return to Campus Home

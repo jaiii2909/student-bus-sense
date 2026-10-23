@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import axios from "axios";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   MapPin, 
@@ -15,6 +16,12 @@ import {
   RefreshCw,
   Bell,
   BellOff,
+  Search,
+  SlidersHorizontal,
+  ChevronRight,
+  Gauge,
+  Wifi,
+  Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -67,13 +74,26 @@ const writeStored = (key: string, value: string | null) => {
   }
 };
 
-const EmptyState = ({ icon: Icon, title, text }: { icon: LucideIcon; title: string; text: string }) => (
-  <div className="text-center p-8 border border-border bg-card rounded-lg space-y-2">
-    <div className="w-10 h-10 rounded-md bg-stone-100 dark:bg-stone-800 flex items-center justify-center mx-auto text-stone-500">
-      <Icon className="w-5 h-5" />
+const EmptyState = ({
+  icon: Icon,
+  title,
+  text,
+  actionButton,
+}: {
+  icon: LucideIcon;
+  title: string;
+  text: string;
+  actionButton?: React.ReactNode;
+}) => (
+  <div className="text-center p-8 border border-border/80 bg-card rounded-xl space-y-3 shadow-xs">
+    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center mx-auto text-primary">
+      <Icon className="w-6 h-6" />
     </div>
-    <h3 className="text-sm font-bold text-foreground">{title}</h3>
-    <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">{text}</p>
+    <div className="space-y-1">
+      <h3 className="text-sm font-bold text-foreground">{title}</h3>
+      <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">{text}</p>
+    </div>
+    {actionButton && <div className="pt-2">{actionButton}</div>}
   </div>
 );
 
@@ -84,6 +104,11 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
   const [authorizedRoutes, setAuthorizedRoutes] = useState<string[]>(studentData.registeredRoutes || []);
   const [stopsByRoute, setStopsByRoute] = useState<Record<string, Stop[]>>({});
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  
+  // Search & filter states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "live">("all");
+
   // dismissed announcement ids, remembered on this device
   const [dismissedIds, setDismissedIds] = useState<string[]>(() => {
     try {
@@ -92,14 +117,17 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
       return [];
     }
   });
+
   // the student's stop per route, remembered on this device
   const [myStopName, setMyStopName] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [nowMs, setNowMs] = useState(Date.now());
   const [mobileView, setMobileView] = useState<"map" | "list">("map");
+  const [socketConnected, setSocketConnected] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
   // "bus is near my stop" alert, remembered on this device
   const [nearAlertOn, setNearAlertOn] = useState(() => readStored("nearAlert") === "1");
   // buses already alerted for this approach, so each approach alerts once
@@ -144,15 +172,27 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
   useEffect(() => {
     if (!studentData.token) return;
     const socket = connectBusSocket(studentData.token);
+    
+    socket.on("connect", () => {
+      setSocketConnected(true);
+    });
+
+    socket.on("disconnect", () => {
+      setSocketConnected(false);
+    });
+
     socket.on("busUpdate", (update: TrackedBus) => {
       setBuses((prev) => prev.map((bus) => (bus.id === update.id ? update : bus)));
     });
+
     socket.on("announcement", (item: Announcement) => {
       setAnnouncements((prev) => (prev.some((a) => a.id === item.id) ? prev : [item, ...prev]));
     });
+
     socket.on("announcementDeleted", ({ id }: { id: string }) => {
       setAnnouncements((prev) => prev.filter((a) => a.id !== id));
     });
+
     return () => {
       socket.disconnect();
     };
@@ -183,28 +223,42 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
     if (selectedRoute) writeStored(`myStop:${selectedRoute}`, name);
   };
 
-  const filteredBuses = useMemo(
-    () => (selectedRoute ? buses.filter((bus) => bus.route === selectedRoute) : []),
-    [buses, selectedRoute]
-  );
+  const filteredBuses = useMemo(() => {
+    if (!selectedRoute) return [];
+    let list = buses.filter((bus) => bus.route === selectedRoute);
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter((b) => b.number.toLowerCase().includes(q));
+    }
+
+    if (statusFilter === "active") {
+      list = list.filter((b) => b.status === "active");
+    } else if (statusFilter === "live") {
+      list = list.filter((b) => getLocationState(b, nowMs) === "live");
+    }
+
+    return list;
+  }, [buses, selectedRoute, searchQuery, statusFilter, nowMs]);
 
   useEffect(() => {
     if (isLoading) return;
     if (selectedBus && !filteredBuses.some((b) => b.id === selectedBus)) {
-      setSelectedBus(null);
+      // keep bus if search filtered it, or clear if entirely removed
+      const existsInRoute = buses.some((b) => b.route === selectedRoute && b.id === selectedBus);
+      if (!existsInRoute) setSelectedBus(null);
     } else if (!selectedBus) {
       const running = filteredBuses.filter((b) => b.status === "active");
       if (running.length === 1) setSelectedBus(running[0].id);
     }
-  }, [selectedBus, filteredBuses, isLoading]);
+  }, [selectedBus, filteredBuses, isLoading, buses, selectedRoute]);
 
   // a different stop or route starts fresh
   useEffect(() => {
     alertedBusIdsRef.current.clear();
   }, [selectedRoute, myStopName]);
 
-  // alert once when a running bus on this route gets within NEAR_MINUTES of my stop;
-  // re-arm after it moves away again (e.g. the next trip)
+  // alert once when a running bus on this route gets within NEAR_MINUTES of my stop
   useEffect(() => {
     if (!nearAlertOn || !myStop) return;
     const NEAR_MINUTES = 5;
@@ -215,8 +269,8 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
       if (minutes !== null && minutes <= NEAR_MINUTES && !alerted.has(bus.id)) {
         alerted.add(bus.id);
         const text = etaText(bus, myStop) || "";
-        toast({ title: `Bus ${bus.number} is almost here`, description: text });
-        showNotification(`Bus ${bus.number} is almost here`, text);
+        toast({ title: `Bus ${bus.number} is approaching`, description: text });
+        showNotification(`Bus ${bus.number} is approaching`, text);
       } else if ((minutes === null || minutes > REARM_MINUTES) && alerted.has(bus.id)) {
         alerted.delete(bus.id);
       }
@@ -234,12 +288,12 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
     writeStored("nearAlert", "1");
     alertedBusIdsRef.current.clear();
     toast({
-      title: "Alert on",
+      title: "Approach Alert Activated",
       description: allowed
-        ? "We'll notify you when a bus is about 5 min from your stop. Keep this app open."
+        ? "You'll be alerted when a bus is approximately 5 mins from your stop. Keep this tab active."
         : notificationsSupported()
-        ? "Notifications are blocked, so you'll see the alert inside the app only. Keep it open."
-        : "You'll see the alert inside the app. Keep it open.",
+        ? "Desktop notifications are blocked. You will receive in-app alerts while this tab is open."
+        : "You will receive in-app alerts while this tab is open.",
     });
   };
 
@@ -256,7 +310,6 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
   );
 
   const handleDismissAnnouncement = (id: string) => {
-    // keep the list short: only ids of announcements that still exist
     const next = [...dismissedIds.filter((d) => announcements.some((a) => a.id === d)), id];
     setDismissedIds(next);
     writeStored("dismissedAnnouncements", JSON.stringify(next));
@@ -268,18 +321,26 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
     onLogout();
   };
 
-  const trackedBus = filteredBuses.find((b) => b.id === selectedBus) || null;
-  const activeBusesCount = filteredBuses.filter((b) => b.status === "active").length;
-  const liveBusesCount = filteredBuses.filter((b) => getLocationState(b, nowMs) === "live").length;
+  const allRouteBuses = selectedRoute ? buses.filter((b) => b.route === selectedRoute) : [];
+  const trackedBus = allRouteBuses.find((b) => b.id === selectedBus) || null;
+  const activeBusesCount = allRouteBuses.filter((b) => b.status === "active").length;
+  const liveBusesCount = allRouteBuses.filter((b) => getLocationState(b, nowMs) === "live").length;
 
   const renderBusList = () => {
     if (isLoading) {
       return (
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="p-3.5 rounded-lg border border-border bg-card space-y-2">
-              <Skeleton className="h-4 w-24 rounded" />
-              <Skeleton className="h-3 w-32 rounded" />
+            <div key={i} className="p-4 rounded-xl border border-border/80 bg-card space-y-2.5">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-5 w-24 rounded-md" />
+                <Skeleton className="h-4 w-16 rounded-full" />
+              </div>
+              <Skeleton className="h-3 w-36 rounded" />
+              <div className="pt-2 border-t border-border/60 flex justify-between">
+                <Skeleton className="h-3 w-20 rounded" />
+                <Skeleton className="h-3 w-16 rounded" />
+              </div>
             </div>
           ))}
         </div>
@@ -290,8 +351,8 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
       return (
         <EmptyState
           icon={ShieldAlert}
-          title="No Route Pass Registered"
-          text="You have no fee-cleared bus passes on file for this semester. Contact the Transport Office at Gate 1."
+          title="No Semester Pass Registered"
+          text="You have no fee-cleared bus passes on file for this academic semester. Please visit the Campus Transport Office at Gate 1."
         />
       );
     }
@@ -300,8 +361,18 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
       return (
         <EmptyState
           icon={RouteIcon}
-          title="Select Route Corridor"
-          text="Pick your registered transit route from the dropdown above to view assigned buses."
+          title="Choose a Route Corridor"
+          text="Select your authorized campus transit corridor from the dropdown above to display active vehicles."
+        />
+      );
+    }
+
+    if (allRouteBuses.length === 0) {
+      return (
+        <EmptyState
+          icon={BusIcon}
+          title="No Scheduled Buses"
+          text="No vehicles are assigned to this corridor today. Please review morning or evening transit timings."
         />
       );
     }
@@ -309,19 +380,33 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
     if (filteredBuses.length === 0) {
       return (
         <EmptyState
-          icon={BusIcon}
-          title="No Scheduled Buses"
-          text="No vehicles are assigned to this route today. Check morning or evening transit timings."
+          icon={Search}
+          title="No Matching Vehicles"
+          text="No buses match your current search or filter criteria. Try resetting the filter."
+          actionButton={
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSearchQuery("");
+                setStatusFilter("all");
+              }}
+              className="text-xs h-8"
+            >
+              Reset Filters
+            </Button>
+          }
         />
       );
     }
 
     return (
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {filteredBuses.map((bus) => {
           const isSelected = selectedBus === bus.id;
           const locationState = getLocationState(bus, nowMs);
           const badge = LOCATION_BADGE[locationState];
+          const eta = myStop && locationState === "live" ? etaText(bus, myStop) : null;
 
           return (
             <div
@@ -337,42 +422,79 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
                   handleSelectBus(bus.id);
                 }
               }}
-              className={`p-3.5 rounded-lg border transition-colors cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              className={`p-3.5 rounded-xl border transition-all cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 isSelected
-                  ? "bg-stone-50 dark:bg-stone-900 border-primary ring-1 ring-primary"
-                  : "bg-card border-border hover:border-stone-400"
-              } ${bus.status === "inactive" ? "opacity-75" : ""}`}
+                  ? "bg-primary/5 dark:bg-primary/10 border-primary ring-1 ring-primary/80 shadow-md"
+                  : "bg-card border-border/80 hover:border-slate-400 dark:hover:border-slate-700 shadow-xs hover:shadow-sm"
+              } ${bus.status === "inactive" ? "opacity-70" : ""}`}
             >
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <div className="flex items-center gap-2">
-                  <span className={`w-6 h-6 rounded flex items-center justify-center font-bold text-xs ${
-                    isSelected ? "bg-primary text-primary-foreground" : "bg-stone-100 dark:bg-stone-800 text-foreground"
-                  }`}>
+              {/* Header: Bus ID, Route, and Status Badge */}
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center font-extrabold text-xs transition-colors ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "bg-slate-100 dark:bg-slate-800 text-foreground"
+                    }`}
+                  >
                     {bus.number}
-                  </span>
+                  </div>
                   <div>
-                    <h3 className="text-xs font-bold text-foreground">Bus {bus.number}</h3>
-                    <p className="text-[11px] text-muted-foreground">{bus.route}</p>
+                    <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      <span>Bus {bus.number}</span>
+                      {isSelected && (
+                        <span className="text-[10px] text-primary font-bold px-1.5 py-0.2 rounded-full bg-primary/10">
+                          Active
+                        </span>
+                      )}
+                    </h4>
+                    <p className="text-[11px] text-muted-foreground truncate max-w-[140px] sm:max-w-[180px]">
+                      {bus.route}
+                    </p>
                   </div>
                 </div>
 
-                <Badge className={`${badge.className} text-[10px] font-semibold gap-1 px-1.5 py-0.5 rounded`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${badge.dotClass}`} />
+                <Badge className={`${badge.className} text-[10px] font-bold gap-1 px-2 py-0.5 rounded-full shrink-0`}>
+                  <span className="relative flex h-1.5 w-1.5">
+                    {badge.pingClass && (
+                      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${badge.pingClass}`} />
+                    )}
+                    <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${badge.dotClass}`} />
+                  </span>
                   <span>{badge.label}</span>
                 </Badge>
               </div>
 
-              <div className="pt-2 border-t border-border flex items-center justify-between text-[11px] text-muted-foreground">
-                <span>
+              {/* ETA Highlight Strip if available */}
+              {eta && (
+                <div className="mb-2 py-1 px-2 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[11px] font-semibold flex items-center justify-between">
+                  <span>Approach ETA</span>
+                  <span className="font-mono font-bold">{eta}</span>
+                </div>
+              )}
+
+              {/* Bottom Telemetry Strip */}
+              <div className="pt-2 border-t border-border/70 flex items-center justify-between text-[11px] text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-muted-foreground" />
                   {bus.status === "inactive"
-                    ? "Driver off duty"
-                    : myStop && locationState === "live"
-                    ? <span className="font-semibold text-foreground">{etaText(bus, myStop)}</span>
+                    ? "Driver off-duty"
                     : formatLastUpdated(bus.updatedAt, nowMs)}
                 </span>
-                {isSelected && (
+
+                {bus.speedKmh !== undefined && bus.speedKmh !== null && locationState === "live" ? (
+                  <span className="font-mono text-[11px] text-accent font-semibold flex items-center gap-1">
+                    <Gauge className="w-3 h-3" />
+                    {Math.round(bus.speedKmh)} km/h
+                  </span>
+                ) : isSelected ? (
                   <span className="text-primary font-bold text-[10px] flex items-center gap-1">
-                    <Check className="w-3 h-3" /> Selected on Radar
+                    <Check className="w-3 h-3" /> Tracking on Map
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground text-[10px] flex items-center gap-0.5">
+                    Tap to track <ChevronRight className="w-3 h-3" />
                   </span>
                 )}
               </div>
@@ -386,7 +508,7 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
       <AppHeader
-        title="Student Bus Tracker"
+        title="Student Bus Tracking Radar"
         subtitle={`Pass: ${studentData.name} • ID: ${studentData.studentId || ""}`}
         roleBadge="Student"
         onLogout={handleLogout}
@@ -398,135 +520,158 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
         />
       </AppHeader>
 
-      <main className="container mx-auto px-4 py-6 max-w-6xl flex-1 space-y-5">
+      <main className="container mx-auto px-4 py-6 max-w-7xl flex-1 space-y-5">
         <AnnouncementBanner
           announcements={visibleAnnouncements}
           nowMs={nowMs}
           onDismiss={handleDismissAnnouncement}
         />
 
-        {/* Short Summary Strip of Key Metrics with Clear Hierarchy */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="border border-border rounded-lg bg-card p-3">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Route Status</span>
-            <span className="text-xl font-extrabold text-foreground tabular-nums mt-0.5 block">
-              {activeBusesCount} <span className="text-xs font-normal text-muted-foreground">Active Now</span>
+        {/* Mobility Telemetry Metric Strip */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <div className="border border-border/80 rounded-xl bg-card p-3.5 shadow-xs transition-all hover:border-primary/40">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+              Corridor Fleet Status
             </span>
-          </div>
-
-          <div className="border border-border rounded-lg bg-card p-3">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Selected Corridor</span>
-            <span className="text-xs font-bold text-foreground truncate mt-1 block">
-              {selectedRoute || "Select route"}
-            </span>
-          </div>
-
-          <div className="border border-border rounded-lg bg-card p-3">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Verified Passes</span>
-            <span className="text-xs font-bold text-foreground mt-1 block">
-              {authorizedRoutes.length} Route(s)
-            </span>
-          </div>
-
-          <div className="border border-border rounded-lg bg-card p-3">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Live GPS</span>
-            {liveBusesCount > 0 ? (
-              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mt-1 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                {liveBusesCount} bus(es) live
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="text-2xl font-extrabold text-foreground tabular-nums">
+                {activeBusesCount}
               </span>
-            ) : (
-              <span className="text-xs font-bold text-muted-foreground mt-1 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-stone-400"></span>
-                {selectedRoute ? "No live bus" : "Select a route"}
+              <span className="text-xs text-muted-foreground font-medium">
+                Active / {allRouteBuses.length} Scheduled
               </span>
-            )}
+            </div>
+          </div>
+
+          <div className="border border-border/80 rounded-xl bg-card p-3.5 shadow-xs transition-all hover:border-primary/40">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+              Live Satellite GPS
+            </span>
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="relative flex h-2.5 w-2.5">
+                {liveBusesCount > 0 && (
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                )}
+                <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${liveBusesCount > 0 ? "bg-emerald-500" : "bg-slate-400"}`} />
+              </span>
+              <span className="text-xs font-bold text-foreground">
+                {liveBusesCount > 0 ? `${liveBusesCount} Vehicle(s) Live` : "No live GPS signal"}
+              </span>
+            </div>
+          </div>
+
+          <div className="border border-border/80 rounded-xl bg-card p-3.5 shadow-xs transition-all hover:border-primary/40">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+              Authorized Pass
+            </span>
+            <div className="flex items-center gap-1.5 mt-1.5 text-xs font-bold text-foreground truncate">
+              <RouteIcon className="w-4 h-4 text-primary shrink-0" />
+              <span className="truncate">{selectedRoute || `${authorizedRoutes.length} Route(s) Verified`}</span>
+            </div>
+          </div>
+
+          <div className="border border-border/80 rounded-xl bg-card p-3.5 shadow-xs transition-all hover:border-primary/40">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+              Telemetry Server
+            </span>
+            <div className="flex items-center gap-1.5 mt-1.5 text-xs font-bold text-foreground">
+              <Wifi className={`w-3.5 h-3.5 ${socketConnected ? "text-emerald-500" : "text-amber-500"}`} />
+              <span>{socketConnected ? "Live Socket Synced" : "Polling Gateway (15s)"}</span>
+            </div>
           </div>
         </div>
 
-        {/* Mobile View Toggle */}
-        <div className="lg:hidden flex items-center p-1 rounded-md bg-stone-100 dark:bg-stone-800 border border-border">
+        {/* Mobile View Toggle Switcher */}
+        <div className="lg:hidden flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-border">
           <button
             onClick={() => setMobileView("map")}
-            className={`flex-1 py-1.5 text-xs font-semibold rounded flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
               mobileView === "map"
-                ? "bg-card text-foreground shadow-sm"
+                ? "bg-card text-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <MapPin className="w-3.5 h-3.5" />
-            <span>Transit Map</span>
+            <MapPin className="w-3.5 h-3.5 text-primary" />
+            <span>Interactive Map</span>
           </button>
           <button
             onClick={() => setMobileView("list")}
-            className={`flex-1 py-1.5 text-xs font-semibold rounded flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
               mobileView === "list"
-                ? "bg-card text-foreground shadow-sm"
+                ? "bg-card text-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <BusIcon className="w-3.5 h-3.5" />
-            <span>Bus List ({filteredBuses.length})</span>
+            <BusIcon className="w-3.5 h-3.5 text-accent" />
+            <span>Vehicles ({filteredBuses.length})</span>
           </button>
         </div>
 
-        {/* Master Split Grid Layout */}
-        <div className="grid lg:grid-cols-12 gap-5 items-start">
+        {/* Master Split Grid: Sidebar & Map Display */}
+        <div className="grid lg:grid-cols-12 gap-6 items-start">
           
-          {/* Left Column: Route Switcher & Bus Selector */}
+          {/* Left Column: Route Controls & Bus Directory */}
           <div className={`lg:col-span-4 space-y-4 ${mobileView === "map" ? "hidden lg:block" : "block"}`}>
-            <div className="border border-border rounded-lg bg-card p-4 space-y-3">
-              <div className="flex items-center justify-between">
+            
+            {/* Route & Stop Selection Card */}
+            <div className="border border-border/80 rounded-xl bg-card p-4 space-y-3.5 shadow-xs">
+              <div className="flex items-center justify-between pb-2 border-b border-border/70">
                 <div>
-                  <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">Assigned Routes</h2>
-                  <p className="text-[11px] text-muted-foreground">Select to filter buses</p>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Transit Corridors</h3>
+                  <p className="text-[11px] text-muted-foreground">Select your verified route</p>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={fetchAuthorizedBuses}
                   disabled={isRefreshing}
-                  className="h-7 w-7 text-stone-500 hover:text-foreground"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
                   title="Refresh bus telemetry"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-primary" : ""}`} />
                 </Button>
               </div>
 
               {authorizedRoutes.length > 0 && (
-                <div className="space-y-1.5">
-                  <Select
-                    value={selectedRoute || ""}
-                    onValueChange={(val) => {
-                      setSelectedRoute(val);
-                      setSelectedBus(null);
-                    }}
-                  >
-                    <SelectTrigger className="w-full h-10 rounded-md border-border text-xs font-semibold">
-                      <SelectValue placeholder="Choose route corridor..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {authorizedRoutes.map((route) => (
-                        <SelectItem key={route} value={route} className="text-xs cursor-pointer">
-                          {route}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  {selectedRoute && routeStops.length > 0 && (
-                    <Select value={myStop?.name || ""} onValueChange={handleSelectStop}>
-                      <SelectTrigger className="w-full h-10 rounded-md border-border text-xs" aria-label="My stop">
-                        <SelectValue placeholder="Choose your stop for ETA..." />
+                <div className="space-y-2.5">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-muted-foreground">Corridor Route</label>
+                    <Select
+                      value={selectedRoute || ""}
+                      onValueChange={(val) => {
+                        setSelectedRoute(val);
+                        setSelectedBus(null);
+                      }}
+                    >
+                      <SelectTrigger className="w-full h-10 rounded-lg border-border text-xs font-semibold">
+                        <SelectValue placeholder="Choose route corridor..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {routeStops.map((stop, index) => (
-                          <SelectItem key={`${index}-${stop.name}`} value={stop.name} className="text-xs cursor-pointer">
-                            {index + 1}. {stop.name}
+                        {authorizedRoutes.map((route) => (
+                          <SelectItem key={route} value={route} className="text-xs cursor-pointer">
+                            {route}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  {selectedRoute && routeStops.length > 0 && (
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-muted-foreground">Your Destination Stop</label>
+                      <Select value={myStop?.name || ""} onValueChange={handleSelectStop}>
+                        <SelectTrigger className="w-full h-10 rounded-lg border-border text-xs" aria-label="My stop">
+                          <SelectValue placeholder="Choose your stop for ETA..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {routeStops.map((stop, index) => (
+                            <SelectItem key={`${index}-${stop.name}`} value={stop.name} className="text-xs cursor-pointer">
+                              {index + 1}. {stop.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   )}
 
                   {selectedRoute && myStop && (
@@ -535,71 +680,120 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
                       size="sm"
                       onClick={handleToggleNearAlert}
                       aria-pressed={nearAlertOn}
-                      className="w-full h-9 text-xs font-semibold gap-1.5"
+                      className={`w-full h-9 text-xs font-semibold gap-2 rounded-lg transition-all ${
+                        nearAlertOn ? "bg-primary text-primary-foreground" : "border-border"
+                      }`}
                     >
-                      {nearAlertOn ? <Bell className="w-3.5 h-3.5" /> : <BellOff className="w-3.5 h-3.5" />}
-                      {nearAlertOn ? "Alert on: bus ~5 min from my stop" : "Alert me when the bus is near"}
+                      {nearAlertOn ? <Bell className="w-3.5 h-3.5 text-accent animate-bounce" /> : <BellOff className="w-3.5 h-3.5 text-muted-foreground" />}
+                      <span>{nearAlertOn ? "Alerts Enabled (~5 min approach)" : "Alert Me When Bus Is Near"}</span>
                     </Button>
-                  )}
-
-                  {selectedRoute && (
-                    <div className="flex items-center justify-between text-[11px] px-1 text-muted-foreground">
-                      <span>{filteredBuses.length} bus(es) scheduled</span>
-                      <span className="font-semibold text-emerald-700 dark:text-emerald-400">
-                        {activeBusesCount} on route
-                      </span>
-                    </div>
                   )}
                 </div>
               )}
             </div>
 
-            {/* List of buses for selected route */}
-            <div className="space-y-1.5">
+            {/* Vehicle Directory & Search Filter */}
+            <div className="space-y-2.5">
               <div className="flex items-center justify-between px-1">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                   Corridor Vehicles
                 </span>
-                {filteredBuses.length > 0 && (
+                {allRouteBuses.length > 0 && (
                   <span className="text-[10px] text-muted-foreground font-mono">
-                    {filteredBuses.length} total
+                    {allRouteBuses.length} scheduled
                   </span>
                 )}
               </div>
+
+              {/* Search & Filter Controls */}
+              {allRouteBuses.length > 0 && (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Search bus number..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-8 h-9 text-xs rounded-lg border-border bg-card"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900 rounded-lg text-xs">
+                    <button
+                      onClick={() => setStatusFilter("all")}
+                      className={`flex-1 py-1 text-[11px] font-semibold rounded-md transition-colors ${
+                        statusFilter === "all" ? "bg-card text-foreground shadow-2xs" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      All ({allRouteBuses.length})
+                    </button>
+                    <button
+                      onClick={() => setStatusFilter("active")}
+                      className={`flex-1 py-1 text-[11px] font-semibold rounded-md transition-colors ${
+                        statusFilter === "active" ? "bg-card text-foreground shadow-2xs" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Active ({activeBusesCount})
+                    </button>
+                    <button
+                      onClick={() => setStatusFilter("live")}
+                      className={`flex-1 py-1 text-[11px] font-semibold rounded-md transition-colors ${
+                        statusFilter === "live" ? "bg-card text-foreground shadow-2xs" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Live GPS ({liveBusesCount})
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Bus Card List */}
               {renderBusList()}
             </div>
           </div>
 
-          {/* Right Column: Clean Map View */}
+          {/* Right Column: Centerpiece Map Canvas */}
           <div 
             className={`lg:col-span-8 ${mobileView === "list" ? "hidden lg:block" : "block"}`}
             ref={mapRef}
           >
-            <div className="border border-border rounded-lg bg-card overflow-hidden">
-              <div className="p-3.5 border-b border-border bg-stone-50 dark:bg-stone-900/60 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs">
-                    <MapPin className="w-3.5 h-3.5" />
+            <div className="border border-border/80 rounded-2xl bg-card overflow-hidden shadow-sm">
+              {/* Map Canvas Header Bar */}
+              <div className="p-4 border-b border-border/80 bg-slate-50/70 dark:bg-slate-900/50 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-xs border border-primary/20">
+                    <MapPin className="w-4 h-4" />
                   </div>
                   <div>
-                    <h2 className="text-xs font-bold text-foreground">
-                      {trackedBus ? `Tracking Bus ${trackedBus.number}` : "Campus Route Map"}
+                    <h2 className="text-sm font-bold text-foreground">
+                      {trackedBus ? `Live Telemetry: Bus ${trackedBus.number}` : "Campus Route Network"}
                     </h2>
-                    <p className="text-[11px] text-muted-foreground">
-                      {trackedBus ? `${trackedBus.route} • ${LOCATION_BADGE[getLocationState(trackedBus, nowMs)].label}` : "Pick an active bus to follow location"}
+                    <p className="text-xs text-muted-foreground">
+                      {trackedBus
+                        ? `${trackedBus.route} • ${LOCATION_BADGE[getLocationState(trackedBus, nowMs)].label}`
+                        : "Select an active vehicle to stream real-time GPS telemetry"}
                     </p>
                   </div>
                 </div>
 
                 {trackedBus && (
-                  <span className="text-[11px] font-mono tabular-nums text-muted-foreground">
-                    {formatLastUpdated(trackedBus.updatedAt, nowMs)}
-                  </span>
+                  <div className="hidden sm:flex items-center gap-2">
+                    <span className="text-xs font-mono tabular-nums text-muted-foreground px-2.5 py-1 rounded-md bg-card border border-border/70">
+                      {formatLastUpdated(trackedBus.updatedAt, nowMs)}
+                    </span>
+                  </div>
                 )}
               </div>
 
-              <div className="h-[460px] sm:h-[540px] relative">
-                <BusMap bus={trackedBus} nowMs={nowMs} stops={routeStops} myStop={myStop} />
+              {/* Map Canvas Container */}
+              <div className="h-[520px] sm:h-[620px] relative">
+                <BusMap
+                  bus={trackedBus}
+                  nowMs={nowMs}
+                  stops={routeStops}
+                  myStop={myStop}
+                />
               </div>
             </div>
           </div>

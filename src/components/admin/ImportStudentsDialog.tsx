@@ -119,7 +119,7 @@ const ImportStudentsDialog = ({ onImported }: ImportStudentsDialogProps) => {
             </DialogDescription>
           </DialogHeader>
 
-          <pre className="text-[11px] bg-stone-50 dark:bg-stone-900 border border-border rounded-md p-2 overflow-x-auto">
+          <pre className="text-[11px] bg-slate-50 dark:bg-slate-900/60 border border-border/80 rounded-xl p-3 overflow-x-auto font-mono">
 {`studentId,name,password,routes
 UGI-2024-CS-001,Asha Verma,asha2024,Kareli
 UGI-2024-CS-002,"Khan, Imran",imran2024,Kareli;Dhoomanganj`}
