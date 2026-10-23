@@ -32,7 +32,8 @@ app.locals.io = io;
 // Render sits behind one proxy; this gives the rate limiter the real client IP
 app.set('trust proxy', 1);
 app.use(cors(corsOptions));
-app.use(express.json());
+// a little larger than the default so a CSV import of a few hundred students fits
+app.use(express.json({ limit: '1mb' }));
 
 // used by the frontend to wake the server and by uptime checks
 app.get('/api/health', (req, res) => {
@@ -70,7 +71,9 @@ io.on('connection', async (socket) => {
       socket.join('admin');
     } else if (user.role === 'student') {
       const student = await Student.findOne({ studentId: user.studentId });
-      if (!student || isTokenOutdated(user, student.passwordChangedAt)) return socket.disconnect(true);
+      if (!student || isTokenOutdated(user, student.passwordChangedAt) || student.isPassExpired()) {
+        return socket.disconnect(true);
+      }
       // 'students' receives announcements meant for every route
       socket.join('students');
       student.registeredRoutes.forEach((route) => socket.join(`route:${route}`));

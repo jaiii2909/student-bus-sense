@@ -57,6 +57,8 @@ import RouteStopsDialog from "@/components/admin/RouteStopsDialog";
 import ResetStudentPasswordDialog from "@/components/admin/ResetStudentPasswordDialog";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import AnnouncementsPanel from "@/components/admin/AnnouncementsPanel";
+import ImportStudentsDialog from "@/components/admin/ImportStudentsDialog";
+import { endOfDayIso, toDateInput } from "@/lib/csv";
 import { Stop } from "@/lib/eta";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/utils";
@@ -82,7 +84,11 @@ interface Student {
   studentId: string;
   name: string;
   registeredRoutes: string[];
+  accessValidUntil?: string | null;
 }
+
+const formatPassDate = (iso: string) =>
+  new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 
 interface PendingDelete {
   title: string;
@@ -127,6 +133,8 @@ const AdminDashboard = () => {
 
   const [newStudent, setNewStudent] = useState(EMPTY_STUDENT);
   const [selectedStudentRoutes, setSelectedStudentRoutes] = useState<string[]>([]);
+  // pass end date as "YYYY-MM-DD" ("" = no expiry), for both add and edit
+  const [studentValidUntil, setStudentValidUntil] = useState("");
 
   const showError = (error: unknown, fallback: string) => {
     console.error(fallback, error);
@@ -286,12 +294,14 @@ const AdminDashboard = () => {
     setEditingStudent(null);
     setNewStudent(EMPTY_STUDENT);
     setSelectedStudentRoutes([]);
+    setStudentValidUntil("");
     setOpenStudentDialog(true);
   };
 
   const handleEditStudent = (student: Student) => {
     setEditingStudent(student);
     setSelectedStudentRoutes(student.registeredRoutes || []);
+    setStudentValidUntil(toDateInput(student.accessValidUntil));
     setOpenStudentDialog(true);
   };
 
@@ -308,7 +318,8 @@ const AdminDashboard = () => {
     try {
       if (editingStudent) {
         const response = await axios.put(`/api/admin/students/${editingStudent._id}/routes`, {
-          registeredRoutes: selectedStudentRoutes
+          registeredRoutes: selectedStudentRoutes,
+          accessValidUntil: endOfDayIso(studentValidUntil)
         });
         setStudents(students.map((s) => (s._id === editingStudent._id ? response.data : s)));
         toast({ title: "Student pass routes updated" });
@@ -321,7 +332,8 @@ const AdminDashboard = () => {
           studentId: newStudent.studentId.trim(),
           name: newStudent.name.trim(),
           password: newStudent.password,
-          registeredRoutes: selectedStudentRoutes
+          registeredRoutes: selectedStudentRoutes,
+          accessValidUntil: endOfDayIso(studentValidUntil)
         });
         setStudents([...students, response.data]);
         toast({ title: "Student enrolled in transport registry" });
@@ -342,6 +354,7 @@ const AdminDashboard = () => {
     setEditingRoute(null);
     setEditingStudent(null);
     setSelectedStudentRoutes([]);
+    setStudentValidUntil("");
     setNewBus({ busNumber: "", route: "" });
     setNewRoute({ routeName: "" });
     setNewStudent(EMPTY_STUDENT);
@@ -730,6 +743,7 @@ const AdminDashboard = () => {
                       className="pl-8 h-8 text-xs w-44 rounded-md border-border"
                     />
                   </div>
+                  <ImportStudentsDialog onImported={fetchAll} />
                   <Button
                     size="sm"
                     onClick={handleNewStudent}
@@ -762,7 +776,16 @@ const AdminDashboard = () => {
                         <TableCell className="font-mono font-bold text-xs text-foreground">
                           {student.studentId}
                         </TableCell>
-                        <TableCell className="font-medium text-xs text-foreground">{student.name}</TableCell>
+                        <TableCell className="font-medium text-xs text-foreground">
+                          {student.name}
+                          {student.accessValidUntil && (
+                            new Date(student.accessValidUntil).getTime() < Date.now() ? (
+                              <span className="block text-[10px] font-semibold text-destructive">Pass expired</span>
+                            ) : (
+                              <span className="block text-[10px] text-muted-foreground">Valid until {formatPassDate(student.accessValidUntil)}</span>
+                            )
+                          )}
+                        </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
                             {student.registeredRoutes.length > 0 ? (
@@ -957,6 +980,18 @@ const AdminDashboard = () => {
                   ))
                 )}
               </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="student-valid-until" className="text-xs font-semibold">Pass valid until (optional)</Label>
+              <Input
+                id="student-valid-until"
+                type="date"
+                value={studentValidUntil}
+                onChange={(e) => setStudentValidUntil(e.target.value)}
+                className="h-9 text-xs rounded-md"
+              />
+              <p className="text-[11px] text-muted-foreground">After this date the student can't log in. Leave empty for no expiry.</p>
             </div>
 
             <Button onClick={handleSaveStudent} disabled={isSaving} className="w-full h-9 text-xs rounded-md font-semibold mt-2">

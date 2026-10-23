@@ -17,6 +17,10 @@ const login = async (req, res) => {
       res.status(401).json({ error: 'Invalid credentials' });
       return;
     }
+    if (student.isPassExpired()) {
+      const date = student.accessValidUntil.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+      return res.status(403).json({ error: `Your bus pass expired on ${date}. Contact the transport office.` });
+    }
 
     // return frontend-required fields but never include password hash
     const safeStudent = student.toObject();
@@ -53,6 +57,9 @@ const viewAuthorizedBuses = async (req, res) => {
     // password was reset or changed since this login
     if (isTokenOutdated(req.user, student.passwordChangedAt)) {
       return res.status(401).json({ error: 'Please log in again' });
+    }
+    if (student.isPassExpired()) {
+      return res.status(401).json({ error: 'Your bus pass has expired' });
     }
 
     const buses = await Bus.find({ route: { $in: student.registeredRoutes } });

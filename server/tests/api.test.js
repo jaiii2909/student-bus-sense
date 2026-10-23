@@ -307,3 +307,66 @@ test('an admin can change their own password', async () => {
   assert.equal((await api('POST', '/api/admin/login', { body: { username: 'admin', password: 'admin-pass' } })).status, 401);
   assert.equal((await api('POST', '/api/admin/login', { body: { username: 'admin', password: 'new-admin-pass' } })).status, 200);
 });
+
+/* ---------------- CSV import + pass expiry ---------------- */
+
+test('importing students adds valid rows and reports skipped ones', async () => {
+  const admin = await login('admin', { username: 'admin', password: 'new-admin-pass' });
+  const res = await api('POST', '/api/admin/students/import', {
+    token: admin,
+    body: {
+      students: [
+        { row: 2, studentId: 'IMP1', name: 'Imported One', password: 'secret1', routes: ['North Line'] },
+        { row: 3, studentId: 'IMP2', name: 'Imported Two', password: 'secret2', routes: [] },
+        { row: 4, studentId: 'S001', name: 'Existing', password: 'secret3', routes: [] },
+        { row: 5, studentId: 'IMP1', name: 'Repeat', password: 'secret4', routes: [] },
+        { row: 6, studentId: 'IMP3', name: 'Bad Route', password: 'secret5', routes: ['Nowhere'] },
+        { row: 7, studentId: 'IMP4', name: 'Short Pw', password: '123', routes: [] },
+        { row: 8, studentId: '', name: 'No Id', password: 'secret6', routes: [] }
+      ]
+    }
+  });
+  assert.equal(res.status, 200);
+  assert.equal(res.data.added, 2);
+  assert.deepEqual(res.data.skipped.map((s) => s.row), [4, 5, 6, 7, 8]);
+  assert.match(res.data.skipped.find((s) => s.row === 6).reason, /Unknown route/);
+
+  // imported students can log in and see their routes
+  const login1 = await api('POST', '/api/student/login', { body: { studentId: 'IMP1', password: 'secret1' } });
+  assert.equal(login1.status, 200);
+  assert.deepEqual(login1.data.registeredRoutes, ['North Line']);
+
+  // non-admins cannot import
+  assert.equal((await api('POST', '/api/admin/students/import', {
+    token: login1.data.token, body: { students: [{ studentId: 'X', name: 'X', password: 'secret1' }] }
+  })).status, 403);
+});
+
+test('an expired pass blocks login and ends existing sessions', async () => {
+  const admin = await login('admin', { username: 'admin', password: 'new-admin-pass' });
+  const student = await Student.findOne({ studentId: 'IMP2' });
+  const token = await login('student', { studentId: 'IMP2', password: 'secret2' });
+
+  // a future end date still works
+  const future = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  assert.equal((await api('PUT', `/api/admin/students/${student._id}/routes`, {
+    token: admin, body: { registeredRoutes: [], accessValidUntil: future }
+  })).status, 200);
+  assert.equal((await api('GET', '/api/student/IMP2/authorized-buses', { token })).status, 200);
+
+  // once it has passed, the open session and new logins are refused
+  const past = new Date(Date.now() - 60 * 1000).toISOString();
+  assert.equal((await api('PUT', `/api/admin/students/${student._id}/routes`, {
+    token: admin, body: { registeredRoutes: [], accessValidUntil: past }
+  })).status, 200);
+  assert.equal((await api('GET', '/api/student/IMP2/authorized-buses', { token })).status, 401);
+  const blocked = await api('POST', '/api/student/login', { body: { studentId: 'IMP2', password: 'secret2' } });
+  assert.equal(blocked.status, 403);
+  assert.match(blocked.data.error, /expired/);
+
+  // clearing the date restores access
+  assert.equal((await api('PUT', `/api/admin/students/${student._id}/routes`, {
+    token: admin, body: { registeredRoutes: [], accessValidUntil: null }
+  })).status, 200);
+  assert.equal((await api('POST', '/api/student/login', { body: { studentId: 'IMP2', password: 'secret2' } })).status, 200);
+});

@@ -13,6 +13,8 @@ import {
   Navigation, 
   Check, 
   RefreshCw,
+  Bell,
+  BellOff,
   type LucideIcon,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,7 +24,9 @@ import AnnouncementBanner, { Announcement } from "./AnnouncementBanner";
 import BusMap from "./tracking/BusMap";
 import { TrackedBus, LOCATION_BADGE, getLocationState, formatLastUpdated } from "@/lib/busStatus";
 import { connectBusSocket } from "@/lib/socket";
-import { Stop, etaText } from "@/lib/eta";
+import { Stop, etaMinutes, etaText } from "@/lib/eta";
+import { notificationsSupported, requestNotificationPermission, showNotification } from "@/lib/notify";
+import { useToast } from "@/hooks/use-toast";
 
 interface StudentData {
   _id?: string;
@@ -95,6 +99,11 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
   const [nowMs, setNowMs] = useState(Date.now());
   const [mobileView, setMobileView] = useState<"map" | "list">("map");
   const mapRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+  // "bus is near my stop" alert, remembered on this device
+  const [nearAlertOn, setNearAlertOn] = useState(() => readStored("nearAlert") === "1");
+  // buses already alerted for this approach, so each approach alerts once
+  const alertedBusIdsRef = useRef<Set<string>>(new Set());
 
   const setSelectedBus = (id: string | null) => {
     setSelectedBusState(id);
@@ -188,6 +197,51 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
       if (running.length === 1) setSelectedBus(running[0].id);
     }
   }, [selectedBus, filteredBuses, isLoading]);
+
+  // a different stop or route starts fresh
+  useEffect(() => {
+    alertedBusIdsRef.current.clear();
+  }, [selectedRoute, myStopName]);
+
+  // alert once when a running bus on this route gets within NEAR_MINUTES of my stop;
+  // re-arm after it moves away again (e.g. the next trip)
+  useEffect(() => {
+    if (!nearAlertOn || !myStop) return;
+    const NEAR_MINUTES = 5;
+    const REARM_MINUTES = 10;
+    filteredBuses.forEach((bus) => {
+      const minutes = getLocationState(bus, Date.now()) === "live" ? etaMinutes(bus, myStop) : null;
+      const alerted = alertedBusIdsRef.current;
+      if (minutes !== null && minutes <= NEAR_MINUTES && !alerted.has(bus.id)) {
+        alerted.add(bus.id);
+        const text = etaText(bus, myStop) || "";
+        toast({ title: `Bus ${bus.number} is almost here`, description: text });
+        showNotification(`Bus ${bus.number} is almost here`, text);
+      } else if ((minutes === null || minutes > REARM_MINUTES) && alerted.has(bus.id)) {
+        alerted.delete(bus.id);
+      }
+    });
+  }, [filteredBuses, myStop, nearAlertOn, toast]);
+
+  const handleToggleNearAlert = async () => {
+    if (nearAlertOn) {
+      setNearAlertOn(false);
+      writeStored("nearAlert", null);
+      return;
+    }
+    const allowed = await requestNotificationPermission();
+    setNearAlertOn(true);
+    writeStored("nearAlert", "1");
+    alertedBusIdsRef.current.clear();
+    toast({
+      title: "Alert on",
+      description: allowed
+        ? "We'll notify you when a bus is about 5 min from your stop. Keep this app open."
+        : notificationsSupported()
+        ? "Notifications are blocked, so you'll see the alert inside the app only. Keep it open."
+        : "You'll see the alert inside the app. Keep it open.",
+    });
+  };
 
   const handleSelectBus = (id: string) => {
     setSelectedBus(id);
@@ -465,6 +519,19 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
                         ))}
                       </SelectContent>
                     </Select>
+                  )}
+
+                  {selectedRoute && myStop && (
+                    <Button
+                      variant={nearAlertOn ? "default" : "outline"}
+                      size="sm"
+                      onClick={handleToggleNearAlert}
+                      aria-pressed={nearAlertOn}
+                      className="w-full h-9 text-xs font-semibold gap-1.5"
+                    >
+                      {nearAlertOn ? <Bell className="w-3.5 h-3.5" /> : <BellOff className="w-3.5 h-3.5" />}
+                      {nearAlertOn ? "Alert on: bus ~5 min from my stop" : "Alert me when the bus is near"}
+                    </Button>
                   )}
 
                   {selectedRoute && (

@@ -27,3 +27,10 @@ axios.interceptors.response.use(undefined, (error) => {
 });
 
 createRoot(document.getElementById("root")!).render(<App />);
+
+// makes the app installable and lets it show "bus is near" notifications
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch((error) => console.error("Service worker failed:", error));
+  });
+}

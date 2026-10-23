@@ -21,14 +21,19 @@ const ROAD_FACTOR = 1.3;
 const FALLBACK_SPEED_KMH = 25;
 const ARRIVING_KM = 0.15;
 
-// Rough ETA from the bus to a stop. Uses the phone GPS speed when the bus is
-// moving at a normal speed, otherwise a typical city bus speed.
-export const etaText = (bus: TrackedBus, stop: Stop) => {
+// Rough minutes from the bus to a stop (0 = arriving). Uses the phone GPS speed
+// when the bus is moving at a normal speed, otherwise a typical city bus speed.
+export const etaMinutes = (bus: TrackedBus, stop: Stop): number | null => {
   if (!bus.coordinates) return null;
   const km = distanceKm(bus.coordinates, stop) * ROAD_FACTOR;
-  if (km <= ARRIVING_KM) return `Arriving at ${stop.name}`;
+  if (km <= ARRIVING_KM) return 0;
 
   const speed = bus.speedKmh && bus.speedKmh >= 10 ? Math.min(bus.speedKmh, 60) : FALLBACK_SPEED_KMH;
-  const minutes = Math.max(1, Math.round((km / speed) * 60));
-  return `~${minutes} min to ${stop.name}`;
+  return Math.max(1, Math.round((km / speed) * 60));
+};
+
+export const etaText = (bus: TrackedBus, stop: Stop) => {
+  const minutes = etaMinutes(bus, stop);
+  if (minutes === null) return null;
+  return minutes === 0 ? `Arriving at ${stop.name}` : `~${minutes} min to ${stop.name}`;
 };

@@ -4,7 +4,7 @@ const Bus = require('../models/Bus');
 const Student = require('../models/Student');
 const Location = require('../models/Location');
 const Announcement = require('../models/Announcement');
-const { comparePassword, hashPassword, newPasswordError } = require('../utils/passwords');
+const { SALT_ROUNDS, comparePassword, hashPassword, newPasswordError } = require('../utils/passwords');
 const { signToken } = require('../middleware/auth');
 const { sendError } = require('../utils/errors');
 const { toBusPayload, emitBusUpdate } = require('../utils/busPayload');
@@ -170,10 +170,21 @@ const deleteBus = async (req, res) => {
   }
 };
 
+// optional pass end date: missing/empty -> null, invalid -> undefined
+const parseValidUntil = (value) => {
+  if (value === undefined || value === null || value === '') return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+};
+
 const addStudent = async (req, res) => {
   const { studentId, name, password, registeredRoutes } = req.body;
   if (!studentId || !name || !password) {
     return res.status(400).json({ error: 'Student ID, name and password are required' });
+  }
+  const accessValidUntil = parseValidUntil(req.body.accessValidUntil);
+  if (accessValidUntil === undefined) {
+    return res.status(400).json({ error: 'Invalid pass end date' });
   }
   try {
     const hashedPassword = await hashPassword(password);
@@ -181,7 +192,8 @@ const addStudent = async (req, res) => {
       studentId,
       name,
       password: hashedPassword,
-      registeredRoutes: Array.isArray(registeredRoutes) ? registeredRoutes : []
+      registeredRoutes: Array.isArray(registeredRoutes) ? registeredRoutes : [],
+      accessValidUntil
     });
     await student.save();
     const safeStudent = student.toObject();
@@ -201,17 +213,83 @@ const listStudents = async (req, res) => {
   }
 };
 
+// body: { registeredRoutes, accessValidUntil? } – the pass end date is only changed when sent
 const updateStudentRoutes = async (req, res) => {
   const { id } = req.params;
   const { registeredRoutes } = req.body;
+  const changes = { registeredRoutes: Array.isArray(registeredRoutes) ? registeredRoutes : [] };
+  if ('accessValidUntil' in req.body) {
+    const accessValidUntil = parseValidUntil(req.body.accessValidUntil);
+    if (accessValidUntil === undefined) {
+      return res.status(400).json({ error: 'Invalid pass end date' });
+    }
+    changes.accessValidUntil = accessValidUntil;
+  }
   try {
-    const student = await Student.findByIdAndUpdate(
-      id,
-      { registeredRoutes: Array.isArray(registeredRoutes) ? registeredRoutes : [] },
-      { new: true }
-    ).select('-password');
+    const student = await Student.findByIdAndUpdate(id, changes, { new: true }).select('-password');
     if (student) res.json(student);
     else res.status(404).json({ error: 'Student not found' });
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+const MAX_IMPORT_ROWS = 500;
+// bulk imports hash many passwords at once, so use the recommended minimum cost
+const IMPORT_HASH_ROUNDS = Math.min(SALT_ROUNDS, 10);
+
+// body: { students: [{ row, studentId, name, password, routes: [] }], accessValidUntil? }
+// adds every valid row and reports the skipped ones with a reason
+const importStudents = async (req, res) => {
+  const rows = req.body.students;
+  if (!Array.isArray(rows) || rows.length === 0 || rows.length > MAX_IMPORT_ROWS) {
+    return res.status(400).json({ error: `Send between 1 and ${MAX_IMPORT_ROWS} students` });
+  }
+  const accessValidUntil = parseValidUntil(req.body.accessValidUntil);
+  if (accessValidUntil === undefined) {
+    return res.status(400).json({ error: 'Invalid pass end date' });
+  }
+
+  try {
+    const routeNames = new Set((await Route.find({}, 'routeName')).map((r) => r.routeName));
+    const ids = rows.map((r) => (typeof r?.studentId === 'string' ? r.studentId.trim() : ''));
+    const existing = new Set((await Student.find({ studentId: { $in: ids } }, 'studentId')).map((s) => s.studentId));
+
+    const seen = new Set();
+    const skipped = [];
+    const valid = [];
+    rows.forEach((raw, index) => {
+      const row = Number.isInteger(raw?.row) ? raw.row : index + 1;
+      const studentId = ids[index];
+      const name = typeof raw?.name === 'string' ? raw.name.trim() : '';
+      const password = typeof raw?.password === 'string' ? raw.password : '';
+      const routes = Array.isArray(raw?.routes)
+        ? raw.routes.filter((r) => typeof r === 'string').map((r) => r.trim()).filter(Boolean)
+        : [];
+
+      const unknownRoute = routes.find((r) => !routeNames.has(r));
+      let reason = null;
+      if (!studentId || !name) reason = 'Missing student ID or name';
+      else if (existing.has(studentId)) reason = 'Student ID already exists';
+      else if (seen.has(studentId)) reason = 'Student ID repeated in file';
+      else if (unknownRoute) reason = `Unknown route: ${unknownRoute}`;
+      else reason = newPasswordError(password, 6);
+
+      if (reason) {
+        skipped.push({ row, studentId, reason });
+      } else {
+        seen.add(studentId);
+        valid.push({ studentId, name, password, registeredRoutes: routes });
+      }
+    });
+
+    const docs = [];
+    for (const s of valid) {
+      docs.push({ ...s, password: await hashPassword(s.password, IMPORT_HASH_ROUNDS), accessValidUntil });
+    }
+    if (docs.length) await Student.insertMany(docs);
+
+    res.json({ added: docs.length, skipped });
   } catch (err) {
     sendError(res, err);
   }
@@ -338,5 +416,6 @@ module.exports = {
   addStudent,
   listStudents,
   updateStudentRoutes,
+  importStudents,
   viewLocations
 };

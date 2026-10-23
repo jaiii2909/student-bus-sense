@@ -6,8 +6,9 @@ const BCRYPT_HASH_PREFIX = /^\$2[aby]\$\d{2}\$/;
 const isBcryptHash = (value) =>
   typeof value === 'string' && BCRYPT_HASH_PREFIX.test(value);
 
-const hashPassword = async (plainTextPassword) => {
-  return bcrypt.hash(plainTextPassword, SALT_ROUNDS);
+// rounds can be lowered for bulk imports (still within the recommended minimum of 10)
+const hashPassword = async (plainTextPassword, rounds = SALT_ROUNDS) => {
+  return bcrypt.hash(plainTextPassword, rounds);
 };
 
 const comparePassword = async (plainTextPassword, storedPassword) => {
@@ -29,6 +30,7 @@ const newPasswordError = (password, minLength) => {
 };
 
 module.exports = {
+  SALT_ROUNDS,
   hashPassword,
   comparePassword,
   isBcryptHash,

@@ -13,6 +13,9 @@ Real-time college bus tracking. Drivers share live GPS from their phone, and stu
 - **Students** log in with their student ID, pick one of their registered routes and their stop, and see the live location of a bus on that route with an ETA to their stop.
 - **Drivers** log in with the shared driver password, pick their route and bus, and tap *Start Sharing*. The bus shows as running until they tap *Stop*.
 - **Admins** manage buses, routes (including stops, placed on a map) and students, assign routes to students, post announcements (for one route or all), reset student passwords, and see the live fleet map.
+- Admins can **import students from a CSV** (`studentId,name,password,routes`, routes separated by `;`, up to 500 rows), and set an optional **pass end date**. After that date the student can't log in, and open sessions end.
+- Students can turn on an alert that fires (in the app, and as a phone/browser notification when allowed) when a bus is about 5 minutes from their stop. It works while the app is open.
+- The site is **installable** (Add to Home Screen) and opens like an app.
 - Students and admins can change their own password. When an admin resets a student's password, that student is logged out on every device.
 
 ```
@@ -100,8 +103,9 @@ Login endpoints return a `token`. Every other endpoint needs `Authorization: Bea
 - `PUT /buses/:id` – body with any of `{busNumber,route,status}`
 - `DELETE /buses/:id`
 - `GET /students` – list students
-- `POST /students` – body `{studentId,name,password,registeredRoutes}`
-- `PUT /students/:id/routes` – body `{registeredRoutes}`
+- `POST /students` – body `{studentId,name,password,registeredRoutes,accessValidUntil?}`
+- `POST /students/import` – body `{students:[{row,studentId,name,password,routes}],accessValidUntil?}`; returns `{added,skipped:[{row,studentId,reason}]}`
+- `PUT /students/:id/routes` – body `{registeredRoutes,accessValidUntil?}` (send `null` to remove the end date)
 - `PUT /students/:id/password` – body `{newPassword}` (min 6); logs the student out everywhere
 - `POST /password` – body `{currentPassword,newPassword}` (min 8), the admin's own password
 - `GET /announcements` – active announcements
