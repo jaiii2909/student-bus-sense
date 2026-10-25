@@ -17,6 +17,7 @@ Real-time college bus tracking. Drivers share live GPS from their phone, and stu
 - Admins can **import students from a CSV** (`studentId,name,password,routes`, routes separated by `;`, up to 500 rows), and set an optional **pass end date**. After that date the student can't log in, and open sessions end.
 - Students can turn on an alert that fires (in the app, and as a phone/browser notification when allowed) when a bus is about 5 minutes from their stop. It works while the app is open.
 - The site is **installable** (Add to Home Screen) and opens like an app.
+- The student directory can be **filtered** by search, route (or "no route") and pass status (valid, expiring in 30 days, expired, no end date). Select students with checkboxes, or select all shown, then **add or remove a route, set or clear the pass end date, export or delete** them in one step.
 - Admins can rename or delete students, and **export** the student list and each day's trip log as CSV (passwords are never exported). The free MongoDB Atlas tier has no automatic backups, so export regularly.
 - Students and admins can change their own password. When an admin resets a student's password, that student is logged out on every device.
 
@@ -109,6 +110,7 @@ Login endpoints return a `token`. Every other endpoint needs `Authorization: Bea
 - `POST /students/import` – body `{students:[{row,studentId,name,password,routes}],accessValidUntil?}`; returns `{added,skipped:[{row,studentId,reason}]}`
 - `PUT /students/:id/routes` – body `{registeredRoutes,accessValidUntil?,name?}` (send `null` to remove the end date)
 - `DELETE /students/:id` – removes the student and ends their sessions
+- `POST /students/bulk` – body `{ids,action,route?,accessValidUntil?}` with action `addRoute`, `removeRoute`, `setValidUntil` (date or `null`) or `delete`; up to 1000 students; returns `{affected}`
 - `PUT /students/:id/password` – body `{newPassword}` (min 6); logs the student out everywhere
 - `POST /password` – body `{currentPassword,newPassword}` (min 8), the admin's own password
 - `GET /announcements` – active announcements

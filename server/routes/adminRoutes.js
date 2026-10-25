@@ -28,6 +28,7 @@ router.delete('/buses/:id', adminCtrl.deleteBus);
 // student administration
 router.post('/students', adminCtrl.addStudent);
 router.post('/students/import', adminCtrl.importStudents);
+router.post('/students/bulk', adminCtrl.bulkUpdateStudents);
 router.get('/students', adminCtrl.listStudents);
 router.put('/students/:id/routes', adminCtrl.updateStudentRoutes);
 router.put('/students/:id/password', adminCtrl.resetStudentPassword);

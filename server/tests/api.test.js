@@ -529,3 +529,45 @@ test('deleting a student ends their session; only admins can delete', async () =
   assert.equal((await api('GET', '/api/student/IMP1/authorized-buses', { token })).status, 401);
   assert.equal((await api('POST', '/api/student/login', { body: { studentId: 'IMP1', password: 'secret1' } })).status, 401);
 });
+
+/* ---------------- bulk student actions ---------------- */
+
+test('bulk actions: add/remove route, set/clear pass date, delete', async () => {
+  const admin = await login('admin', { username: 'admin', password: 'new-admin-pass' });
+  await Student.insertMany(['B1', 'B2', 'B3'].map((id) => ({ studentId: id, name: `Bulk ${id}`, password: 'x', registeredRoutes: [] })));
+  const ids = (await Student.find({ studentId: { $in: ['B1', 'B2', 'B3'] } })).map((s) => s._id.toString());
+  const bulk = (body) => api('POST', '/api/admin/students/bulk', { token: admin, body });
+
+  // validation
+  assert.equal((await bulk({ ids, action: 'explode' })).status, 400);
+  assert.equal((await bulk({ ids: [], action: 'delete' })).status, 400);
+  assert.equal((await bulk({ ids: ['not-an-id'], action: 'delete' })).status, 400);
+  assert.equal((await bulk({ ids: [{ $ne: null }], action: 'delete' })).status, 400);
+  assert.equal((await bulk({ ids, action: 'addRoute', route: 'Nowhere' })).status, 400);
+
+  // add a route twice: no duplicates
+  assert.equal((await bulk({ ids, action: 'addRoute', route: 'North Line' })).data.affected, 3);
+  assert.equal((await bulk({ ids, action: 'addRoute', route: 'North Line' })).data.affected, 0);
+  let docs = await Student.find({ _id: { $in: ids } });
+  assert.ok(docs.every((s) => s.registeredRoutes.length === 1 && s.registeredRoutes[0] === 'North Line'));
+
+  // remove it from two of them
+  assert.equal((await bulk({ ids: ids.slice(0, 2), action: 'removeRoute', route: 'North Line' })).data.affected, 2);
+  docs = await Student.find({ _id: { $in: ids } }).sort({ studentId: 1 });
+  assert.deepEqual(docs.map((s) => s.registeredRoutes.length), [0, 0, 1]);
+
+  // set, then clear, the pass end date
+  const date = new Date(Date.now() + 86400000).toISOString();
+  assert.equal((await bulk({ ids, action: 'setValidUntil', accessValidUntil: date })).status, 200);
+  assert.ok((await Student.find({ _id: { $in: ids } })).every((s) => s.accessValidUntil));
+  assert.equal((await bulk({ ids, action: 'setValidUntil', accessValidUntil: 'garbage' })).status, 400);
+  await bulk({ ids, action: 'setValidUntil', accessValidUntil: null });
+  assert.ok((await Student.find({ _id: { $in: ids } })).every((s) => s.accessValidUntil === null));
+
+  // students cannot use it; admin delete removes exactly the selected ones
+  const studentToken = await login('student', { studentId: 'S002', password: 'pass2' });
+  assert.equal((await api('POST', '/api/admin/students/bulk', { token: studentToken, body: { ids, action: 'delete' } })).status, 403);
+  const before = await Student.countDocuments();
+  assert.equal((await bulk({ ids, action: 'delete' })).data.affected, 3);
+  assert.equal(await Student.countDocuments(), before - 3);
+});

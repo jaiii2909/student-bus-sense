@@ -62,6 +62,8 @@ import AnnouncementsPanel from "@/components/admin/AnnouncementsPanel";
 import ImportStudentsDialog from "@/components/admin/ImportStudentsDialog";
 import DriversPanel from "@/components/admin/DriversPanel";
 import TripsPanel from "@/components/admin/TripsPanel";
+import StudentBulkActions from "@/components/admin/StudentBulkActions";
+import { ALL_ROUTES, NO_ROUTE, PASS_FILTER_LABELS, PassFilter, filterStudents, isFiltered } from "@/lib/studentFilters";
 import { downloadCsv, endOfDayIso, toDateInput } from "@/lib/csv";
 import { Stop } from "@/lib/eta";
 import { useToast } from "@/hooks/use-toast";
@@ -123,6 +125,9 @@ const AdminDashboard = () => {
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
   const [studentSearch, setStudentSearch] = useState("");
+  const [studentRouteFilter, setStudentRouteFilter] = useState(ALL_ROUTES);
+  const [studentPassFilter, setStudentPassFilter] = useState<PassFilter>("all");
+  const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
   const [busSearch, setBusSearch] = useState("");
   const [activeTab, setActiveTab] = useState("radar");
 
@@ -426,12 +431,37 @@ const AdminDashboard = () => {
     );
   }
 
-  const sSearch = studentSearch.trim().toLowerCase();
-  const visibleStudents = sSearch
-    ? students.filter(
-        (s) => s.studentId.toLowerCase().includes(sSearch) || s.name.toLowerCase().includes(sSearch)
-      )
-    : students;
+  const studentFilter = { search: studentSearch, route: studentRouteFilter, pass: studentPassFilter };
+  const studentsFiltered = isFiltered(studentFilter);
+  const visibleStudents = filterStudents(students, studentFilter, Date.now());
+  // only ids that still exist count as selected
+  const selectedStudents = students.filter((s) => selectedStudentIds.has(s._id));
+  const visibleSelectedCount = visibleStudents.filter((s) => selectedStudentIds.has(s._id)).length;
+  const allVisibleSelected = visibleStudents.length > 0 && visibleSelectedCount === visibleStudents.length;
+
+  const toggleStudentSelected = (id: string) => {
+    setSelectedStudentIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // header checkbox: select every student currently shown, or unselect them
+  const toggleAllVisibleStudents = () => {
+    setSelectedStudentIds((prev) => {
+      const next = new Set(prev);
+      visibleStudents.forEach((s) => (allVisibleSelected ? next.delete(s._id) : next.add(s._id)));
+      return next;
+    });
+  };
+
+  const clearStudentFilters = () => {
+    setStudentSearch("");
+    setStudentRouteFilter(ALL_ROUTES);
+    setStudentPassFilter("all");
+  };
 
   const bSearch = busSearch.trim().toLowerCase();
   const visibleBuses = bSearch
@@ -811,9 +841,59 @@ const AdminDashboard = () => {
                   </Button>
                 </div>
               </div>
+
+              {/* Filters */}
+              <div className="px-4 py-2.5 border-b border-border flex flex-wrap items-center gap-2">
+                <Select value={studentRouteFilter} onValueChange={setStudentRouteFilter}>
+                  <SelectTrigger className="h-8 w-44 text-xs" aria-label="Filter by route">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_ROUTES} className="text-xs">All routes</SelectItem>
+                    <SelectItem value={NO_ROUTE} className="text-xs">No route assigned</SelectItem>
+                    {routes.map((r) => (
+                      <SelectItem key={r._id} value={r.routeName} className="text-xs">{r.routeName}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={studentPassFilter} onValueChange={(v) => setStudentPassFilter(v as PassFilter)}>
+                  <SelectTrigger className="h-8 w-44 text-xs" aria-label="Filter by pass status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(PASS_FILTER_LABELS) as PassFilter[]).map((key) => (
+                      <SelectItem key={key} value={key} className="text-xs">{PASS_FILTER_LABELS[key]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {studentsFiltered && (
+                  <Button size="sm" variant="ghost" onClick={clearStudentFilters} className="h-8 text-xs">
+                    Clear filters
+                  </Button>
+                )}
+                <span className="text-[11px] text-muted-foreground ml-auto">
+                  Showing {visibleStudents.length} of {students.length}
+                </span>
+              </div>
+
+              <StudentBulkActions
+                selected={selectedStudents}
+                routeNames={routes.map((r) => r.routeName)}
+                onDone={fetchAll}
+                onClear={() => setSelectedStudentIds(new Set())}
+              />
+
               <Table>
                 <TableHeader>
                   <TableRow className="border-border hover:bg-transparent">
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={allVisibleSelected ? true : visibleSelectedCount > 0 ? "indeterminate" : false}
+                        onCheckedChange={toggleAllVisibleStudents}
+                        aria-label="Select all shown students"
+                        disabled={visibleStudents.length === 0}
+                      />
+                    </TableHead>
                     <TableHead className="text-xs font-bold uppercase tracking-wider">Enrollment ID</TableHead>
                     <TableHead className="text-xs font-bold uppercase tracking-wider">Student Name</TableHead>
                     <TableHead className="text-xs font-bold uppercase tracking-wider">Authorized Route Passes</TableHead>
@@ -823,13 +903,24 @@ const AdminDashboard = () => {
                 <TableBody>
                   {visibleStudents.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-8 text-xs text-muted-foreground">
-                        {sSearch ? "No matching students found" : "No students enrolled in transport registry"}
+                      <TableCell colSpan={5} className="text-center py-8 text-xs text-muted-foreground">
+                        {studentsFiltered ? "No students match these filters" : "No students enrolled in transport registry"}
                       </TableCell>
                     </TableRow>
                   ) : (
                     visibleStudents.map((student) => (
-                      <TableRow key={student._id} className="border-border hover:bg-slate-50/60 dark:hover:bg-slate-900/40">
+                      <TableRow
+                        key={student._id}
+                        data-state={selectedStudentIds.has(student._id) ? "selected" : undefined}
+                        className="border-border hover:bg-slate-50/60 dark:hover:bg-slate-900/40"
+                      >
+                        <TableCell className="w-10">
+                          <Checkbox
+                            checked={selectedStudentIds.has(student._id)}
+                            onCheckedChange={() => toggleStudentSelected(student._id)}
+                            aria-label={`Select ${student.name}`}
+                          />
+                        </TableCell>
                         <TableCell className="font-mono font-bold text-xs text-foreground">
                           {student.studentId}
                         </TableCell>

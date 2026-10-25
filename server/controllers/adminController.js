@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Admin = require('../models/Admin');
 const Route = require('../models/Route');
 const Bus = require('../models/Bus');
@@ -254,6 +255,49 @@ const deleteStudent = async (req, res) => {
     const student = await Student.findByIdAndDelete(req.params.id);
     if (!student) return res.status(404).json({ error: 'Student not found' });
     res.json({ success: true });
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+const MAX_BULK_STUDENTS = 1000;
+const BULK_ACTIONS = ['addRoute', 'removeRoute', 'setValidUntil', 'delete'];
+
+// body: { ids: [student _id], action, route?, accessValidUntil? }
+//  addRoute / removeRoute need `route`; setValidUntil takes a date or null (no expiry)
+const bulkUpdateStudents = async (req, res) => {
+  const { ids, action } = req.body;
+  if (!BULK_ACTIONS.includes(action)) {
+    return res.status(400).json({ error: 'Unknown action' });
+  }
+  if (!Array.isArray(ids) || ids.length === 0 || ids.length > MAX_BULK_STUDENTS ||
+      !ids.every((id) => typeof id === 'string' && mongoose.Types.ObjectId.isValid(id))) {
+    return res.status(400).json({ error: `Select between 1 and ${MAX_BULK_STUDENTS} students` });
+  }
+  const filter = { _id: { $in: ids } };
+
+  try {
+    if (action === 'delete') {
+      const result = await Student.deleteMany(filter);
+      return res.json({ affected: result.deletedCount });
+    }
+
+    let update;
+    if (action === 'setValidUntil') {
+      const accessValidUntil = parseValidUntil(req.body.accessValidUntil);
+      if (accessValidUntil === undefined) return res.status(400).json({ error: 'Invalid pass end date' });
+      update = { $set: { accessValidUntil } };
+    } else {
+      const route = asText(req.body.route);
+      if (!route || !(await Route.exists({ routeName: route }))) {
+        return res.status(400).json({ error: 'Choose an existing route' });
+      }
+      update = action === 'addRoute'
+        ? { $addToSet: { registeredRoutes: route } }
+        : { $pull: { registeredRoutes: route } };
+    }
+    const result = await Student.updateMany(filter, update);
+    res.json({ affected: result.modifiedCount });
   } catch (err) {
     sendError(res, err);
   }
@@ -551,6 +595,7 @@ module.exports = {
   listStudents,
   updateStudentRoutes,
   importStudents,
+  bulkUpdateStudents,
   deleteStudent,
   listDrivers,
   addDriver,
