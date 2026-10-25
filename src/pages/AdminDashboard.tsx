@@ -48,7 +48,8 @@ import {
   ShieldCheck,
   Check,
   Megaphone,
-  IdCard
+  IdCard,
+  Download
 } from "lucide-react";
 import axios from "axios";
 import LoginForm from "@/components/auth/LoginForm";
@@ -61,7 +62,7 @@ import AnnouncementsPanel from "@/components/admin/AnnouncementsPanel";
 import ImportStudentsDialog from "@/components/admin/ImportStudentsDialog";
 import DriversPanel from "@/components/admin/DriversPanel";
 import TripsPanel from "@/components/admin/TripsPanel";
-import { endOfDayIso, toDateInput } from "@/lib/csv";
+import { downloadCsv, endOfDayIso, toDateInput } from "@/lib/csv";
 import { Stop } from "@/lib/eta";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/utils";
@@ -303,9 +304,29 @@ const AdminDashboard = () => {
 
   const handleEditStudent = (student: Student) => {
     setEditingStudent(student);
+    setNewStudent({ ...EMPTY_STUDENT, name: student.name });
     setSelectedStudentRoutes(student.registeredRoutes || []);
     setStudentValidUntil(toDateInput(student.accessValidUntil));
     setOpenStudentDialog(true);
+  };
+
+  const handleDeleteStudent = (student: Student) => {
+    setPendingDelete({
+      title: `Delete ${student.name} (${student.studentId})?`,
+      description: "The student is logged out and can no longer sign in. This cannot be undone.",
+      run: async () => {
+        await axios.delete(`/api/admin/students/${student._id}`);
+        setStudents((prev) => prev.filter((s) => s._id !== student._id));
+      }
+    });
+  };
+
+  // backup / sharing copy of the student list (passwords are never included)
+  const handleExportStudents = () => {
+    downloadCsv(`students-${toDateInput(new Date().toISOString())}.csv`, [
+      ["studentId", "name", "routes", "passValidUntil"],
+      ...students.map((s) => [s.studentId, s.name, s.registeredRoutes.join(";"), toDateInput(s.accessValidUntil)])
+    ]);
   };
 
   const handleToggleStudentRoute = (routeName: string) => {
@@ -320,7 +341,12 @@ const AdminDashboard = () => {
     setIsSaving(true);
     try {
       if (editingStudent) {
+        if (!newStudent.name.trim()) {
+          toast({ title: "Name cannot be empty", variant: "destructive" });
+          return;
+        }
         const response = await axios.put(`/api/admin/students/${editingStudent._id}/routes`, {
+          name: newStudent.name.trim(),
           registeredRoutes: selectedStudentRoutes,
           accessValidUntil: endOfDayIso(studentValidUntil)
         });
@@ -763,6 +789,17 @@ const AdminDashboard = () => {
                       className="pl-8 h-8 text-xs w-44 rounded-md border-border"
                     />
                   </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleExportStudents}
+                    disabled={students.length === 0}
+                    className="h-8 text-xs font-semibold rounded-md gap-1"
+                    title="Download the student list as CSV (no passwords)"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Export
+                  </Button>
                   <ImportStudentsDialog onImported={fetchAll} />
                   <Button
                     size="sm"
@@ -839,6 +876,16 @@ const AdminDashboard = () => {
                             className="h-7 text-xs rounded ml-1"
                           >
                             Reset Password
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteStudent(student)}
+                            className="h-7 w-7 p-0 rounded ml-1 text-stone-500 hover:text-destructive"
+                            title="Delete student"
+                            aria-label={`Delete ${student.name}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -962,16 +1009,22 @@ const AdminDashboard = () => {
                     className="h-9 text-xs rounded-md"
                   />
                 </div>
-                <div className="space-y-1">
-                  <Label htmlFor="student-name" className="text-xs font-semibold">Full Legal Name</Label>
-                  <Input
-                    id="student-name"
-                    placeholder="e.g. Rajesh Kumar"
-                    value={newStudent.name}
-                    onChange={(e) => setNewStudent({ ...newStudent, name: e.target.value })}
-                    className="h-9 text-xs rounded-md"
-                  />
-                </div>
+              </>
+            )}
+
+            <div className="space-y-1">
+              <Label htmlFor="student-name" className="text-xs font-semibold">Full Legal Name</Label>
+              <Input
+                id="student-name"
+                placeholder="e.g. Rajesh Kumar"
+                value={newStudent.name}
+                onChange={(e) => setNewStudent({ ...newStudent, name: e.target.value })}
+                className="h-9 text-xs rounded-md"
+              />
+            </div>
+
+            {!editingStudent && (
+              <>
                 <div className="space-y-1">
                   <Label htmlFor="student-pwd" className="text-xs font-semibold">Passkey / Password</Label>
                   <Input

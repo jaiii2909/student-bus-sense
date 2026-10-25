@@ -31,6 +31,7 @@ router.post('/students/import', adminCtrl.importStudents);
 router.get('/students', adminCtrl.listStudents);
 router.put('/students/:id/routes', adminCtrl.updateStudentRoutes);
 router.put('/students/:id/password', adminCtrl.resetStudentPassword);
+router.delete('/students/:id', adminCtrl.deleteStudent);
 
 // drivers and their trips
 router.get('/drivers', adminCtrl.listDrivers);

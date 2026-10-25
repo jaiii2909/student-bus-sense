@@ -222,11 +222,16 @@ const listStudents = async (req, res) => {
   }
 };
 
-// body: { registeredRoutes, accessValidUntil? } – the pass end date is only changed when sent
+// body: { registeredRoutes, accessValidUntil?, name? } – the end date and name are only changed when sent
 const updateStudentRoutes = async (req, res) => {
   const { id } = req.params;
   const { registeredRoutes } = req.body;
   const changes = { registeredRoutes: Array.isArray(registeredRoutes) ? registeredRoutes : [] };
+  if ('name' in req.body) {
+    const name = asText(req.body.name);
+    if (!name) return res.status(400).json({ error: 'Name cannot be empty' });
+    changes.name = name;
+  }
   if ('accessValidUntil' in req.body) {
     const accessValidUntil = parseValidUntil(req.body.accessValidUntil);
     if (accessValidUntil === undefined) {
@@ -238,6 +243,17 @@ const updateStudentRoutes = async (req, res) => {
     const student = await Student.findByIdAndUpdate(id, changes, { new: true }).select('-password');
     if (student) res.json(student);
     else res.status(404).json({ error: 'Student not found' });
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
+// removes the student; their open sessions end on the next request
+const deleteStudent = async (req, res) => {
+  try {
+    const student = await Student.findByIdAndDelete(req.params.id);
+    if (!student) return res.status(404).json({ error: 'Student not found' });
+    res.json({ success: true });
   } catch (err) {
     sendError(res, err);
   }
@@ -535,6 +551,7 @@ module.exports = {
   listStudents,
   updateStudentRoutes,
   importStudents,
+  deleteStudent,
   listDrivers,
   addDriver,
   updateDriver,

@@ -498,3 +498,34 @@ test('logins reject query objects instead of text', async () => {
     assert.equal(res.status, 401, `${path} ${JSON.stringify(body)}`);
   }
 });
+
+/* ---------------- edit and delete students ---------------- */
+
+test('admin can rename a student; an empty name is rejected', async () => {
+  const admin = await login('admin', { username: 'admin', password: 'new-admin-pass' });
+  const student = await Student.findOne({ studentId: 'IMP1' });
+
+  assert.equal((await api('PUT', `/api/admin/students/${student._id}/routes`, {
+    token: admin, body: { registeredRoutes: student.registeredRoutes, name: '   ' }
+  })).status, 400);
+  const renamed = await api('PUT', `/api/admin/students/${student._id}/routes`, {
+    token: admin, body: { registeredRoutes: student.registeredRoutes, name: 'Imported One Renamed' }
+  });
+  assert.equal(renamed.status, 200);
+  assert.equal(renamed.data.name, 'Imported One Renamed');
+  // routes are kept as sent
+  assert.deepEqual(renamed.data.registeredRoutes, ['North Line']);
+});
+
+test('deleting a student ends their session; only admins can delete', async () => {
+  const admin = await login('admin', { username: 'admin', password: 'new-admin-pass' });
+  const token = await login('student', { studentId: 'IMP1', password: 'secret1' });
+  const student = await Student.findOne({ studentId: 'IMP1' });
+
+  assert.equal((await api('DELETE', `/api/admin/students/${student._id}`, { token })).status, 403);
+  assert.equal((await api('DELETE', `/api/admin/students/${student._id}`, { token: admin })).status, 200);
+  assert.equal((await api('DELETE', `/api/admin/students/${student._id}`, { token: admin })).status, 404);
+
+  assert.equal((await api('GET', '/api/student/IMP1/authorized-buses', { token })).status, 401);
+  assert.equal((await api('POST', '/api/student/login', { body: { studentId: 'IMP1', password: 'secret1' } })).status, 401);
+});

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
-import { RefreshCw } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table";
-import { toDateInput } from "@/lib/csv";
+import { downloadCsv, toDateInput } from "@/lib/csv";
 
 interface TripRow {
   id: string;
@@ -62,6 +62,21 @@ const TripsPanel = () => {
 
   const busCount = new Set(trips.map((t) => t.busNumber)).size;
 
+  const handleExport = () => {
+    downloadCsv(`trips-${day}.csv`, [
+      ["bus", "route", "driver", "started", "ended", "minutes", "status"],
+      ...trips.map((t) => [
+        t.busNumber,
+        t.route,
+        t.driverName,
+        new Date(t.startedAt).toLocaleString(),
+        t.endedAt ? new Date(t.endedAt).toLocaleString() : "",
+        t.endedAt ? Math.round((new Date(t.endedAt).getTime() - new Date(t.startedAt).getTime()) / 60000) : "",
+        t.endedAt ? (t.endReason ? END_LABEL[t.endReason] : "Ended") : "Running"
+      ])
+    ]);
+  };
+
   return (
     <div className="border border-border rounded-lg bg-card overflow-hidden">
       <div className="p-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -73,6 +88,10 @@ const TripsPanel = () => {
         </div>
         <div className="flex items-center gap-2">
           <Input type="date" value={day} onChange={(e) => setDay(e.target.value)} className="h-8 text-xs w-40" aria-label="Day" />
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={trips.length === 0} className="h-8 text-xs gap-1" title="Download this day's trips as CSV">
+            <Download className="w-3.5 h-3.5" />
+            Export
+          </Button>
           <Button variant="outline" size="sm" onClick={load} disabled={isLoading} className="h-8 w-8 p-0" aria-label="Refresh trips">
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
           </Button>

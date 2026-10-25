@@ -55,7 +55,8 @@ const viewAuthorizedBuses = async (req, res) => {
   try {
     const student = await Student.findOne({ studentId });
     if (!student) {
-      return res.status(404).json({ error: 'Student not found' });
+      // deleted by the admin: end this session
+      return res.status(401).json({ error: 'Please log in again' });
     }
     // password was reset or changed since this login
     if (isTokenOutdated(req.user, student.passwordChangedAt)) {

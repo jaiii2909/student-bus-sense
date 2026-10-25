@@ -48,3 +48,27 @@ export const toDateInput = (iso?: string | null) => {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 };
+
+// One CSV cell: quoted when needed, and text that Excel would run as a formula
+// (starting with = + - @) gets a leading ' so it stays plain text.
+const toCell = (value: string | number | null | undefined) => {
+  let text = value === null || value === undefined ? "" : String(value);
+  if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
+  return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+};
+
+export const toCsv = (rows: (string | number | null | undefined)[][]) =>
+  rows.map((row) => row.map(toCell).join(",")).join("\r\n");
+
+// downloads rows as a .csv file (with a BOM so Excel shows Hindi names correctly)
+export const downloadCsv = (filename: string, rows: (string | number | null | undefined)[][]) => {
+  const blob = new Blob(["﻿" + toCsv(rows)], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+};
