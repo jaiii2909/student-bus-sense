@@ -12,7 +12,7 @@ const hashPassword = async (plainTextPassword, rounds = SALT_ROUNDS) => {
 };
 
 const comparePassword = async (plainTextPassword, storedPassword) => {
-  if (typeof storedPassword !== 'string') {
+  if (typeof plainTextPassword !== 'string' || typeof storedPassword !== 'string') {
     return false;
   }
   return bcrypt.compare(plainTextPassword, storedPassword);

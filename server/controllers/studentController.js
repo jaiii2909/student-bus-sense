@@ -6,10 +6,13 @@ const Announcement = require('../models/Announcement');
 const { comparePassword, hashPassword, newPasswordError } = require('../utils/passwords');
 const { signToken, isTokenOutdated } = require('../middleware/auth');
 const { sendError } = require('../utils/errors');
+const { asText } = require('../utils/input');
 const { toBusPayload } = require('../utils/busPayload');
 
 const login = async (req, res) => {
-  const { studentId, password } = req.body;
+  const studentId = asText(req.body.studentId);
+  const { password } = req.body;
+  if (!studentId) return res.status(401).json({ error: 'Invalid credentials' });
   try {
     const student = await Student.findOne({ studentId });
     const isValid = student && await comparePassword(password, student.password);

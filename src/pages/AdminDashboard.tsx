@@ -425,7 +425,17 @@ const AdminDashboard = () => {
         roleBadge="Admin" 
         onLogout={handleLogout} 
       >
-        <ChangePasswordDialog endpoint="/api/admin/password" minLength={8} />
+        <ChangePasswordDialog
+          endpoint="/api/admin/password"
+          minLength={8}
+          onChanged={(data) => {
+            // other admin sessions end; keep this one with the new token
+            if (data.token) {
+              saveSession("admin", { token: data.token });
+              setToken(data.token);
+            }
+          }}
+        />
       </AppHeader>
 
       <main className="container mx-auto px-4 py-6 max-w-6xl flex-1 space-y-6">

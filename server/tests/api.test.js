@@ -300,9 +300,16 @@ test('an admin can change their own password', async () => {
   assert.equal((await api('POST', '/api/admin/password', {
     token, body: { currentPassword: 'admin-pass', newPassword: 'short' }
   })).status, 400);
-  assert.equal((await api('POST', '/api/admin/password', {
+  // a second admin session opened earlier must end after the change
+  const otherSession = await login('admin', { username: 'admin', password: 'admin-pass' });
+  await new Promise((resolve) => setTimeout(resolve, 1100));
+  const changed = await api('POST', '/api/admin/password', {
     token, body: { currentPassword: 'admin-pass', newPassword: 'new-admin-pass' }
-  })).status, 200);
+  });
+  assert.equal(changed.status, 200);
+  assert.equal((await api('GET', '/api/admin/buses', { token: otherSession })).status, 401);
+  // the session that changed it continues with the returned token
+  assert.equal((await api('GET', '/api/admin/buses', { token: changed.data.token })).status, 200);
 
   assert.equal((await api('POST', '/api/admin/login', { body: { username: 'admin', password: 'admin-pass' } })).status, 401);
   assert.equal((await api('POST', '/api/admin/login', { body: { username: 'admin', password: 'new-admin-pass' } })).status, 200);
@@ -475,4 +482,19 @@ test('disabling a driver or resetting their password ends their logins', async (
   })).status, 200);
   assert.equal((await ping(rameshToken, 'N1')).status, 401);
   assert.equal((await api('POST', '/api/driver/login', { body: { username: 'ramesh', password: 'ramesh2' } })).status, 200);
+});
+
+/* ---------------- input hardening ---------------- */
+
+test('logins reject query objects instead of text', async () => {
+  const attempts = [
+    ['/api/student/login', { studentId: { $ne: null }, password: 'x' }],
+    ['/api/student/login', { studentId: 'S001', password: { $ne: null } }],
+    ['/api/admin/login', { username: { $gt: '' }, password: 'x' }],
+    ['/api/driver/login', { username: { $ne: null }, password: 'x' }]
+  ];
+  for (const [path, body] of attempts) {
+    const res = await api('POST', path, { body });
+    assert.equal(res.status, 401, `${path} ${JSON.stringify(body)}`);
+  }
 });

@@ -11,6 +11,7 @@ const { verifyToken, requireRole, isTokenOutdated } = require('./middleware/auth
 const { sendError } = require('./utils/errors');
 const Bus = require('./models/Bus');
 const Student = require('./models/Student');
+const Admin = require('./models/Admin');
 
 // Allowed frontend origins, comma separated (e.g. https://your-app.vercel.app).
 // When unset every origin is allowed, which is fine for local development.
@@ -68,6 +69,8 @@ io.on('connection', async (socket) => {
 
   try {
     if (user.role === 'admin') {
+      const admin = await Admin.findOne({ username: user.username });
+      if (!admin || isTokenOutdated(user, admin.passwordChangedAt)) return socket.disconnect(true);
       socket.join('admin');
     } else if (user.role === 'student') {
       const student = await Student.findOne({ studentId: user.studentId });

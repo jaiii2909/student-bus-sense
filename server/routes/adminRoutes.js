@@ -6,8 +6,8 @@ const { loginLimiter } = require('../middleware/rateLimit');
 
 router.post('/login', loginLimiter, adminCtrl.login);
 
-// everything below needs an admin token
-router.use(requireRole('admin'));
+// everything below needs a current admin token
+router.use(requireRole('admin'), adminCtrl.requireCurrentAdmin);
 
 // failed attempts count toward the login limit
 router.post('/password', loginLimiter, adminCtrl.changeOwnPassword);

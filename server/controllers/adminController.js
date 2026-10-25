@@ -8,12 +8,15 @@ const Driver = require('../models/Driver');
 const Trip = require('../models/Trip');
 const { endOpenTrip, TRIP_TIMEOUT_MS } = require('../utils/trips');
 const { SALT_ROUNDS, comparePassword, hashPassword, newPasswordError } = require('../utils/passwords');
-const { signToken } = require('../middleware/auth');
+const { signToken, isTokenOutdated } = require('../middleware/auth');
 const { sendError } = require('../utils/errors');
+const { asText } = require('../utils/input');
 const { toBusPayload, emitBusUpdate } = require('../utils/busPayload');
 
 const login = async (req, res) => {
-  const { username, password } = req.body;
+  const username = asText(req.body.username);
+  const { password } = req.body;
+  if (!username) return res.status(401).json({ error: 'Invalid credentials' });
   try {
     const admin = await Admin.findOne({ username });
     const isValid = admin && await comparePassword(password, admin.password);
@@ -329,7 +332,7 @@ const listAnnouncements = async (req, res) => {
 // body: { message, route (name or null for all), expiresAt (ISO date) }
 const addAnnouncement = async (req, res) => {
   const message = typeof req.body.message === 'string' ? req.body.message.trim() : '';
-  const route = req.body.route || null;
+  const route = asText(req.body.route) || null;
   const expiresAt = new Date(req.body.expiresAt);
   const now = Date.now();
 
@@ -470,8 +473,10 @@ const changeOwnPassword = async (req, res) => {
       return res.status(401).json({ error: 'Current password is wrong' });
     }
     admin.password = await hashPassword(newPassword);
+    admin.passwordChangedAt = new Date();
     await admin.save();
-    res.json({ success: true });
+    // other admin sessions end; this one continues with a fresh token
+    res.json({ success: true, token: signToken({ role: 'admin', username: admin.username }) });
   } catch (err) {
     sendError(res, err);
   }
@@ -495,8 +500,23 @@ const resetStudentPassword = async (req, res) => {
   }
 };
 
+// Middleware after requireRole('admin'): the admin account must still exist and the
+// token must be newer than the admin's last password change.
+const requireCurrentAdmin = async (req, res, next) => {
+  try {
+    const admin = await Admin.findOne({ username: req.user.username });
+    if (!admin || isTokenOutdated(req.user, admin.passwordChangedAt)) {
+      return res.status(401).json({ error: 'Please log in again' });
+    }
+    next();
+  } catch (err) {
+    sendError(res, err);
+  }
+};
+
 module.exports = {
   login,
+  requireCurrentAdmin,
   changeOwnPassword,
   resetStudentPassword,
   listAnnouncements,
