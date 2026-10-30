@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -64,10 +64,10 @@ const ResetPasswordDialog = ({ person, endpoint, onClose }: ResetPasswordDialogP
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="reset-password">New password</Label>
-            <Input id="reset-password" type="text" autoComplete="off" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
+            <PasswordInput id="reset-password" name="newPassword" autoComplete="new-password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
           </div>
           <Button type="submit" disabled={isSaving} className="w-full">
-            {isSaving ? "Saving..." : "Reset password"}
+            {isSaving ? "Saving…" : "Reset Password"}
           </Button>
         </form>
       </DialogContent>

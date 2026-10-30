@@ -9,7 +9,7 @@ type MapViewProps = ComponentProps<typeof import("./MapView").default>;
 
 const MapLoading = () => (
   <div className="h-full min-h-[300px] flex items-center justify-center text-muted-foreground">
-    <Loader2 className="w-5 h-5 animate-spin text-primary" />
+    <Loader2 className="w-5 h-5 animate-spin text-primary" aria-hidden="true" />
   </div>
 );
 

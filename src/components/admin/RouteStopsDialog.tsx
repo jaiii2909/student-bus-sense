@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import MapView from "@/components/LazyMapView";
 import { useToast } from "@/hooks/use-toast";
-import { apiErrorMessage } from "@/lib/utils";
+import { apiErrorMessage, plural } from "@/lib/utils";
 import { Stop } from "@/lib/eta";
 
 export interface RouteWithStops {
@@ -121,20 +121,20 @@ const RouteStopsDialog = ({ route, onClose, onSaved }: RouteStopsDialogProps) =>
                 aria-label={`Stop ${index + 1} name`}
               />
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => moveStop(index, -1)} disabled={index === 0} aria-label="Move stop up">
-                <ArrowUp className="w-3.5 h-3.5" />
+                <ArrowUp className="w-3.5 h-3.5" aria-hidden="true" />
               </Button>
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => moveStop(index, 1)} disabled={index === stops.length - 1} aria-label="Move stop down">
-                <ArrowDown className="w-3.5 h-3.5" />
+                <ArrowDown className="w-3.5 h-3.5" aria-hidden="true" />
               </Button>
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:text-destructive" onClick={() => removeStop(index)} aria-label="Remove stop">
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
               </Button>
             </div>
           ))}
         </div>
 
         <Button onClick={handleSave} disabled={isSaving} className="w-full">
-          {isSaving ? "Saving..." : `Save ${stops.length} stop(s)`}
+          {isSaving ? "Saving…" : `Save ${plural(stops.length, "Stop")}`}
         </Button>
       </DialogContent>
     </Dialog>

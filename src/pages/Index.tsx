@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -104,7 +104,6 @@ const sampleCorridors: SampleCorridor[] = [
 ];
 
 const Index = () => {
-  const navigate = useNavigate();
   const [activeCorridor, setActiveCorridor] = useState<SampleCorridor>(sampleCorridors[0]);
 
   const scrollToRoutes = () => document.getElementById("routes-schedule")?.scrollIntoView({ behavior: "smooth" });
@@ -143,44 +142,48 @@ const Index = () => {
               Route Network
             </Button>
             <Button
+              asChild
               variant="ghost"
               size="sm"
-              onClick={() => navigate("/role-selection")}
               className="hidden sm:inline-flex text-xs font-semibold text-muted-foreground hover:text-foreground"
             >
-              Staff & Driver
+              <Link to="/role-selection">
+                Staff & Driver
+              </Link>
             </Button>
             {/* phones and tablets: secondary links collapse into one menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon" className="md:hidden h-8 w-8 text-muted-foreground" aria-label="More links">
-                  <Menu className="h-4 w-4" />
+                  <Menu className="h-4 w-4" aria-hidden="true" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
                 <DropdownMenuItem onClick={scrollToRoutes} className="text-xs">
                   Route Network
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate("/role-selection")} className="text-xs sm:hidden">
-                  Staff & Driver
+                <DropdownMenuItem asChild className="text-xs sm:hidden">
+                  <Link to="/role-selection">Staff & Driver</Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <ThemeToggle />
             <Button
+              asChild
               size="sm"
-              onClick={() => navigate("/student-login")}
               className="text-xs font-bold px-3 sm:px-4 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
             >
-              <span className="sm:hidden">Sign In</span>
-              <span className="hidden sm:inline">Student Sign In</span>
+              <Link to="/student-login">
+                <span className="sm:hidden">Sign In</span>
+                <span className="hidden sm:inline">Student Sign In</span>
+              </Link>
             </Button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1">
+      <main id="main-content" tabIndex={-1} className="focus:outline-none flex-1">
         
         {/* SECTION 1: Split Hero Section */}
         <section className="py-14 sm:py-20 border-b border-border/80 relative overflow-hidden">
@@ -201,7 +204,7 @@ const Index = () => {
                   <span>Semester 2026 Live GPS Telemetry Active</span>
                 </div>
 
-                <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.12]">
+                <h1 className="text-balance text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.12]">
                   Track your college bus in real-time. Arrive at your stop with confidence.
                 </h1>
 
@@ -211,20 +214,24 @@ const Index = () => {
 
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <Button
+                    asChild
                     size="lg"
-                    onClick={() => navigate("/student-login")}
-                    className="h-12 px-6 font-bold text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition-all hover:shadow-lg"
+                    className="h-12 px-6 font-bold text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition hover:shadow-lg"
                   >
-                    Track My Bus
-                    <ArrowRight className="w-4 h-4 ml-2" />
+                    <Link to="/student-login">
+                      Track My Bus
+                      <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
+                    </Link>
                   </Button>
                   <Button
+                    asChild
                     size="lg"
                     variant="outline"
-                    onClick={() => navigate("/role-selection")}
                     className="h-12 px-6 font-semibold text-sm border-border/80 bg-card hover:bg-muted transition-colors"
                   >
-                    Driver & Fleet Admin
+                    <Link to="/role-selection">
+                      Driver & Fleet Admin
+                    </Link>
                   </Button>
                 </div>
 
@@ -232,19 +239,19 @@ const Index = () => {
                 <div className="pt-4 border-t border-border/80 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <div className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="w-3.5 h-3.5" aria-hidden="true" />
                     </div>
                     <span className="font-medium text-foreground">5-Second GPS Sync</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="w-3.5 h-3.5" aria-hidden="true" />
                     </div>
                     <span className="font-medium text-foreground">Verified Pass Clearance</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="w-3.5 h-3.5" aria-hidden="true" />
                     </div>
                     <span className="font-medium text-foreground">Low Mobile Data Usage</span>
                   </div>
@@ -253,7 +260,7 @@ const Index = () => {
 
               {/* Right Column: Interactive Live Corridor Telemetry Mockup */}
               <div className="lg:col-span-5">
-                <div className="border border-border/80 rounded-xl bg-card shadow-xl overflow-hidden transition-all">
+                <div className="border border-border/80 rounded-xl bg-card shadow-xl overflow-hidden transition">
                   
                   {/* Top Bar of Bus Card */}
                   <div className="p-4 border-b border-border/80 bg-muted/40 flex items-center justify-between">
@@ -300,7 +307,7 @@ const Index = () => {
                               </div>
                             ) : stop.status === "passed" ? (
                               <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 flex items-center justify-center mt-0.5 text-white">
-                                <Check className="w-2.5 h-2.5" />
+                                <Check className="w-2.5 h-2.5" aria-hidden="true" />
                               </div>
                             ) : (
                               <div className="w-3.5 h-3.5 rounded-full bg-muted-foreground/30 mt-0.5" />
@@ -338,11 +345,13 @@ const Index = () => {
                       </div>
                     </div>
 
-                    <Button 
-                      onClick={() => navigate("/student-login")} 
+                    <Button
+                      asChild
                       className="w-full text-xs font-bold h-10 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
                     >
-                      Open Live Radar Dashboard
+                      <Link to="/student-login">
+                        Open Live Radar Dashboard
+                      </Link>
                     </Button>
                   </div>
                 </div>
@@ -386,7 +395,7 @@ const Index = () => {
             <div className="grid md:grid-cols-12 gap-8 items-center">
               <div className="md:col-span-6 space-y-4">
                 <span className="text-xs font-bold uppercase tracking-wider text-primary">01. For Students</span>
-                <h2 className="text-2xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+                <h2 className="text-balance text-2xl sm:text-4xl font-extrabold text-foreground tracking-tight">
                   Know exactly when to step out to your stop
                 </h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">
@@ -395,19 +404,19 @@ const Index = () => {
                 <ul className="text-xs text-foreground space-y-3 pt-2">
                   <li className="flex items-center gap-2.5">
                     <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="w-3.5 h-3.5" aria-hidden="true" />
                     </div>
                     <span>Satellite location updates transmitted every 5 seconds</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="w-3.5 h-3.5" aria-hidden="true" />
                     </div>
                     <span>Direct status flags: "Live Tracking", "Delayed Signal", or "At Depot"</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="w-3.5 h-3.5" aria-hidden="true" />
                     </div>
                     <span>Proximity alert triggers when vehicle is ~5 minutes from your stop</span>
                   </li>
@@ -440,7 +449,7 @@ const Index = () => {
                 <div className="border border-border/80 rounded-xl p-6 bg-card shadow-md space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pb-3 border-b border-border/80">
                     <div className="flex items-center gap-2">
-                      <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
                       <span className="text-xs font-bold text-foreground">Verified Transport Pass</span>
                     </div>
                     <span className="text-2xs font-mono text-emerald-600 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-full bg-emerald-500/10">Active: Sem 6</span>
@@ -458,7 +467,7 @@ const Index = () => {
 
               <div className="md:col-span-6 order-1 md:order-2 space-y-4">
                 <span className="text-xs font-bold uppercase tracking-wider text-primary">02. Route Governance</span>
-                <h2 className="text-2xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+                <h2 className="text-balance text-2xl sm:text-4xl font-extrabold text-foreground tracking-tight">
                   Authorized passes prevent route overcrowding
                 </h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">
@@ -467,19 +476,19 @@ const Index = () => {
                 <ul className="text-xs text-foreground space-y-3 pt-2">
                   <li className="flex items-center gap-2.5">
                     <div className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="w-3.5 h-3.5" aria-hidden="true" />
                     </div>
                     <span>Single university enrollment ID for bus pass verification</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <div className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="w-3.5 h-3.5" aria-hidden="true" />
                     </div>
                     <span>Admin portal for adding and reallocating student corridor seats</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <div className="w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="w-3.5 h-3.5" aria-hidden="true" />
                     </div>
                     <span>Eliminates unauthorized boarding and guarantees seat availability</span>
                   </li>
@@ -491,7 +500,7 @@ const Index = () => {
             <div className="grid md:grid-cols-12 gap-8 items-center">
               <div className="md:col-span-6 space-y-4">
                 <span className="text-xs font-bold uppercase tracking-wider text-primary">03. In-Cab Safety</span>
-                <h2 className="text-2xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+                <h2 className="text-balance text-2xl sm:text-4xl font-extrabold text-foreground tracking-tight">
                   Designed for drivers with zero in-traffic distractions
                 </h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">
@@ -500,19 +509,19 @@ const Index = () => {
                 <ul className="text-xs text-foreground space-y-3 pt-2">
                   <li className="flex items-center gap-2.5">
                     <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="w-3.5 h-3.5" aria-hidden="true" />
                     </div>
                     <span>Large 56px touch controls operable from a phone dashboard mount</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="w-3.5 h-3.5" aria-hidden="true" />
                     </div>
                     <span>Automatic screen wake-lock keeps the broadcast screen active</span>
                   </li>
                   <li className="flex items-center gap-2.5">
                     <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="w-3.5 h-3.5" aria-hidden="true" />
                     </div>
                     <span>Throttled location sync preserves driver mobile data and battery life</span>
                   </li>
@@ -550,21 +559,18 @@ const Index = () => {
         <section className="py-16 bg-muted/40 border-t border-border/80">
           <div className="container mx-auto px-4 max-w-7xl">
             <div className="text-center max-w-md mx-auto mb-10 space-y-1.5">
-              <h2 className="text-2xl font-bold text-foreground">Access Portals</h2>
+              <h2 className="text-balance text-2xl font-bold text-foreground">Access Portals</h2>
               <p className="text-xs text-muted-foreground">Select your portal to continue with campus transport.</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-6">
-              <div 
-                onClick={() => navigate("/student-login")}
-                className="border border-border/80 rounded-xl p-6 bg-card hover:border-primary/60 hover:shadow-lg transition-all cursor-pointer text-left space-y-3 group"
-              >
+              <Link to="/student-login" className="border border-border/80 rounded-xl p-6 bg-card hover:border-primary/60 hover:shadow-lg transition cursor-pointer text-left space-y-3 group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                 <div className="flex items-center justify-between">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
-                    <Users className="w-5 h-5" />
+                    <Users className="w-5 h-5" aria-hidden="true" />
                   </div>
                   <span className="text-xs font-bold uppercase text-primary flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                    Enter <ArrowRight className="w-3.5 h-3.5" />
+                    Enter <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
                   </span>
                 </div>
                 <div>
@@ -573,18 +579,15 @@ const Index = () => {
                     Sign in with your enrollment number to track assigned corridor buses and view real-time arrival estimates.
                   </p>
                 </div>
-              </div>
+              </Link>
 
-              <div 
-                onClick={() => navigate("/driver-location")}
-                className="border border-border/80 rounded-xl p-6 bg-card hover:border-primary/60 hover:shadow-lg transition-all cursor-pointer text-left space-y-3 group"
-              >
+              <Link to="/driver-location" className="border border-border/80 rounded-xl p-6 bg-card hover:border-primary/60 hover:shadow-lg transition cursor-pointer text-left space-y-3 group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                 <div className="flex items-center justify-between">
                   <div className="w-10 h-10 rounded-xl bg-muted text-foreground flex items-center justify-center font-bold">
-                    <Navigation className="w-5 h-5 text-primary" />
+                    <Navigation className="w-5 h-5 text-primary" aria-hidden="true" />
                   </div>
                   <span className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                    Enter <ArrowRight className="w-3.5 h-3.5" />
+                    Enter <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
                   </span>
                 </div>
                 <div>
@@ -593,18 +596,15 @@ const Index = () => {
                     One-tap live GPS broadcasting for scheduled morning and evening transit trips with zero driving distraction.
                   </p>
                 </div>
-              </div>
+              </Link>
 
-              <div 
-                onClick={() => navigate("/admin-dashboard")}
-                className="border border-border/80 rounded-xl p-6 bg-card hover:border-primary/60 hover:shadow-lg transition-all cursor-pointer text-left space-y-3 group"
-              >
+              <Link to="/admin-dashboard" className="border border-border/80 rounded-xl p-6 bg-card hover:border-primary/60 hover:shadow-lg transition cursor-pointer text-left space-y-3 group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                 <div className="flex items-center justify-between">
                   <div className="w-10 h-10 rounded-xl bg-muted text-foreground flex items-center justify-center font-bold">
-                    <ShieldCheck className="w-5 h-5 text-primary" />
+                    <ShieldCheck className="w-5 h-5 text-primary" aria-hidden="true" />
                   </div>
                   <span className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                    Enter <ArrowRight className="w-3.5 h-3.5" />
+                    Enter <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
                   </span>
                 </div>
                 <div>
@@ -613,7 +613,7 @@ const Index = () => {
                     Manage routes, assign vehicles, monitor live fleet radar, and verify student semester pass clearances.
                   </p>
                 </div>
-              </div>
+              </Link>
             </div>
           </div>
         </section>
@@ -637,10 +637,10 @@ const Index = () => {
               <p className="font-bold text-foreground text-sm">Emergency & Lost Transit Items</p>
               <div className="space-y-1">
                 <a href="tel:+915322687140" className="flex items-center gap-1.5 hover:text-primary transition-colors">
-                  <Phone className="w-3.5 h-3.5" /> +91 (532) 268-7140 (Transport Desk)
+                  <Phone className="w-3.5 h-3.5" aria-hidden="true" /> +91 (532) 268-7140 (Transport Desk)
                 </a>
                 <a href="mailto:transport@united.ac.in" className="flex items-center gap-1.5 hover:text-primary transition-colors">
-                  <Mail className="w-3.5 h-3.5" /> transport@united.ac.in
+                  <Mail className="w-3.5 h-3.5" aria-hidden="true" /> transport@united.ac.in
                 </a>
               </div>
             </div>
@@ -649,11 +649,11 @@ const Index = () => {
               <p className="font-bold text-foreground text-sm">Official University Links</p>
               <div className="space-y-1">
                 <a href="https://united.ac.in" target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:text-primary transition-colors">
-                  UGI Official Portal <ExternalLink className="w-3 h-3" />
+                  UGI Official Portal <ExternalLink className="w-3 h-3" aria-hidden="true" />
                 </a>
-                <a href="/role-selection" className="block hover:text-primary transition-colors">
+                <Link to="/role-selection" className="block hover:text-primary transition-colors">
                   Staff & Driver Access
-                </a>
+                </Link>
               </div>
             </div>
           </div>

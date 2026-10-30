@@ -20,7 +20,7 @@ const AppHeader = ({ title, subtitle, roleBadge, onLogout, children }: AppHeader
       <div className="flex items-center gap-3 min-w-0">
         <Link 
           to="/" 
-          className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-primary text-primary-foreground font-bold shrink-0 hover:bg-primary/90 transition-all shadow-xs group"
+          className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-primary text-primary-foreground font-bold shrink-0 hover:bg-primary/90 transition shadow-xs group"
           title="Return to Campus Portal"
           aria-label="Return to Campus Portal"
         >

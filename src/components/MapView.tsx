@@ -263,7 +263,7 @@ const MapView = ({
     return (
       <div className="h-full min-h-[320px] flex flex-col items-center justify-center p-6 text-center text-xs text-muted-foreground bg-muted/50 border border-border/80 rounded-xl">
         <div className="w-10 h-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mb-2">
-          <Navigation className="w-5 h-5" />
+          <Navigation className="w-5 h-5" aria-hidden="true" />
         </div>
         <p className="font-semibold text-foreground mb-1">Transit GPS Map Offline</p>
         <p className="max-w-xs">Unable to load satellite map grid. Please check network connectivity or API key configuration.</p>
@@ -276,9 +276,9 @@ const MapView = ({
       <div className="h-full min-h-[320px] flex flex-col items-center justify-center gap-3 text-xs text-muted-foreground bg-muted/50 rounded-xl">
         <div className="relative flex items-center justify-center">
           <div className="w-10 h-10 rounded-full bg-primary/10 animate-ping absolute" />
-          <Loader2 className="w-6 h-6 animate-spin text-primary relative z-10" />
+          <Loader2 className="w-6 h-6 animate-spin text-primary relative z-10" aria-hidden="true" />
         </div>
-        <span className="font-medium tracking-wide">Syncing campus transit satellite telemetry...</span>
+        <span className="font-medium tracking-wide">Syncing campus transit satellite telemetry…</span>
       </div>
     );
   }

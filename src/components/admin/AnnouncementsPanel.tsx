@@ -87,7 +87,7 @@ const AnnouncementsPanel = ({ routeNames }: AnnouncementsPanelProps) => {
 
   return (
     <div className="grid lg:grid-cols-2 gap-4 items-start">
-      <SectionCard title="New announcement" description="Shown at the top of the student dashboard until it expires">
+      <SectionCard title="New Announcement" description="Shown at the top of the student dashboard until it expires">
       <form onSubmit={handlePost} className="p-4 space-y-3">
 
         <div className="space-y-1.5">
@@ -134,8 +134,8 @@ const AnnouncementsPanel = ({ routeNames }: AnnouncementsPanelProps) => {
         </div>
 
         <Button type="submit" disabled={isSaving} className="w-full gap-1.5">
-          <Megaphone className="w-3.5 h-3.5" />
-          {isSaving ? "Posting..." : "Post announcement"}
+          <Megaphone className="w-3.5 h-3.5" aria-hidden="true" />
+          {isSaving ? "Posting…" : "Post Announcement"}
         </Button>
       </form>
       </SectionCard>
@@ -158,7 +158,7 @@ const AnnouncementsPanel = ({ routeNames }: AnnouncementsPanelProps) => {
               className="h-7 w-7 p-0 hover:text-destructive"
               aria-label="Delete announcement"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
             </Button>
           </div>
         ))}

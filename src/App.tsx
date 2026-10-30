@@ -19,7 +19,7 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 
 const PageLoading = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
-    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+    <Loader2 className="w-6 h-6 animate-spin text-primary" aria-hidden="true" />
   </div>
 );
 
@@ -32,6 +32,13 @@ const App = () => (
         <Toaster />
         <Sonner />
       <BrowserRouter>
+        {/* keyboard users: first Tab stop jumps past the header to the page content */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-lg focus:bg-card focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-foreground focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          Skip to content
+        </a>
         <ErrorBoundary>
         <Suspense fallback={<PageLoading />}>
         <Routes>

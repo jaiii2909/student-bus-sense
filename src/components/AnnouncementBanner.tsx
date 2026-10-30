@@ -35,7 +35,7 @@ const AnnouncementBanner = ({ announcements, nowMs, onDismiss }: AnnouncementBan
           className="flex items-start gap-3 p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200 shadow-xs"
         >
           <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0 mt-0.5">
-            <Megaphone className="w-4 h-4" />
+            <Megaphone className="w-4 h-4" aria-hidden="true" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs sm:text-sm font-semibold break-words">{a.message}</p>
@@ -48,11 +48,12 @@ const AnnouncementBanner = ({ announcements, nowMs, onDismiss }: AnnouncementBan
             </div>
           </div>
           <button
+            type="button"
             onClick={() => onDismiss(a.id)}
-            className="shrink-0 p-1.5 rounded-lg hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 transition-colors"
+            className="shrink-0 p-1.5 rounded-lg hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring pointer-coarse:p-2.5"
             aria-label="Dismiss announcement"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-3.5 h-3.5" aria-hidden="true" />
           </button>
         </div>
       ))}

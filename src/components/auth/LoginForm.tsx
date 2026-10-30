@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Bus, Eye, EyeOff, Lock, User, ShieldCheck, Navigation, Loader2 } from "lucide-react";
+import { ArrowLeft, Bus, Lock, User, ShieldCheck, Navigation, Loader2 } from "lucide-react";
+import { PasswordInput } from "@/components/ui/password-input";
 import { useToast } from "@/hooks/use-toast";
-import { apiErrorMessage } from "@/lib/utils";
+import { apiErrorMessage, plural } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 type Role = 'student' | 'admin' | 'driver';
@@ -49,8 +50,10 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
   const [studentId, setStudentId] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  // first field of the form, focused again after a failed sign-in
+  const firstFieldRef = useRef<HTMLInputElement>(null);
   const [isWakingServer, setIsWakingServer] = useState(false);
   const { toast } = useToast();
 
@@ -63,6 +66,7 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
     setIsLoading(true);
     const slowTimer = window.setTimeout(() => setIsWakingServer(true), 3000);
     let endpoint = '';
@@ -89,21 +93,21 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
         title: "Access Verified",
         description:
           role === 'student'
-            ? `Welcome ${response.data.name}. Authorized for ${response.data.registeredRoutes?.length || 0} campus route(s).`
+            ? `Welcome ${response.data.name}. Authorized for ${plural(response.data.registeredRoutes?.length || 0, "campus route")}.`
             : 'Credentials confirmed.',
       });
       onLogin(response.data);
     } catch (error) {
-      toast({
-        title: "Authentication Failed",
-        description: apiErrorMessage(
+      // shown next to the fields (not in a toast) and announced via role="alert"
+      setFormError(
+        apiErrorMessage(
           error,
           role === 'student'
-            ? 'Invalid student ID or password. Check with the campus transport desk.'
-            : 'Invalid credentials. Please verify your entry.'
-        ),
-        variant: "destructive",
-      });
+            ? 'Invalid student ID or password. Check your pass slip, or ask the campus transport desk to reset it.'
+            : 'Invalid username or password. Check them and try again.'
+        )
+      );
+      firstFieldRef.current?.focus();
     } finally {
       window.clearTimeout(slowTimer);
       setIsWakingServer(false);
@@ -112,7 +116,7 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] font-sans relative overflow-hidden">
+    <main id="main-content" tabIndex={-1} className="focus:outline-none min-h-screen bg-background text-foreground flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] font-sans relative overflow-hidden">
       {/* Background ambient lighting */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-primary/5 dark:bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -126,7 +130,7 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
             onClick={onBack}
             className="text-muted-foreground hover:text-foreground text-xs font-semibold -ml-2"
           >
-            <ArrowLeft className="w-4 h-4 mr-1.5" />
+            <ArrowLeft className="w-4 h-4 mr-1.5" aria-hidden="true" />
             Back
           </Button>
           <ThemeToggle />
@@ -139,7 +143,7 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
               <IconComponent className="w-3.5 h-3.5" />
               <span>{meta.badge}</span>
             </div>
-            <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
+            <h1 className="text-balance text-2xl font-extrabold text-foreground tracking-tight">
               {meta.title}
             </h1>
             <p className="text-xs text-muted-foreground leading-relaxed">
@@ -154,16 +158,22 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
                   Student Enrollment Number
                 </Label>
                 <div className="relative">
-                  <User className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
+                  <User className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />
                   <Input
+                    ref={firstFieldRef}
                     id="studentId"
+                    name="studentId"
+                    aria-invalid={!!formError}
+                    aria-describedby={formError ? "login-error" : undefined}
+                    spellCheck={false}
                     type="text"
                     value={studentId}
-                    onChange={(e) => setStudentId(e.target.value)}
+                    onChange={(e) => { setStudentId(e.target.value); setFormError(null); }}
                     placeholder="e.g. UGI-2023-CS-104"
                     className="pl-10 h-10 border-border text-xs focus-visible:ring-primary"
                     required
                     autoComplete="username"
+                    autoCapitalize="none"
                   />
                 </div>
                 <p className="text-2xs text-muted-foreground">Printed on your physical semester bus pass slip.</p>
@@ -176,16 +186,22 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
                   Administrator Username
                 </Label>
                 <div className="relative">
-                  <User className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
+                  <User className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />
                   <Input
+                    ref={firstFieldRef}
                     id="username"
+                    name="username"
+                    aria-invalid={!!formError}
+                    aria-describedby={formError ? "login-error" : undefined}
+                    spellCheck={false}
                     type="text"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={(e) => { setUsername(e.target.value); setFormError(null); }}
                     placeholder="e.g. transport_admin"
                     className="pl-10 h-10 border-border text-xs focus-visible:ring-primary"
                     required
                     autoComplete="username"
+                    autoCapitalize="none"
                   />
                 </div>
               </div>
@@ -197,12 +213,17 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
                   Driver Username
                 </Label>
                 <div className="relative">
-                  <User className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
+                  <User className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />
                   <Input
+                    ref={firstFieldRef}
                     id="driver-username"
+                    name="username"
+                    aria-invalid={!!formError}
+                    aria-describedby={formError ? "login-error" : undefined}
+                    spellCheck={false}
                     type="text"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={(e) => { setUsername(e.target.value); setFormError(null); }}
                     placeholder="e.g. ramesh"
                     className="pl-10 h-10 border-border text-xs focus-visible:ring-primary"
                     autoComplete="username"
@@ -219,38 +240,36 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
                   {role === 'driver' ? 'In-Cab Driver Passkey' : 'Password'}
                 </Label>
               </div>
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={role === 'driver' ? "Enter assigned driver passkey" : "Enter password"}
-                  className="pl-10 pr-10 h-10 border-border text-xs focus-visible:ring-primary"
-                  required
-                  autoComplete="current-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-3 text-muted-foreground hover:text-foreground transition-colors"
-                  tabIndex={-1}
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
+              <PasswordInput
+                id="password"
+                name="password"
+                leadingIcon={<Lock className="absolute left-3.5 top-3 h-4 w-4 text-muted-foreground" aria-hidden="true" />}
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setFormError(null); }}
+                placeholder={role === 'driver' ? "Enter assigned driver passkey…" : "Enter password…"}
+                className="pl-10 h-10 border-border text-xs focus-visible:ring-primary"
+                required
+                autoComplete="current-password"
+                aria-invalid={!!formError}
+                aria-describedby={formError ? "login-error" : undefined}
+              />
             </div>
+
+            {formError && (
+              <p id="login-error" role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
+                {formError}
+              </p>
+            )}
 
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full h-11 font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs mt-3 transition-all"
+              className="w-full h-11 font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs mt-3 transition"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
-                  Verifying Credentials...
+                  <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" aria-hidden="true" />
+                  Verifying Credentials…
                 </>
               ) : (
                 role === 'driver' ? "Begin In-Cab Session" : "Verify & Sign In"
@@ -258,7 +277,7 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
             </Button>
             {isWakingServer && (
               <p className="text-2xs text-muted-foreground text-center animate-pulse" role="status">
-                Waking up the cloud server, this can take up to a minute...
+                Waking up the cloud server, this can take up to a minute…
               </p>
             )}
           </form>
@@ -269,7 +288,7 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
         </div>
 
       </div>
-    </div>
+    </main>
   );
 };
 

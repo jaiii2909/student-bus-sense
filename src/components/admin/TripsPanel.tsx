@@ -13,6 +13,7 @@ import {
   TableRow
 } from "@/components/ui/table";
 import { downloadCsv, toDateInput } from "@/lib/csv";
+import { plural } from "@/lib/utils";
 
 interface TripRow {
   id: string;
@@ -80,17 +81,17 @@ const TripsPanel = () => {
 
   return (
     <SectionCard
-      title="Trip log"
-      description={`${trips.length} trip(s) by ${busCount} bus(es). A trip runs from the driver's Start to Stop.`}
+      title="Trip Log"
+      description={`${plural(trips.length, "trip")} by ${plural(busCount, "bus", "buses")}. A trip runs from the driver's Start to Stop.`}
       actions={
         <>
           <Input type="date" value={day} onChange={(e) => setDay(e.target.value)} className="h-8 text-xs w-40" aria-label="Day" />
           <Button variant="outline" size="sm" onClick={handleExport} disabled={trips.length === 0} className="h-8 text-xs gap-1" title="Download this day's trips as CSV">
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-3.5 h-3.5" aria-hidden="true" />
             Export
           </Button>
           <Button variant="outline" size="sm" onClick={load} disabled={isLoading} className="h-8 w-8 p-0" aria-label="Refresh trips">
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} aria-hidden="true" />
           </Button>
         </>
       }
@@ -109,7 +110,7 @@ const TripsPanel = () => {
           {trips.length === 0 ? (
             <TableRow>
               <TableCell colSpan={4} className="text-center py-8 text-xs text-muted-foreground">
-                {isLoading ? "Loading..." : "No trips on this day"}
+                {isLoading ? "Loading…" : "No trips on this day"}
               </TableCell>
             </TableRow>
           ) : (

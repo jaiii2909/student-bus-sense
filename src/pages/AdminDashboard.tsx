@@ -10,6 +10,7 @@ import {
   TableRow
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -70,7 +71,7 @@ import { ALL_ROUTES, NO_ROUTE, PASS_FILTER_LABELS, PassFilter, filterStudents, i
 import { downloadCsv, endOfDayIso, toDateInput } from "@/lib/csv";
 import { Stop } from "@/lib/eta";
 import { useToast } from "@/hooks/use-toast";
-import { apiErrorMessage } from "@/lib/utils";
+import { apiErrorMessage, plural } from "@/lib/utils";
 import { clearSession, getSession, saveSession } from "@/lib/session";
 import { connectBusSocket } from "@/lib/socket";
 import { TrackedBus } from "@/lib/busStatus";
@@ -430,8 +431,8 @@ const AdminDashboard = () => {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="text-center space-y-2">
-          <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" />
-          <p className="text-xs text-muted-foreground">Connecting to Transport Control Registry...</p>
+          <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto" aria-hidden="true" />
+          <p className="text-xs text-muted-foreground">Connecting to Transport Control Registry…</p>
         </div>
       </div>
     );
@@ -503,7 +504,7 @@ const AdminDashboard = () => {
         title="Edit vehicle"
         aria-label={`Edit Bus ${bus.busNumber}`}
       >
-        <Edit2 className="w-3.5 h-3.5" />
+        <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
       </Button>
       <Button
         variant="ghost"
@@ -513,15 +514,15 @@ const AdminDashboard = () => {
         title="Delete vehicle"
         aria-label={`Delete Bus ${bus.busNumber}`}
       >
-        <Trash2 className="w-3.5 h-3.5" />
+        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
       </Button>
     </>
   );
 
   const renderRouteStops = (route: Route) => (
     <Button variant="outline" size="sm" onClick={() => setStopsRoute(route)} className="h-7 text-xs gap-1">
-      <MapPin className="w-3.5 h-3.5" />
-      {route.stops?.length ? `${route.stops.length} stop(s)` : "Add stops"}
+      <MapPin className="w-3.5 h-3.5" aria-hidden="true" />
+      {route.stops?.length ? plural(route.stops.length, "stop") : "Add Stops"}
     </Button>
   );
 
@@ -535,7 +536,7 @@ const AdminDashboard = () => {
         title="Edit route"
         aria-label={`Edit ${route.routeName}`}
       >
-        <Edit2 className="w-3.5 h-3.5" />
+        <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
       </Button>
       <Button
         variant="ghost"
@@ -545,7 +546,7 @@ const AdminDashboard = () => {
         title="Delete route"
         aria-label={`Delete ${route.routeName}`}
       >
-        <Trash2 className="w-3.5 h-3.5" />
+        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
       </Button>
     </>
   );
@@ -592,7 +593,7 @@ const AdminDashboard = () => {
         title="Delete student"
         aria-label={`Delete ${student.name}`}
       >
-        <Trash2 className="w-3.5 h-3.5" />
+        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
       </Button>
     </>
   );
@@ -620,7 +621,7 @@ const AdminDashboard = () => {
         />
       </AppHeader>
 
-      <main className="container mx-auto px-4 py-6 max-w-6xl flex-1 space-y-6">
+      <main id="main-content" tabIndex={-1} className="focus:outline-none container mx-auto px-4 py-6 max-w-6xl flex-1 space-y-6">
         
         {/* Short Summary Strip with Strong Hierarchy */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
@@ -648,27 +649,27 @@ const AdminDashboard = () => {
             <div className="relative min-w-0 flex-1 lg:flex-none">
               <TabsList className="bg-muted p-1 rounded-lg h-11 border border-border/80 w-full lg:w-auto overflow-x-auto justify-start [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <TabsTrigger value="radar" className={TAB_TRIGGER}>
-                  <Radio className="w-3.5 h-3.5 text-primary" />
+                  <Radio className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
                   <span>Fleet Radar</span>
                 </TabsTrigger>
                 <TabsTrigger value="buses" className={TAB_TRIGGER}>
-                  <BusIcon className="w-3.5 h-3.5 text-accent" />
+                  <BusIcon className="w-3.5 h-3.5 text-accent" aria-hidden="true" />
                   <span>Buses ({buses.length})</span>
                 </TabsTrigger>
                 <TabsTrigger value="routes" className={TAB_TRIGGER}>
-                  <RouteIcon className="w-3.5 h-3.5" />
+                  <RouteIcon className="w-3.5 h-3.5" aria-hidden="true" />
                   <span>Routes ({routes.length})</span>
                 </TabsTrigger>
                 <TabsTrigger value="students" className={TAB_TRIGGER}>
-                  <Users className="w-3.5 h-3.5" />
+                  <Users className="w-3.5 h-3.5" aria-hidden="true" />
                   <span>Student Directory ({students.length})</span>
                 </TabsTrigger>
                 <TabsTrigger value="announcements" className={TAB_TRIGGER}>
-                  <Megaphone className="w-3.5 h-3.5" />
+                  <Megaphone className="w-3.5 h-3.5" aria-hidden="true" />
                   <span>Announcements</span>
                 </TabsTrigger>
                 <TabsTrigger value="drivers" className={TAB_TRIGGER}>
-                  <IdCard className="w-3.5 h-3.5" />
+                  <IdCard className="w-3.5 h-3.5" aria-hidden="true" />
                   <span>Drivers & Trips</span>
                 </TabsTrigger>
               </TabsList>
@@ -683,7 +684,7 @@ const AdminDashboard = () => {
               className="text-xs h-9 w-9 sm:w-auto px-0 sm:px-3 shrink-0 border-border gap-1.5 font-semibold hover:bg-muted"
               aria-label="Refresh telemetry"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-primary" : ""}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-primary" : ""}`} aria-hidden="true" />
               <span className="hidden sm:inline">Refresh Telemetry</span>
             </Button>
           </div>
@@ -742,9 +743,14 @@ const AdminDashboard = () => {
               actions={
                 <>
                   <div className="relative w-full sm:w-auto">
-                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted-foreground" />
+                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted-foreground" aria-hidden="true" />
                     <Input
-                      placeholder="Search bus or route..."
+                      type="search"
+                      name="bus-search"
+                      aria-label="Search buses"
+                      autoComplete="off"
+                      spellCheck={false}
+                      placeholder="Search bus or route…"
                       value={busSearch}
                       onChange={(e) => setBusSearch(e.target.value)}
                       className="pl-8 h-8 text-xs w-full sm:w-44 border-border"
@@ -759,7 +765,7 @@ const AdminDashboard = () => {
                     }}
                     className="h-8 text-xs font-semibold gap-1"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-3.5 h-3.5" aria-hidden="true" />
                     Register Bus
                   </Button>
                 </>
@@ -832,7 +838,7 @@ const AdminDashboard = () => {
                   }}
                   className="h-8 text-xs font-semibold gap-1"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-3.5 h-3.5" aria-hidden="true" />
                   Add Route
                 </Button>
               }
@@ -847,7 +853,7 @@ const AdminDashboard = () => {
                           <div className="min-w-0">
                             <p className="truncate text-sm font-bold text-foreground">{route.routeName}</p>
                             <p className="text-xs font-mono text-muted-foreground">
-                              {buses.filter((b) => b.route === route.routeName).length} vehicle(s)
+                              {plural(buses.filter((b) => b.route === route.routeName).length, "vehicle")}
                             </p>
                           </div>
                           {renderRouteStops(route)}
@@ -882,7 +888,7 @@ const AdminDashboard = () => {
                           <TableCell className="font-bold text-xs text-foreground">{route.routeName}</TableCell>
                           <TableCell>
                             <span className="text-xs font-mono text-muted-foreground">
-                              {assignedBuses.length} vehicle(s)
+                              {plural(assignedBuses.length, "vehicle")}
                             </span>
                           </TableCell>
                           <TableCell>{renderRouteStops(route)}</TableCell>
@@ -906,9 +912,14 @@ const AdminDashboard = () => {
               actions={
                 <>
                   <div className="relative w-full sm:w-auto">
-                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted-foreground" />
+                    <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted-foreground" aria-hidden="true" />
                     <Input
-                      placeholder="Search ID or name..."
+                      type="search"
+                      name="student-search"
+                      aria-label="Search students"
+                      autoComplete="off"
+                      spellCheck={false}
+                      placeholder="Search ID or name…"
                       value={studentSearch}
                       onChange={(e) => setStudentSearch(e.target.value)}
                       className="pl-8 h-8 text-xs w-full sm:w-44 border-border"
@@ -922,7 +933,7 @@ const AdminDashboard = () => {
                     className="h-8 text-xs font-semibold gap-1"
                     title="Download the student list as CSV (no passwords)"
                   >
-                    <Download className="w-3.5 h-3.5" />
+                    <Download className="w-3.5 h-3.5" aria-hidden="true" />
                     Export
                   </Button>
                   <ImportStudentsDialog onImported={fetchAll} />
@@ -931,7 +942,7 @@ const AdminDashboard = () => {
                     onClick={handleNewStudent}
                     className="h-8 text-xs font-semibold gap-1"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-3.5 h-3.5" aria-hidden="true" />
                     Enroll Student
                   </Button>
                 </>
@@ -963,7 +974,7 @@ const AdminDashboard = () => {
                 </Select>
                 {studentsFiltered && (
                   <Button size="sm" variant="ghost" onClick={clearStudentFilters} className="h-8 text-xs">
-                    Clear filters
+                    Clear Filters
                   </Button>
                 )}
                 <span className="text-2xs text-muted-foreground ml-auto">
@@ -1103,6 +1114,9 @@ const AdminDashboard = () => {
               <Label htmlFor="bus-number">Bus Identifier / License Code</Label>
               <Input
                 id="bus-number"
+                name="busNumber"
+                autoComplete="off"
+                spellCheck={false}
                 placeholder="e.g. 04 (UP-70-BT-4412)"
                 value={newBus.busNumber}
                 onChange={(e) => setNewBus({ ...newBus, busNumber: e.target.value })}
@@ -1125,7 +1139,7 @@ const AdminDashboard = () => {
               </Select>
             </div>
             <Button onClick={handleAddBus} disabled={isSaving} className="w-full h-9 text-xs font-semibold mt-2">
-              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
+              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" aria-hidden="true" /> : null}
               {editingBus ? "Save Vehicle Record" : "Register Bus in Fleet"}
             </Button>
           </div>
@@ -1148,6 +1162,8 @@ const AdminDashboard = () => {
               <Label htmlFor="route-name">Corridor Route Name</Label>
               <Input
                 id="route-name"
+                name="routeName"
+                autoComplete="off"
                 placeholder="e.g. Route 01 - Civil Lines Express"
                 value={newRoute.routeName}
                 onChange={(e) => setNewRoute({ ...newRoute, routeName: e.target.value })}
@@ -1155,7 +1171,7 @@ const AdminDashboard = () => {
               />
             </div>
             <Button onClick={handleAddRoute} disabled={isSaving} className="w-full h-9 text-xs font-semibold mt-2">
-              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
+              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" aria-hidden="true" /> : null}
               {editingRoute ? "Save Corridor Changes" : "Create Transit Corridor"}
             </Button>
           </div>
@@ -1182,6 +1198,10 @@ const AdminDashboard = () => {
                   <Label htmlFor="student-id">Student Enrollment ID</Label>
                   <Input
                     id="student-id"
+                    name="studentId"
+                    autoComplete="off"
+                    autoCapitalize="none"
+                    spellCheck={false}
                     placeholder="e.g. UGI-2023-CS-104"
                     value={newStudent.studentId}
                     onChange={(e) => setNewStudent({ ...newStudent, studentId: e.target.value })}
@@ -1195,6 +1215,8 @@ const AdminDashboard = () => {
               <Label htmlFor="student-name">Full Legal Name</Label>
               <Input
                 id="student-name"
+                name="studentName"
+                autoComplete="off"
                 placeholder="e.g. Rajesh Kumar"
                 value={newStudent.name}
                 onChange={(e) => setNewStudent({ ...newStudent, name: e.target.value })}
@@ -1206,10 +1228,11 @@ const AdminDashboard = () => {
               <>
                 <div className="space-y-1">
                   <Label htmlFor="student-pwd">Passkey / Password</Label>
-                  <Input
+                  <PasswordInput
                     id="student-pwd"
-                    type="password"
-                    placeholder="Set student login password"
+                    name="studentPassword"
+                    autoComplete="new-password"
+                    placeholder="Set student login password…"
                     value={newStudent.password}
                     onChange={(e) => setNewStudent({ ...newStudent, password: e.target.value })}
                     className="h-9 text-xs"
@@ -1253,7 +1276,7 @@ const AdminDashboard = () => {
             </div>
 
             <Button onClick={handleSaveStudent} disabled={isSaving} className="w-full h-9 text-xs font-semibold mt-2">
-              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
+              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" aria-hidden="true" /> : null}
               {editingStudent ? "Save Corridor Pass" : "Complete Enrollment"}
             </Button>
           </div>

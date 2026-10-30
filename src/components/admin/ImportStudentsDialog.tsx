@@ -12,7 +12,7 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { apiErrorMessage } from "@/lib/utils";
+import { apiErrorMessage, plural } from "@/lib/utils";
 import { endOfDayIso, parseCsv } from "@/lib/csv";
 
 interface ImportRow {
@@ -94,7 +94,7 @@ const ImportStudentsDialog = ({ onImported }: ImportStudentsDialogProps) => {
       setResult(response.data);
       setRows([]);
       onImported();
-      toast({ title: `${response.data.added} student(s) added` });
+      toast({ title: `${plural(response.data.added, "student")} added` });
     } catch (error) {
       toast({ title: "Import failed", description: apiErrorMessage(error, "Please try again."), variant: "destructive" });
     } finally {
@@ -105,7 +105,7 @@ const ImportStudentsDialog = ({ onImported }: ImportStudentsDialogProps) => {
   return (
     <>
       <Button size="sm" variant="outline" onClick={() => setOpen(true)} className="h-8 text-xs font-semibold gap-1">
-        <Upload className="w-3.5 h-3.5" />
+        <Upload className="w-3.5 h-3.5" aria-hidden="true" />
         Import CSV
       </Button>
 
@@ -140,7 +140,7 @@ UGI-2024-CS-002,"Khan, Imran",imran2024,Kareli;Dhoomanganj`}
 
           {rows.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs font-semibold">{rows.length} student(s) found. First few:</p>
+              <p className="text-xs font-semibold">{plural(rows.length, "student")} found. First few:</p>
               <div className="border border-border/80 rounded-lg divide-y divide-border text-xs">
                 {rows.slice(0, 5).map((r) => (
                   <div key={r.row} className="px-3 py-1.5 flex justify-between gap-2">
@@ -151,7 +151,7 @@ UGI-2024-CS-002,"Khan, Imran",imran2024,Kareli;Dhoomanganj`}
                 ))}
               </div>
               <Button onClick={handleImport} disabled={isImporting} className="w-full">
-                {isImporting ? "Importing... this can take up to a minute" : `Import ${rows.length} student(s)`}
+                {isImporting ? "Importing… this can take up to a minute" : `Import ${plural(rows.length, "Student")}`}
               </Button>
             </div>
           )}

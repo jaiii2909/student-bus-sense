@@ -248,11 +248,11 @@ const Driver = () => {
         onLogout={handleLogout}
       />
 
-      <main className="container mx-auto max-w-md p-4 sm:p-6 flex-1 flex flex-col sm:justify-center space-y-4">
+      <main id="main-content" tabIndex={-1} className="focus:outline-none container mx-auto max-w-md p-4 sm:p-6 flex-1 flex flex-col sm:justify-center space-y-4">
         
         {/* Main In-Cab Control Card */}
         {/* overflow-clip (not hidden) so the sticky action bar below can stick to the viewport */}
-        <div className="border border-border/80 rounded-xl bg-card shadow-lg overflow-clip transition-all">
+        <div className="border border-border/80 rounded-xl bg-card shadow-lg overflow-clip transition">
           
           {/* Status HUD Header */}
           <div className={`p-6 sm:p-8 text-center border-b transition-colors ${
@@ -272,9 +272,9 @@ const Driver = () => {
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+            <h2 className="text-balance text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
               {isSharing ? `Bus ${busId} is Live` : "Trip Telemetry Dispatch"}
-            </h1>
+            </h2>
             
             <p className="text-xs text-muted-foreground mt-1.5 max-w-xs mx-auto leading-relaxed">
               {isSharing
@@ -287,7 +287,7 @@ const Driver = () => {
             
             {wasInterrupted && !isSharing && (
               <div className="flex items-start gap-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 p-3.5 text-xs text-amber-800 dark:text-amber-300">
-                <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
                 <span>Broadcasting stopped when the browser closed. Tap start to resume your scheduled trip.</span>
               </div>
             )}
@@ -303,7 +303,7 @@ const Driver = () => {
                 disabled={isSharing || isLoadingFleet}
               >
                 <SelectTrigger id="driver-route" className="w-full h-11 text-xs font-semibold border-border bg-card">
-                  <SelectValue placeholder={isLoadingFleet ? "Loading routes..." : "Choose route corridor"} />
+                  <SelectValue placeholder={isLoadingFleet ? "Loading routes…" : "Choose route corridor"} />
                 </SelectTrigger>
                 <SelectContent>
                   {routes.map((route) => (
@@ -341,7 +341,7 @@ const Driver = () => {
               <div className="border border-border/80 rounded-xl bg-muted/50 p-4 space-y-2.5 text-xs shadow-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground flex items-center gap-1.5">
-                    <Wifi className="w-3.5 h-3.5 text-accent" /> Mobile Telemetry
+                    <Wifi className="w-3.5 h-3.5 text-accent" aria-hidden="true" /> Mobile Telemetry
                   </span>
                   <span className={`font-semibold ${sendFailed ? "text-destructive" : "text-emerald-600 dark:text-emerald-400 font-mono"}`}>
                     {sendFailed ? "Retry in progress" : "Connected (HTTP 200)"}
@@ -350,17 +350,17 @@ const Driver = () => {
 
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground flex items-center gap-1.5">
-                    <Activity className="w-3.5 h-3.5 text-primary" /> GPS Sync Rate
+                    <Activity className="w-3.5 h-3.5 text-primary" aria-hidden="true" /> GPS Sync Rate
                   </span>
                   <span className="font-mono tabular-nums font-bold text-foreground">
-                    {secondsSinceSent === null ? "Fixing coordinates..." : `Ping sent ${secondsSinceSent}s ago`}
+                    {secondsSinceSent === null ? "Fixing coordinates…" : `Ping sent ${secondsSinceSent}s ago`}
                   </span>
                 </div>
 
                 {currentSpeedKmh !== null && (
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground flex items-center gap-1.5">
-                      <Gauge className="w-3.5 h-3.5 text-accent" /> Speed Radar
+                      <Gauge className="w-3.5 h-3.5 text-accent" aria-hidden="true" /> Speed Radar
                     </span>
                     <span className="font-mono font-bold text-foreground">
                       {currentSpeedKmh} km/h
@@ -370,7 +370,7 @@ const Driver = () => {
 
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground flex items-center gap-1.5">
-                    <Sun className="w-3.5 h-3.5 text-amber-500" /> Screen Lock
+                    <Sun className="w-3.5 h-3.5 text-amber-500" aria-hidden="true" /> Screen Lock
                   </span>
                   <span className="font-semibold text-foreground">
                     {wakeLockActive ? "Wake-Lock Active (Screen on)" : "Standard Sleep"}
@@ -386,19 +386,19 @@ const Driver = () => {
                 <Button
                   onClick={startSharingLocation}
                   disabled={!busId}
-                  className="w-full h-14 font-bold text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+                  className="w-full h-14 font-bold text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition disabled:opacity-50"
                 >
-                  <Radio className="w-5 h-5 mr-2 animate-pulse" />
-                  START LOCATION BROADCAST
+                  <Radio className="w-5 h-5 mr-2 animate-pulse" aria-hidden="true" />
+                  Start Location Broadcast
                 </Button>
               ) : (
                 <Button
                   onClick={stopSharingLocation}
                   variant="destructive"
-                  className="w-full h-14 font-bold text-sm shadow-md hover:shadow-lg transition-all"
+                  className="w-full h-14 font-bold text-sm shadow-md hover:shadow-lg transition"
                 >
-                  <StopCircle className="w-5 h-5 mr-2" />
-                  STOP SHARING LOCATION
+                  <StopCircle className="w-5 h-5 mr-2" aria-hidden="true" />
+                  Stop Sharing Location
                 </Button>
               )}
             </div>

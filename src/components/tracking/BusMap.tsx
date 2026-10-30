@@ -178,7 +178,7 @@ const BusMap = ({ bus, nowMs, stops = [], myStop = null }: BusMapProps) => {
           aria-label="Center on bus"
           className="h-9 w-9 bg-card/90 backdrop-blur border border-border shadow-md hover:bg-card text-foreground"
         >
-          <Crosshair className="w-4 h-4 text-primary" />
+          <Crosshair className="w-4 h-4 text-primary" aria-hidden="true" />
         </Button>
         {stops.length > 0 && (
           <Button
@@ -189,7 +189,7 @@ const BusMap = ({ bus, nowMs, stops = [], myStop = null }: BusMapProps) => {
             aria-label="Fit whole route"
             className="h-9 w-9 bg-card/90 backdrop-blur border border-border shadow-md hover:bg-card text-foreground"
           >
-            <Layers className="w-4 h-4 text-accent" />
+            <Layers className="w-4 h-4 text-accent" aria-hidden="true" />
           </Button>
         )}
       </div>
@@ -211,14 +211,14 @@ const BusMap = ({ bus, nowMs, stops = [], myStop = null }: BusMapProps) => {
                 </div>
                 <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1 font-mono text-2xs">
-                    <Clock className="w-3 h-3 text-muted-foreground" />
+                    <Clock className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
                     {formatLastUpdated(bus.updatedAt, nowMs)}
                   </span>
                   {bus.speedKmh !== undefined && bus.speedKmh !== null && (
                     <>
                       <span>•</span>
                       <span className="flex items-center gap-1 font-mono text-2xs text-foreground font-semibold">
-                        <Gauge className="w-3 h-3 text-accent" />
+                        <Gauge className="w-3 h-3 text-accent" aria-hidden="true" />
                         {Math.round(bus.speedKmh)} km/h
                       </span>
                     </>
@@ -242,7 +242,7 @@ const BusMap = ({ bus, nowMs, stops = [], myStop = null }: BusMapProps) => {
           {myStop && (
             <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs flex items-center justify-between">
               <div className="flex items-center gap-2 min-w-0">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" aria-hidden="true" />
                 <span className="text-foreground font-medium truncate">
                   Target: <strong className="text-emerald-700 dark:text-emerald-300">{myStop.name}</strong>
                 </span>
@@ -273,10 +273,11 @@ const BusMap = ({ bus, nowMs, stops = [], myStop = null }: BusMapProps) => {
             </div>
 
             <button
+              type="button"
               onClick={handleCenterOnBus}
-              className="text-2xs text-primary hover:underline font-semibold flex items-center gap-1"
+              className="text-2xs text-primary hover:underline font-semibold flex items-center gap-1 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <Navigation className="w-3 h-3" />
+              <Navigation className="w-3 h-3" aria-hidden="true" />
               Focus Bus
             </button>
           </div>

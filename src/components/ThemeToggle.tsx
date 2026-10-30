@@ -19,22 +19,22 @@ export function ThemeToggle() {
           size="icon" 
           className="h-8 w-8 border-border/80 bg-card text-muted-foreground hover:text-foreground transition-colors"
         >
-          <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-amber-500" />
-          <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-sky-400" />
+          <Sun className="h-4 w-4 rotate-0 scale-100 transition dark:-rotate-90 dark:scale-0 text-amber-500" aria-hidden="true" />
+          <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition dark:rotate-0 dark:scale-100 text-sky-400" aria-hidden="true" />
           <span className="sr-only">Toggle theme</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-32 rounded-xl border-border/80 text-xs shadow-md">
         <DropdownMenuItem onClick={() => setTheme("light")} className="cursor-pointer gap-2 text-xs">
-          <Sun className="h-3.5 w-3.5 text-amber-500" />
+          <Sun className="h-3.5 w-3.5 text-amber-500" aria-hidden="true" />
           <span>Light</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme("dark")} className="cursor-pointer gap-2 text-xs">
-          <Moon className="h-3.5 w-3.5 text-sky-400" />
+          <Moon className="h-3.5 w-3.5 text-sky-400" aria-hidden="true" />
           <span>Dark</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme("system")} className="cursor-pointer gap-2 text-xs">
-          <Laptop className="h-3.5 w-3.5 text-muted-foreground" />
+          <Laptop className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
           <span>System</span>
         </DropdownMenuItem>
       </DropdownMenuContent>

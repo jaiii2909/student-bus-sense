@@ -3,6 +3,7 @@ import axios from "axios";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { SectionCard } from "@/components/ui/section-card";
 import { Switch } from "@/components/ui/switch";
@@ -60,7 +61,7 @@ const DriversPanel = () => {
 
   return (
     <SectionCard
-      title="Driver logins"
+      title="Driver Logins"
       description={
         drivers.length === 0
           ? "Drivers currently use the shared driver password. Adding the first driver turns that off."
@@ -72,19 +73,19 @@ const DriversPanel = () => {
       <form onSubmit={handleAdd} className="grid sm:grid-cols-4 gap-2 items-end">
         <div className="space-y-1">
           <Label htmlFor="driver-name">Name</Label>
-          <Input id="driver-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-9 text-xs" required />
+          <Input id="driver-name" name="driverName" autoComplete="off" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-9 text-xs" required />
         </div>
         <div className="space-y-1">
           <Label htmlFor="driver-username-new">Username</Label>
-          <Input id="driver-username-new" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} placeholder="e.g. ramesh" className="h-9 text-xs" autoCapitalize="none" required />
+          <Input id="driver-username-new" name="driverUsername" autoComplete="off" spellCheck={false} value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} placeholder="e.g. ramesh" className="h-9 text-xs" autoCapitalize="none" required />
         </div>
         <div className="space-y-1">
           <Label htmlFor="driver-password-new">Password</Label>
-          <Input id="driver-password-new" type="text" autoComplete="off" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="min 6 characters" className="h-9 text-xs" required />
+          <PasswordInput id="driver-password-new" name="driverPassword" autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="min 6 characters" className="h-9 text-xs" required />
         </div>
         <Button type="submit" size="sm" disabled={isSaving} className="h-9 text-xs gap-1">
-          <Plus className="w-3.5 h-3.5" />
-          {isSaving ? "Adding..." : "Add driver"}
+          <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+          {isSaving ? "Adding…" : "Add Driver"}
         </Button>
       </form>
 

@@ -14,7 +14,7 @@ import {
   DialogTitle
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { apiErrorMessage } from "@/lib/utils";
+import { apiErrorMessage, plural } from "@/lib/utils";
 import { downloadCsv, endOfDayIso, toDateInput } from "@/lib/csv";
 
 interface SelectedStudent {
@@ -85,7 +85,7 @@ const StudentBulkActions = ({ selected, routeNames, onDone, onClear }: StudentBu
       });
       const affected = response.data.affected;
       toast({
-        title: action === "delete" ? `${affected} student(s) deleted` : `${affected} student(s) updated`,
+        title: action === "delete" ? `${plural(affected, "student")} deleted` : `${plural(affected, "student")} updated`,
         description: action !== "delete" && affected < count ? `${count - affected} already had this setting.` : undefined
       });
       setAction(null);
@@ -106,23 +106,23 @@ const StudentBulkActions = ({ selected, routeNames, onDone, onClear }: StudentBu
       <div className="flex w-full items-center justify-between sm:contents">
         <span className="text-xs font-bold mr-1">{count} selected</span>
         <Button size="sm" variant="ghost" onClick={onClear} className="h-7 text-xs gap-1 sm:order-last sm:ml-auto">
-          <X className="w-3.5 h-3.5" /> Clear selection
+          <X className="w-3.5 h-3.5" aria-hidden="true" /> Clear Selection
         </Button>
       </div>
       <Button size="sm" variant="outline" onClick={() => open("addRoute")} className="h-7 text-xs gap-1">
-        <PlusCircle className="w-3.5 h-3.5" /> Add route
+        <PlusCircle className="w-3.5 h-3.5" aria-hidden="true" /> Add Route
       </Button>
       <Button size="sm" variant="outline" onClick={() => open("removeRoute")} className="h-7 text-xs gap-1">
-        <MinusCircle className="w-3.5 h-3.5" /> Remove route
+        <MinusCircle className="w-3.5 h-3.5" aria-hidden="true" /> Remove Route
       </Button>
       <Button size="sm" variant="outline" onClick={() => open("setValidUntil")} className="h-7 text-xs gap-1">
-        <CalendarClock className="w-3.5 h-3.5" /> Pass end date
+        <CalendarClock className="w-3.5 h-3.5" aria-hidden="true" /> Pass End Date
       </Button>
       <Button size="sm" variant="outline" onClick={handleExport} className="h-7 text-xs gap-1">
-        <Download className="w-3.5 h-3.5" /> Export
+        <Download className="w-3.5 h-3.5" aria-hidden="true" /> Export
       </Button>
       <Button size="sm" variant="outline" onClick={() => open("delete")} className="h-7 text-xs gap-1 text-destructive hover:text-destructive">
-        <Trash2 className="w-3.5 h-3.5" /> Delete
+        <Trash2 className="w-3.5 h-3.5" aria-hidden="true" /> Delete
       </Button>
 
       <Dialog open={!!action} onOpenChange={(value) => !value && setAction(null)}>
@@ -131,8 +131,8 @@ const StudentBulkActions = ({ selected, routeNames, onDone, onClear }: StudentBu
             <DialogTitle>{action ? TITLES[action] : ""}</DialogTitle>
             <DialogDescription>
               {action === "delete"
-                ? `Delete ${count} student(s)? They are logged out and can no longer sign in. This cannot be undone.`
-                : `Applies to ${count} selected student(s).`}
+                ? `Delete ${plural(count, "student")}? They are logged out and can no longer sign in. This cannot be undone.`
+                : `Applies to ${plural(count, "selected student")}.`}
             </DialogDescription>
           </DialogHeader>
 
@@ -171,7 +171,7 @@ const StudentBulkActions = ({ selected, routeNames, onDone, onClear }: StudentBu
             variant={action === "delete" ? "destructive" : "default"}
             className="w-full"
           >
-            {isSaving ? "Applying..." : action === "delete" ? `Delete ${count} student(s)` : "Apply"}
+            {isSaving ? "Applying…" : action === "delete" ? `Delete ${plural(count, "Student")}` : "Apply"}
           </Button>
         </DialogContent>
       </Dialog>

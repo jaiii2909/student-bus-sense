@@ -18,7 +18,7 @@ const EmptyState = ({ icon: Icon, title, text, action, className }: EmptyStatePr
       <Icon className="h-6 w-6" aria-hidden="true" />
     </div>
     <div className="space-y-1">
-      <h3 className="text-sm font-bold text-foreground">{title}</h3>
+      <h3 className="text-balance text-sm font-bold text-foreground">{title}</h3>
       <p className="mx-auto max-w-xs text-xs leading-relaxed text-muted-foreground">{text}</p>
     </div>
     {action && <div className="pt-2">{action}</div>}

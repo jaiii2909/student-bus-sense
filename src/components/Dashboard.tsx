@@ -38,6 +38,7 @@ import { connectBusSocket } from "@/lib/socket";
 import { Stop, etaMinutes, etaText } from "@/lib/eta";
 import { notificationsSupported, requestNotificationPermission, showNotification } from "@/lib/notify";
 import { useToast } from "@/hooks/use-toast";
+import { plural } from "@/lib/utils";
 
 interface StudentData {
   _id?: string;
@@ -407,7 +408,7 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
                   handleSelectBus(bus.id);
                 }
               }}
-              className={`p-3.5 rounded-xl border transition-all cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+              className={`p-3.5 rounded-xl border transition cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 isSelected
                   ? "bg-primary/5 dark:bg-primary/10 border-primary ring-1 ring-primary/80 shadow-md"
                   : "bg-card border-border/80 hover:border-muted-foreground/40 shadow-xs hover:shadow-sm"
@@ -462,7 +463,7 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
               {/* Bottom Telemetry Strip */}
               <div className="pt-2 border-t border-border/70 flex items-center justify-between text-2xs text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-muted-foreground" />
+                  <Clock className="w-3 h-3 text-muted-foreground" aria-hidden="true" />
                   {bus.status === "inactive"
                     ? "Driver off-duty"
                     : formatLastUpdated(bus.updatedAt, nowMs)}
@@ -470,16 +471,16 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
 
                 {bus.speedKmh !== undefined && bus.speedKmh !== null && locationState === "live" ? (
                   <span className="font-mono text-2xs text-accent font-semibold flex items-center gap-1">
-                    <Gauge className="w-3 h-3" />
+                    <Gauge className="w-3 h-3" aria-hidden="true" />
                     {Math.round(bus.speedKmh)} km/h
                   </span>
                 ) : isSelected ? (
                   <span className="text-primary font-bold text-2xs flex items-center gap-1">
-                    <Check className="w-3 h-3" /> Tracking on Map
+                    <Check className="w-3 h-3" aria-hidden="true" /> Tracking on Map
                   </span>
                 ) : (
                   <span className="text-muted-foreground text-2xs flex items-center gap-0.5">
-                    Tap to track <ChevronRight className="w-3 h-3" />
+                    Tap to track <ChevronRight className="w-3 h-3" aria-hidden="true" />
                   </span>
                 )}
               </div>
@@ -505,7 +506,7 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
         />
       </AppHeader>
 
-      <main className="container mx-auto px-4 py-6 max-w-7xl flex-1 space-y-5">
+      <main id="main-content" tabIndex={-1} className="focus:outline-none container mx-auto px-4 py-6 max-w-7xl flex-1 space-y-5">
         <AnnouncementBanner
           announcements={visibleAnnouncements}
           nowMs={nowMs}
@@ -526,7 +527,7 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
                 <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${liveBusesCount > 0 ? "bg-emerald-500" : "bg-muted-foreground/50"}`} />
               </span>
               <span className="truncate text-xs font-bold text-foreground">
-                {liveBusesCount > 0 ? `${liveBusesCount} Vehicle(s) Live` : "No live GPS signal"}
+                {liveBusesCount > 0 ? `${plural(liveBusesCount, "Vehicle")} Live` : "No live GPS signal"}
               </span>
             </div>
           </StatCard>
@@ -534,7 +535,7 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
           <StatCard className={STAT_CARD} label="Authorized Pass">
             <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
               <RouteIcon className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
-              <span className="truncate">{selectedRoute || `${authorizedRoutes.length} Route(s) Verified`}</span>
+              <span className="truncate">{selectedRoute || `${plural(authorizedRoutes.length, "Route")} Verified`}</span>
             </div>
           </StatCard>
 
@@ -578,7 +579,7 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
                   title="Refresh bus telemetry"
                   aria-label="Refresh bus telemetry"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-primary" : ""}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-primary" : ""}`} aria-hidden="true" />
                 </Button>
               }
             >
@@ -594,7 +595,7 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
                       }}
                     >
                       <SelectTrigger id="route-select" className="w-full h-10 border-border text-xs font-semibold">
-                        <SelectValue placeholder="Choose route corridor..." />
+                        <SelectValue placeholder="Choose route corridor…" />
                       </SelectTrigger>
                       <SelectContent>
                         {authorizedRoutes.map((route) => (
@@ -611,7 +612,7 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
                       <Label htmlFor="stop-select">Your Destination Stop</Label>
                       <Select value={myStop?.name || ""} onValueChange={handleSelectStop}>
                         <SelectTrigger id="stop-select" className="w-full h-10 border-border text-xs">
-                          <SelectValue placeholder="Choose your stop for ETA..." />
+                          <SelectValue placeholder="Choose your stop for ETA…" />
                         </SelectTrigger>
                         <SelectContent>
                           {routeStops.map((stop, index) => (
@@ -630,11 +631,11 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
                       size="sm"
                       onClick={handleToggleNearAlert}
                       aria-pressed={nearAlertOn}
-                      className={`w-full h-9 text-xs font-semibold gap-2 transition-all ${
+                      className={`w-full h-9 text-xs font-semibold gap-2 transition ${
                         nearAlertOn ? "bg-primary text-primary-foreground" : "border-border"
                       }`}
                     >
-                      {nearAlertOn ? <Bell className="w-3.5 h-3.5 text-accent animate-bounce" /> : <BellOff className="w-3.5 h-3.5 text-muted-foreground" />}
+                      {nearAlertOn ? <Bell className="w-3.5 h-3.5 text-accent animate-bounce" aria-hidden="true" /> : <BellOff className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />}
                       <span>{nearAlertOn ? "Alerts Enabled (~5 min approach)" : "Alert Me When Bus Is Near"}</span>
                     </Button>
                   )}
@@ -659,10 +660,14 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
               {allRouteBuses.length > 0 && (
                 <div className="space-y-2">
                   <div className="relative">
-                    <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-muted-foreground" />
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-muted-foreground" aria-hidden="true" />
                     <Input
-                      type="text"
-                      placeholder="Search bus number..."
+                      type="search"
+                      name="bus-search"
+                      aria-label="Search bus number"
+                      autoComplete="off"
+                      spellCheck={false}
+                      placeholder="Search bus number…"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="pl-8 h-9 text-xs border-border bg-card"
