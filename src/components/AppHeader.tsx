@@ -14,16 +14,17 @@ interface AppHeaderProps {
 }
 
 const AppHeader = ({ title, subtitle, roleBadge, onLogout, children }: AppHeaderProps) => (
-  <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-card/85 backdrop-blur-md">
-    <div className="container mx-auto px-4 h-16 max-w-7xl flex items-center justify-between gap-4">
+  <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-card/85 backdrop-blur-md pt-safe">
+    <div className="container mx-auto px-4 h-16 max-w-7xl flex items-center justify-between gap-3 sm:gap-4">
       {/* Brand & Wayfinding Title */}
       <div className="flex items-center gap-3 min-w-0">
         <Link 
           to="/" 
           className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-primary text-primary-foreground font-bold shrink-0 hover:bg-primary/90 transition-all shadow-xs group"
           title="Return to Campus Portal"
+          aria-label="Return to Campus Portal"
         >
-          <Bus className="w-5 h-5 transition-transform group-hover:scale-110" />
+          <Bus className="w-5 h-5 transition-transform group-hover:scale-110" aria-hidden="true" />
           <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-accent ring-2 ring-card animate-pulse" />
         </Link>
         <div className="min-w-0">
@@ -34,7 +35,7 @@ const AppHeader = ({ title, subtitle, roleBadge, onLogout, children }: AppHeader
             {roleBadge && (
               <Badge 
                 variant="outline" 
-                className={`text-2xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 border ${
+                className={`text-2xs font-bold uppercase tracking-wider hidden sm:inline-flex px-2 py-0.5 rounded-full shrink-0 border ${
                   roleBadge === "Admin"
                     ? "border-indigo-300 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 bg-indigo-50/70 dark:bg-indigo-950/40"
                     : roleBadge === "Driver"
@@ -61,10 +62,11 @@ const AppHeader = ({ title, subtitle, roleBadge, onLogout, children }: AppHeader
             variant="outline" 
             size="sm"
             onClick={onLogout}
-            className="h-8 px-3 text-xs font-semibold border-border hover:bg-muted transition-colors"
+            className="h-8 w-8 sm:w-auto px-0 sm:px-3 text-xs font-semibold border-border hover:bg-muted transition-colors"
+            aria-label="Sign out"
           >
-            <LogOut className="w-3.5 h-3.5 mr-1.5" />
-            Sign Out
+            <LogOut className="w-3.5 h-3.5 sm:mr-1.5" aria-hidden="true" />
+            <span className="hidden sm:inline">Sign Out</span>
           </Button>
         )}
       </div>

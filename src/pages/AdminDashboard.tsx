@@ -479,6 +479,126 @@ const AdminDashboard = () => {
   const busesWithLocation = locations.filter((l) => l.coordinates);
   const activeBusesCount = buses.filter((b) => b.status === "active").length;
 
+  // Row pieces shared by the desktop tables and the stacked phone cards
+  const renderBusStatus = (bus: Bus) => (
+    <div className="flex items-center gap-2">
+      <Switch
+        checked={bus.status === "active"}
+        onCheckedChange={() => handleToggleBusStatus(bus)}
+        aria-label={`Toggle status for Bus ${bus.busNumber}`}
+      />
+      <span className={`text-xs font-semibold ${bus.status === "active" ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"}`}>
+        {bus.status === "active" ? "On Route" : "At Depot"}
+      </span>
+    </div>
+  );
+
+  const renderBusActions = (bus: Bus) => (
+    <>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => handleEditBus(bus)}
+        className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+        title="Edit vehicle"
+        aria-label={`Edit Bus ${bus.busNumber}`}
+      >
+        <Edit2 className="w-3.5 h-3.5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => handleDeleteBus(bus)}
+        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+        title="Delete vehicle"
+        aria-label={`Delete Bus ${bus.busNumber}`}
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+      </Button>
+    </>
+  );
+
+  const renderRouteStops = (route: Route) => (
+    <Button variant="outline" size="sm" onClick={() => setStopsRoute(route)} className="h-7 text-xs gap-1">
+      <MapPin className="w-3.5 h-3.5" />
+      {route.stops?.length ? `${route.stops.length} stop(s)` : "Add stops"}
+    </Button>
+  );
+
+  const renderRouteActions = (route: Route) => (
+    <>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => handleEditRoute(route)}
+        className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+        title="Edit route"
+        aria-label={`Edit ${route.routeName}`}
+      >
+        <Edit2 className="w-3.5 h-3.5" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => handleDeleteRoute(route)}
+        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+        title="Delete route"
+        aria-label={`Delete ${route.routeName}`}
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+      </Button>
+    </>
+  );
+
+  const renderPassValidity = (student: Student) =>
+    student.accessValidUntil &&
+    (new Date(student.accessValidUntil).getTime() < Date.now() ? (
+      <span className="block text-2xs font-semibold text-destructive">Pass expired</span>
+    ) : (
+      <span className="block text-2xs text-muted-foreground">Valid until {formatPassDate(student.accessValidUntil)}</span>
+    ));
+
+  const renderStudentRoutes = (student: Student) => (
+    <div className="flex flex-wrap gap-1">
+      {student.registeredRoutes.length > 0 ? (
+        student.registeredRoutes.map((r) => (
+          <Badge
+            key={`${student._id}-${r}`}
+            variant="outline"
+            className="text-2xs font-semibold px-1.5 py-0 rounded-md border-border/80 bg-muted/50"
+          >
+            {r}
+          </Badge>
+        ))
+      ) : (
+        <span className="text-2xs text-muted-foreground italic">No route pass assigned</span>
+      )}
+    </div>
+  );
+
+  const renderStudentActions = (student: Student) => (
+    <>
+      <Button variant="outline" size="sm" onClick={() => handleEditStudent(student)} className="h-7 text-xs border-border">
+        Manage Pass
+      </Button>
+      <Button variant="ghost" size="sm" onClick={() => setResetStudent(student)} className="h-7 text-xs">
+        Reset Password
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => handleDeleteStudent(student)}
+        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+        title="Delete student"
+        aria-label={`Delete ${student.name}`}
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+      </Button>
+    </>
+  );
+
+  const emptyListText = (text: string) => <li className="py-8 text-center text-xs text-muted-foreground">{text}</li>;
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
       <AppHeader 
@@ -523,43 +643,48 @@ const AdminDashboard = () => {
 
         {/* Tabbed Views */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <div className="flex items-center justify-between border-b border-border/80 pb-3 flex-wrap gap-2">
-            <TabsList className="bg-muted p-1 rounded-lg h-11 border border-border/80 max-w-full overflow-x-auto justify-start">
-              <TabsTrigger value="radar" className={TAB_TRIGGER}>
-                <Radio className="w-3.5 h-3.5 text-primary" />
-                <span>Fleet Radar</span>
-              </TabsTrigger>
-              <TabsTrigger value="buses" className={TAB_TRIGGER}>
-                <BusIcon className="w-3.5 h-3.5 text-accent" />
-                <span>Buses ({buses.length})</span>
-              </TabsTrigger>
-              <TabsTrigger value="routes" className={TAB_TRIGGER}>
-                <RouteIcon className="w-3.5 h-3.5" />
-                <span>Routes ({routes.length})</span>
-              </TabsTrigger>
-              <TabsTrigger value="students" className={TAB_TRIGGER}>
-                <Users className="w-3.5 h-3.5" />
-                <span>Student Directory ({students.length})</span>
-              </TabsTrigger>
-              <TabsTrigger value="announcements" className={TAB_TRIGGER}>
-                <Megaphone className="w-3.5 h-3.5" />
-                <span>Announcements</span>
-              </TabsTrigger>
-              <TabsTrigger value="drivers" className={TAB_TRIGGER}>
-                <IdCard className="w-3.5 h-3.5" />
-                <span>Drivers & Trips</span>
-              </TabsTrigger>
-            </TabsList>
+          <div className="flex items-center justify-between border-b border-border/80 pb-3 gap-2">
+            {/* tabs scroll sideways on narrow screens; the fade on the right hints there is more */}
+            <div className="relative min-w-0 flex-1 lg:flex-none">
+              <TabsList className="bg-muted p-1 rounded-lg h-11 border border-border/80 w-full lg:w-auto overflow-x-auto justify-start [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <TabsTrigger value="radar" className={TAB_TRIGGER}>
+                  <Radio className="w-3.5 h-3.5 text-primary" />
+                  <span>Fleet Radar</span>
+                </TabsTrigger>
+                <TabsTrigger value="buses" className={TAB_TRIGGER}>
+                  <BusIcon className="w-3.5 h-3.5 text-accent" />
+                  <span>Buses ({buses.length})</span>
+                </TabsTrigger>
+                <TabsTrigger value="routes" className={TAB_TRIGGER}>
+                  <RouteIcon className="w-3.5 h-3.5" />
+                  <span>Routes ({routes.length})</span>
+                </TabsTrigger>
+                <TabsTrigger value="students" className={TAB_TRIGGER}>
+                  <Users className="w-3.5 h-3.5" />
+                  <span>Student Directory ({students.length})</span>
+                </TabsTrigger>
+                <TabsTrigger value="announcements" className={TAB_TRIGGER}>
+                  <Megaphone className="w-3.5 h-3.5" />
+                  <span>Announcements</span>
+                </TabsTrigger>
+                <TabsTrigger value="drivers" className={TAB_TRIGGER}>
+                  <IdCard className="w-3.5 h-3.5" />
+                  <span>Drivers & Trips</span>
+                </TabsTrigger>
+              </TabsList>
+              <div className="pointer-events-none absolute inset-y-px right-px w-10 rounded-r-lg bg-gradient-to-l from-muted to-transparent lg:hidden" />
+            </div>
 
             <Button
               variant="outline"
               size="sm"
               onClick={fetchAll}
               disabled={isRefreshing}
-              className="text-xs h-9 border-border gap-1.5 font-semibold hover:bg-muted"
+              className="text-xs h-9 w-9 sm:w-auto px-0 sm:px-3 shrink-0 border-border gap-1.5 font-semibold hover:bg-muted"
+              aria-label="Refresh telemetry"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-primary" : ""}`} />
-              <span>Refresh Telemetry</span>
+              <span className="hidden sm:inline">Refresh Telemetry</span>
             </Button>
           </div>
 
@@ -616,13 +741,13 @@ const AdminDashboard = () => {
               description="Manage bus numbers, assigned routes, and operational status"
               actions={
                 <>
-                  <div className="relative">
+                  <div className="relative w-full sm:w-auto">
                     <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted-foreground" />
                     <Input
                       placeholder="Search bus or route..."
                       value={busSearch}
                       onChange={(e) => setBusSearch(e.target.value)}
-                      className="pl-8 h-8 text-xs w-44 border-border"
+                      className="pl-8 h-8 text-xs w-full sm:w-44 border-border"
                     />
                   </div>
                   <Button
@@ -640,7 +765,26 @@ const AdminDashboard = () => {
                 </>
               }
             >
-              <Table>
+              {/* phones: stacked cards */}
+              <ul className="divide-y divide-border/80 md:hidden">
+                {visibleBuses.length === 0
+                  ? emptyListText(bSearch ? "No matching buses found" : "No vehicles registered in fleet")
+                  : visibleBuses.map((bus) => (
+                      <li key={bus._id} className="flex items-center justify-between gap-3 p-4">
+                        <div className="min-w-0 space-y-2">
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-foreground">Bus {bus.busNumber}</p>
+                            <p className="truncate text-xs text-muted-foreground">{bus.route}</p>
+                          </div>
+                          {renderBusStatus(bus)}
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1">{renderBusActions(bus)}</div>
+                      </li>
+                    ))}
+              </ul>
+
+              {/* md+: table */}
+              <Table className="hidden md:table">
                 <TableHeader>
                   <TableRow className="border-border hover:bg-transparent">
                     <TableHead className="text-xs font-bold uppercase tracking-wider">Bus Identifier</TableHead>
@@ -661,37 +805,9 @@ const AdminDashboard = () => {
                       <TableRow key={bus._id} className="border-border hover:bg-muted/40">
                         <TableCell className="font-bold text-xs text-foreground">Bus {bus.busNumber}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{bus.route}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Switch
-                              checked={bus.status === "active"}
-                              onCheckedChange={() => handleToggleBusStatus(bus)}
-                              aria-label={`Toggle status for Bus ${bus.busNumber}`}
-                            />
-                            <span className={`text-xs font-semibold ${bus.status === "active" ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"}`}>
-                              {bus.status === "active" ? "On Route" : "At Depot"}
-                            </span>
-                          </div>
-                        </TableCell>
+                        <TableCell>{renderBusStatus(bus)}</TableCell>
                         <TableCell className="text-right whitespace-nowrap">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditBus(bus)}
-                            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground mr-1"
-                            title="Edit vehicle"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteBus(bus)}
-                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                            title="Delete vehicle"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
+                          <div className="inline-flex items-center gap-1">{renderBusActions(bus)}</div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -721,7 +837,28 @@ const AdminDashboard = () => {
                 </Button>
               }
             >
-              <Table>
+              {/* phones: stacked cards */}
+              <ul className="divide-y divide-border/80 md:hidden">
+                {routes.length === 0
+                  ? emptyListText("No transit routes configured yet")
+                  : routes.map((route) => (
+                      <li key={route._id} className="flex items-center justify-between gap-3 p-4">
+                        <div className="min-w-0 space-y-2">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-bold text-foreground">{route.routeName}</p>
+                            <p className="text-xs font-mono text-muted-foreground">
+                              {buses.filter((b) => b.route === route.routeName).length} vehicle(s)
+                            </p>
+                          </div>
+                          {renderRouteStops(route)}
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1">{renderRouteActions(route)}</div>
+                      </li>
+                    ))}
+              </ul>
+
+              {/* md+: table */}
+              <Table className="hidden md:table">
                 <TableHeader>
                   <TableRow className="border-border hover:bg-transparent">
                     <TableHead className="text-xs font-bold uppercase tracking-wider">Route Corridor Name</TableHead>
@@ -748,36 +885,9 @@ const AdminDashboard = () => {
                               {assignedBuses.length} vehicle(s)
                             </span>
                           </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setStopsRoute(route)}
-                              className="h-7 text-xs gap-1"
-                            >
-                              <MapPin className="w-3.5 h-3.5" />
-                              {route.stops?.length ? `${route.stops.length} stop(s)` : "Add stops"}
-                            </Button>
-                          </TableCell>
+                          <TableCell>{renderRouteStops(route)}</TableCell>
                           <TableCell className="text-right whitespace-nowrap">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditRoute(route)}
-                              className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground mr-1"
-                              title="Edit route"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteRoute(route)}
-                              className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                              title="Delete route"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
+                            <div className="inline-flex items-center gap-1">{renderRouteActions(route)}</div>
                           </TableCell>
                         </TableRow>
                       );
@@ -795,13 +905,13 @@ const AdminDashboard = () => {
               description="Enroll commuters and assign authorized corridor passes"
               actions={
                 <>
-                  <div className="relative">
+                  <div className="relative w-full sm:w-auto">
                     <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted-foreground" />
                     <Input
                       placeholder="Search ID or name..."
                       value={studentSearch}
                       onChange={(e) => setStudentSearch(e.target.value)}
-                      className="pl-8 h-8 text-xs w-44 border-border"
+                      className="pl-8 h-8 text-xs w-full sm:w-44 border-border"
                     />
                   </div>
                   <Button
@@ -868,7 +978,47 @@ const AdminDashboard = () => {
                 onClear={() => setSelectedStudentIds(new Set())}
               />
 
-              <Table>
+              {/* phones: stacked cards, with a select-all row since there is no table header */}
+              <div className="md:hidden">
+                {visibleStudents.length > 0 && (
+                  <label className="flex items-center gap-3 border-b border-border/80 px-4 py-2.5 text-xs font-semibold text-muted-foreground">
+                    <Checkbox
+                      checked={allVisibleSelected ? true : visibleSelectedCount > 0 ? "indeterminate" : false}
+                      onCheckedChange={toggleAllVisibleStudents}
+                    />
+                    Select all shown
+                  </label>
+                )}
+                <ul className="divide-y divide-border/80">
+                  {visibleStudents.length === 0
+                    ? emptyListText(studentsFiltered ? "No students match these filters" : "No students enrolled in transport registry")
+                    : visibleStudents.map((student) => (
+                        <li
+                          key={student._id}
+                          className={`flex gap-3 p-4 ${selectedStudentIds.has(student._id) ? "bg-muted/50" : ""}`}
+                        >
+                          <Checkbox
+                            className="mt-0.5"
+                            checked={selectedStudentIds.has(student._id)}
+                            onCheckedChange={() => toggleStudentSelected(student._id)}
+                            aria-label={`Select ${student.name}`}
+                          />
+                          <div className="min-w-0 flex-1 space-y-2">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-bold text-foreground">{student.name}</p>
+                              <p className="truncate font-mono text-xs text-muted-foreground">{student.studentId}</p>
+                              {renderPassValidity(student)}
+                            </div>
+                            {renderStudentRoutes(student)}
+                            <div className="flex flex-wrap items-center gap-1">{renderStudentActions(student)}</div>
+                          </div>
+                        </li>
+                      ))}
+                </ul>
+              </div>
+
+              {/* md+: table */}
+              <Table className="hidden md:table">
                 <TableHeader>
                   <TableRow className="border-border hover:bg-transparent">
                     <TableHead className="w-10">
@@ -911,58 +1061,11 @@ const AdminDashboard = () => {
                         </TableCell>
                         <TableCell className="font-medium text-xs text-foreground">
                           {student.name}
-                          {student.accessValidUntil && (
-                            new Date(student.accessValidUntil).getTime() < Date.now() ? (
-                              <span className="block text-2xs font-semibold text-destructive">Pass expired</span>
-                            ) : (
-                              <span className="block text-2xs text-muted-foreground">Valid until {formatPassDate(student.accessValidUntil)}</span>
-                            )
-                          )}
+                          {renderPassValidity(student)}
                         </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {student.registeredRoutes.length > 0 ? (
-                              student.registeredRoutes.map((r) => (
-                                <Badge 
-                                  key={`${student._id}-${r}`} 
-                                  variant="outline"
-                                  className="text-2xs font-semibold px-1.5 py-0 rounded-md border-border/80 bg-muted/50"
-                                >
-                                  {r}
-                                </Badge>
-                              ))
-                            ) : (
-                              <span className="text-2xs text-muted-foreground italic">No route pass assigned</span>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditStudent(student)}
-                            className="h-7 text-xs border-border"
-                          >
-                            Manage Pass
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setResetStudent(student)}
-                            className="h-7 text-xs ml-1"
-                          >
-                            Reset Password
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteStudent(student)}
-                            className="h-7 w-7 p-0 ml-1 text-stone-500 hover:text-destructive"
-                            title="Delete student"
-                            aria-label={`Delete ${student.name}`}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
+                        <TableCell>{renderStudentRoutes(student)}</TableCell>
+                        <TableCell className="text-right whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1">{renderStudentActions(student)}</div>
                         </TableCell>
                       </TableRow>
                     ))

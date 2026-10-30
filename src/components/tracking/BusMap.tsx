@@ -39,7 +39,7 @@ const Placeholder = ({
   subtext?: string;
   badgeText?: string;
 }) => (
-  <div className="h-full min-h-[420px] flex items-center justify-center bg-muted/40 p-8 text-center relative overflow-hidden">
+  <div className="h-full min-h-[320px] flex items-center justify-center bg-muted/40 p-8 text-center relative overflow-hidden">
     {/* Subtle Background Pattern */}
     <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] opacity-40 pointer-events-none" />
     
@@ -158,7 +158,7 @@ const BusMap = ({ bus, nowMs, stops = [], myStop = null }: BusMapProps) => {
   const distKm = myStop && bus.coordinates ? distanceKm(bus.coordinates, myStop) : null;
 
   return (
-    <div className="relative h-full w-full min-h-[460px] overflow-hidden rounded-xl bg-slate-900">
+    <div className="relative h-full w-full min-h-[320px] overflow-hidden rounded-xl bg-slate-900">
       {/* Map View */}
       <MapView
         center={bus.coordinates}
@@ -175,6 +175,7 @@ const BusMap = ({ bus, nowMs, stops = [], myStop = null }: BusMapProps) => {
           variant="secondary"
           onClick={handleCenterOnBus}
           title="Center on Bus"
+          aria-label="Center on bus"
           className="h-9 w-9 bg-card/90 backdrop-blur border border-border shadow-md hover:bg-card text-foreground"
         >
           <Crosshair className="w-4 h-4 text-primary" />
@@ -185,6 +186,7 @@ const BusMap = ({ bus, nowMs, stops = [], myStop = null }: BusMapProps) => {
             variant="secondary"
             onClick={handleFitRouteBounds}
             title="Fit Route Network"
+            aria-label="Fit whole route"
             className="h-9 w-9 bg-card/90 backdrop-blur border border-border shadow-md hover:bg-card text-foreground"
           >
             <Layers className="w-4 h-4 text-accent" />
@@ -194,18 +196,18 @@ const BusMap = ({ bus, nowMs, stops = [], myStop = null }: BusMapProps) => {
 
       {/* Floating Live Telemetry Overlay HUD at Bottom */}
       <div className="absolute bottom-3 left-3 right-3 z-10 pointer-events-none">
-        <div className="max-w-lg mx-auto sm:ml-0 bg-card/95 backdrop-blur-md border border-border/80 shadow-xl rounded-xl p-4 pointer-events-auto space-y-3">
+        <div className="max-w-lg mx-auto sm:ml-0 bg-card/95 backdrop-blur-md border border-border/80 shadow-xl rounded-xl p-3 sm:p-4 pointer-events-auto space-y-2.5 sm:space-y-3">
           
           {/* Header Row: Vehicle details + Status badge */}
           <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-extrabold text-sm border border-primary/20 shrink-0">
                 {bus.number}
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-foreground">Bus {bus.number}</h3>
-                  <span className="text-xs text-muted-foreground font-medium">• {bus.route}</span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <h3 className="text-sm font-bold text-foreground shrink-0">Bus {bus.number}</h3>
+                  <span className="text-xs text-muted-foreground font-medium truncate">• {bus.route}</span>
                 </div>
                 <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1 font-mono text-2xs">
@@ -251,8 +253,8 @@ const BusMap = ({ bus, nowMs, stops = [], myStop = null }: BusMapProps) => {
             </div>
           )}
 
-          {/* Micro Map Legend Bar */}
-          <div className="pt-2 border-t border-border/70 flex items-center justify-between text-2xs text-muted-foreground">
+          {/* Micro Map Legend Bar (hidden on phones to keep the map visible; the crosshair button covers Focus Bus) */}
+          <div className="pt-2 border-t border-border/70 hidden sm:flex items-center justify-between text-2xs text-muted-foreground">
             <div className="flex items-center gap-3">
               <span className="inline-flex items-center gap-1">
                 <span className="w-2.5 h-2.5 rounded-full bg-primary border border-white inline-block shadow-xs" />

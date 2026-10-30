@@ -19,7 +19,7 @@ const NotFound = () => {
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4 font-sans relative overflow-hidden">
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[300px] bg-primary/5 dark:bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="absolute top-4 right-4 z-20">
+      <div className="absolute top-[max(1rem,env(safe-area-inset-top))] right-4 z-20">
         <ThemeToggle />
       </div>
 

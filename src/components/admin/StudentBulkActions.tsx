@@ -101,8 +101,14 @@ const StudentBulkActions = ({ selected, routeNames, onDone, onClear }: StudentBu
   if (count === 0) return null;
 
   return (
-    <div className="px-4 py-2.5 border-b border-border bg-primary/5 flex flex-wrap items-center gap-2">
-      <span className="text-xs font-bold mr-1">{count} selected</span>
+    <div className="px-4 py-2.5 border-b border-border/80 bg-primary/5 flex flex-wrap items-center gap-2">
+      {/* phones: count + clear on their own row, actions wrap below; sm+: one row with clear at the end */}
+      <div className="flex w-full items-center justify-between sm:contents">
+        <span className="text-xs font-bold mr-1">{count} selected</span>
+        <Button size="sm" variant="ghost" onClick={onClear} className="h-7 text-xs gap-1 sm:order-last sm:ml-auto">
+          <X className="w-3.5 h-3.5" /> Clear selection
+        </Button>
+      </div>
       <Button size="sm" variant="outline" onClick={() => open("addRoute")} className="h-7 text-xs gap-1">
         <PlusCircle className="w-3.5 h-3.5" /> Add route
       </Button>
@@ -117,9 +123,6 @@ const StudentBulkActions = ({ selected, routeNames, onDone, onClear }: StudentBu
       </Button>
       <Button size="sm" variant="outline" onClick={() => open("delete")} className="h-7 text-xs gap-1 text-destructive hover:text-destructive">
         <Trash2 className="w-3.5 h-3.5" /> Delete
-      </Button>
-      <Button size="sm" variant="ghost" onClick={onClear} className="h-7 text-xs gap-1 ml-auto">
-        <X className="w-3.5 h-3.5" /> Clear selection
       </Button>
 
       <Dialog open={!!action} onOpenChange={(value) => !value && setAction(null)}>

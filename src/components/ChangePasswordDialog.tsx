@@ -67,8 +67,9 @@ const ChangePasswordDialog = ({ endpoint, minLength, onChanged }: ChangePassword
         variant="outline" 
         size="sm" 
         onClick={() => setOpen(true)} 
-        className="h-8 px-3 text-xs font-semibold border-border hover:bg-muted transition-colors" 
+        className="h-8 w-8 sm:w-auto px-0 sm:px-3 text-xs font-semibold border-border hover:bg-muted transition-colors" 
         title="Change account password"
+        aria-label="Change password"
       >
         <KeyRound className="w-3.5 h-3.5 sm:mr-1.5 text-primary" />
         <span className="hidden sm:inline">Password</span>

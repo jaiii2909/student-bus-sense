@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SegmentedControl } from "@/components/ui/segmented-control";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { 
   Bus, 
   MapPin, 
@@ -23,7 +24,8 @@ import {
   Users,
   Compass,
   Zap,
-  Activity
+  Activity,
+  Menu
 } from "lucide-react";
 
 interface SampleCorridor {
@@ -105,21 +107,25 @@ const Index = () => {
   const navigate = useNavigate();
   const [activeCorridor, setActiveCorridor] = useState<SampleCorridor>(sampleCorridors[0]);
 
+  const scrollToRoutes = () => document.getElementById("routes-schedule")?.scrollIntoView({ behavior: "smooth" });
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
       
       {/* Institutional Top Navigation Bar */}
-      <header className="sticky top-0 z-50 w-full border-b border-border/80 bg-card/85 backdrop-blur-md">
-        <div className="container mx-auto px-4 h-16 max-w-7xl flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-50 w-full border-b border-border/80 bg-card/85 backdrop-blur-md pt-safe">
+        <div className="container mx-auto px-4 h-16 max-w-7xl flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-primary text-primary-foreground font-bold shrink-0 shadow-xs">
-              <Bus className="w-5 h-5" />
+              <Bus className="w-5 h-5" aria-hidden="true" />
               <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-accent ring-2 ring-card animate-pulse" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-base text-foreground tracking-tight">UGI Campus Transit</span>
-                <span className="text-2xs font-bold tracking-wider uppercase px-2 py-0.5 rounded-full border border-primary/20 bg-primary/10 text-primary">
+                <span className="font-extrabold text-base text-foreground tracking-tight truncate">
+                  UGI <span className="hidden sm:inline">Campus </span>Transit
+                </span>
+                <span className="hidden sm:inline text-2xs font-bold tracking-wider uppercase px-2 py-0.5 rounded-full border border-primary/20 bg-primary/10 text-primary">
                   Live Dispatch
                 </span>
               </div>
@@ -127,11 +133,11 @@ const Index = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => document.getElementById("routes-schedule")?.scrollIntoView({ behavior: "smooth" })}
+              onClick={scrollToRoutes}
               className="hidden md:inline-flex text-xs font-semibold text-muted-foreground hover:text-foreground"
             >
               Route Network
@@ -140,17 +146,34 @@ const Index = () => {
               variant="ghost"
               size="sm"
               onClick={() => navigate("/role-selection")}
-              className="text-xs font-semibold text-muted-foreground hover:text-foreground"
+              className="hidden sm:inline-flex text-xs font-semibold text-muted-foreground hover:text-foreground"
             >
               Staff & Driver
             </Button>
+            {/* phones and tablets: secondary links collapse into one menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="md:hidden h-8 w-8 text-muted-foreground" aria-label="More links">
+                  <Menu className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem onClick={scrollToRoutes} className="text-xs">
+                  Route Network
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/role-selection")} className="text-xs sm:hidden">
+                  Staff & Driver
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <ThemeToggle />
             <Button
               size="sm"
               onClick={() => navigate("/student-login")}
-              className="text-xs font-bold px-4 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
+              className="text-xs font-bold px-3 sm:px-4 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
             >
-              Student Sign In
+              <span className="sm:hidden">Sign In</span>
+              <span className="hidden sm:inline">Student Sign In</span>
             </Button>
           </div>
         </div>
@@ -393,16 +416,16 @@ const Index = () => {
 
               <div className="md:col-span-6">
                 <div className="border border-border/80 rounded-xl p-6 bg-card shadow-md space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-border/80">
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pb-3 border-b border-border/80">
                     <span className="text-xs font-bold text-foreground">Sample Corridor: Route 03 (Kareli Line)</span>
                     <span className="text-2xs font-mono text-muted-foreground">Departed: 07:30 AM</span>
                   </div>
                   <div className="space-y-2.5 text-xs">
-                    <div className="p-3 rounded-xl bg-muted/50 border border-border/80 flex justify-between items-center">
+                    <div className="p-3 rounded-xl bg-muted/50 border border-border/80 flex flex-wrap justify-between items-center gap-x-3 gap-y-1">
                       <span className="font-bold text-foreground">Bus 12 (UP-70-AT-1290)</span>
                       <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">At GTB Nagar (4 stops away)</span>
                     </div>
-                    <div className="p-3 rounded-xl bg-muted/50 border border-border/80 flex justify-between items-center">
+                    <div className="p-3 rounded-xl bg-muted/50 border border-border/80 flex flex-wrap justify-between items-center gap-x-3 gap-y-1">
                       <span className="font-bold text-foreground">Bus 15 (UP-70-BT-1504)</span>
                       <span className="text-muted-foreground font-mono">Scheduled 08:00 AM (Depot)</span>
                     </div>
@@ -415,7 +438,7 @@ const Index = () => {
             <div className="grid md:grid-cols-12 gap-8 items-center">
               <div className="md:col-span-6 order-2 md:order-1">
                 <div className="border border-border/80 rounded-xl p-6 bg-card shadow-md space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-border/80">
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pb-3 border-b border-border/80">
                     <div className="flex items-center gap-2">
                       <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                       <span className="text-xs font-bold text-foreground">Verified Transport Pass</span>
@@ -498,7 +521,7 @@ const Index = () => {
 
               <div className="md:col-span-6">
                 <div className="border border-border/80 rounded-xl p-6 bg-card shadow-md space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-border/80">
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pb-3 border-b border-border/80">
                     <span className="text-xs font-bold text-foreground">Driver In-Cab HUD</span>
                     <span className="text-2xs font-mono text-emerald-600 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-full bg-emerald-500/10">Screen Wake-Lock: Active</span>
                   </div>

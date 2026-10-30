@@ -61,6 +61,9 @@ interface AuthorizedBusesResponse {
   buses: TrackedBus[];
 }
 
+// summary tiles: fixed width in the phone swipe row, grid cells from md up
+const STAT_CARD = "w-40 shrink-0 snap-start md:w-auto";
+
 const readStored = (key: string) => {
   try {
     return localStorage.getItem(key);
@@ -104,7 +107,8 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [nowMs, setNowMs] = useState(Date.now());
-  const [mobileView, setMobileView] = useState<"map" | "list">("map");
+  // phones show one pane at a time; start on the list until a route is chosen, since the route picker lives there
+  const [mobileView, setMobileView] = useState<"map" | "list">(() => (readStored("selectedRoute") ? "map" : "list"));
   const [socketConnected, setSocketConnected] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -509,10 +513,11 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
         />
 
         {/* Mobility Telemetry Metric Strip */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          <StatCard label="Corridor Fleet Status" value={activeBusesCount} unit={`Active / ${allRouteBuses.length} Scheduled`} />
+        {/* phones: one swipeable row instead of a 2×2 block above the map; md+: 4-column grid */}
+        <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 scroll-px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:grid md:grid-cols-4 md:gap-4 md:overflow-visible md:px-0">
+          <StatCard className={STAT_CARD} label="Corridor Fleet Status" value={activeBusesCount} unit={`Active / ${allRouteBuses.length} Scheduled`} />
 
-          <StatCard label="Live Satellite GPS">
+          <StatCard className={STAT_CARD} label="Live Satellite GPS">
             <div className="flex items-center gap-2">
               <span className="relative flex h-2.5 w-2.5 shrink-0">
                 {liveBusesCount > 0 && (
@@ -526,14 +531,14 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
             </div>
           </StatCard>
 
-          <StatCard label="Authorized Pass">
+          <StatCard className={STAT_CARD} label="Authorized Pass">
             <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
               <RouteIcon className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
               <span className="truncate">{selectedRoute || `${authorizedRoutes.length} Route(s) Verified`}</span>
             </div>
           </StatCard>
 
-          <StatCard label="Telemetry Server">
+          <StatCard className={STAT_CARD} label="Telemetry Server">
             <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
               <Wifi className={`w-3.5 h-3.5 shrink-0 ${socketConnected ? "text-emerald-500" : "text-amber-500"}`} aria-hidden="true" />
               <span className="truncate">{socketConnected ? "Live Socket Synced" : "Polling Gateway (15s)"}</span>
@@ -685,7 +690,7 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
 
           {/* Right Column: Centerpiece Map Canvas */}
           <div 
-            className={`lg:col-span-8 ${mobileView === "list" ? "hidden lg:block" : "block"}`}
+            className={`lg:col-span-8 scroll-mt-20 ${mobileView === "list" ? "hidden lg:block" : "block"}`}
             ref={mapRef}
           >
             <SectionCard
@@ -705,7 +710,8 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
               }
             >
               {/* Map Canvas Container */}
-              <div className="h-[520px] sm:h-[620px] relative">
+              {/* phones: fill most of the screen below the sticky header; desktop: fixed height */}
+              <div className="h-[70dvh] min-h-[340px] max-h-[620px] sm:h-[620px] relative">
                 <BusMap
                   bus={trackedBus}
                   nowMs={nowMs}

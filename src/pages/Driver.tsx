@@ -248,10 +248,11 @@ const Driver = () => {
         onLogout={handleLogout}
       />
 
-      <main className="container mx-auto max-w-md p-4 sm:p-6 flex-1 flex flex-col justify-center space-y-4">
+      <main className="container mx-auto max-w-md p-4 sm:p-6 flex-1 flex flex-col sm:justify-center space-y-4">
         
         {/* Main In-Cab Control Card */}
-        <div className="border border-border/80 rounded-xl bg-card shadow-lg overflow-hidden transition-all">
+        {/* overflow-clip (not hidden) so the sticky action bar below can stick to the viewport */}
+        <div className="border border-border/80 rounded-xl bg-card shadow-lg overflow-clip transition-all">
           
           {/* Status HUD Header */}
           <div className={`p-6 sm:p-8 text-center border-b transition-colors ${
@@ -293,7 +294,7 @@ const Driver = () => {
 
             {/* In-Cab Route Selection */}
             <div className="space-y-1.5">
-              <Label>
+              <Label htmlFor="driver-route">
                 Select Transit Route
               </Label>
               <Select
@@ -301,7 +302,7 @@ const Driver = () => {
                 onValueChange={handleRouteChange}
                 disabled={isSharing || isLoadingFleet}
               >
-                <SelectTrigger className="w-full h-11 text-xs font-semibold border-border bg-card">
+                <SelectTrigger id="driver-route" className="w-full h-11 text-xs font-semibold border-border bg-card">
                   <SelectValue placeholder={isLoadingFleet ? "Loading routes..." : "Choose route corridor"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -317,11 +318,11 @@ const Driver = () => {
             {/* In-Cab Bus Selection */}
             {availableBuses.length > 0 && (
               <div className="space-y-1.5">
-                <Label>
+                <Label htmlFor="driver-bus">
                   Select Vehicle Number
                 </Label>
                 <Select value={busId} onValueChange={handleBusChange} disabled={isSharing}>
-                  <SelectTrigger className="w-full h-11 text-xs font-semibold border-border bg-card">
+                  <SelectTrigger id="driver-bus" className="w-full h-11 text-xs font-semibold border-border bg-card">
                     <SelectValue placeholder="Select assigned bus" />
                   </SelectTrigger>
                   <SelectContent>
@@ -378,26 +379,29 @@ const Driver = () => {
               </div>
             )}
 
-            {/* Giant Action Button (Min 56px height for in-cab safety) */}
-            {!isSharing ? (
-              <Button
-                onClick={startSharingLocation}
-                disabled={!busId}
-                className="w-full h-14 font-bold text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all disabled:opacity-50"
-              >
-                <Radio className="w-5 h-5 mr-2 animate-pulse" />
-                START LOCATION BROADCAST
-              </Button>
-            ) : (
-              <Button
-                onClick={stopSharingLocation}
-                variant="destructive"
-                className="w-full h-14 font-bold text-sm shadow-md hover:shadow-lg transition-all"
-              >
-                <StopCircle className="w-5 h-5 mr-2" />
-                STOP SHARING LOCATION
-              </Button>
-            )}
+            {/* Giant Action Button (Min 56px height for in-cab safety).
+                Phones: sticks to the bottom of the screen, clear of the home indicator. */}
+            <div className="sticky bottom-0 z-10 -mx-6 border-t border-border/80 bg-card px-6 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:static sm:mx-0 sm:border-0 sm:p-0">
+              {!isSharing ? (
+                <Button
+                  onClick={startSharingLocation}
+                  disabled={!busId}
+                  className="w-full h-14 font-bold text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+                >
+                  <Radio className="w-5 h-5 mr-2 animate-pulse" />
+                  START LOCATION BROADCAST
+                </Button>
+              ) : (
+                <Button
+                  onClick={stopSharingLocation}
+                  variant="destructive"
+                  className="w-full h-14 font-bold text-sm shadow-md hover:shadow-lg transition-all"
+                >
+                  <StopCircle className="w-5 h-5 mr-2" />
+                  STOP SHARING LOCATION
+                </Button>
+              )}
+            </div>
 
             <p className="text-2xs text-center text-muted-foreground leading-relaxed">
               Mount your phone in a dashboard holder and keep this broadcast active while in transit.
