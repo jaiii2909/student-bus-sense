@@ -261,7 +261,7 @@ const MapView = ({
 
   if (loadError) {
     return (
-      <div className="h-full min-h-[320px] flex flex-col items-center justify-center p-6 text-center text-xs text-muted-foreground bg-slate-50 dark:bg-slate-900/60 border border-border/80 rounded-xl">
+      <div className="h-full min-h-[320px] flex flex-col items-center justify-center p-6 text-center text-xs text-muted-foreground bg-muted/50 border border-border/80 rounded-xl">
         <div className="w-10 h-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mb-2">
           <Navigation className="w-5 h-5" />
         </div>
@@ -273,7 +273,7 @@ const MapView = ({
 
   if (!isLoaded) {
     return (
-      <div className="h-full min-h-[320px] flex flex-col items-center justify-center gap-3 text-xs text-muted-foreground bg-slate-50 dark:bg-slate-900/60 rounded-xl">
+      <div className="h-full min-h-[320px] flex flex-col items-center justify-center gap-3 text-xs text-muted-foreground bg-muted/50 rounded-xl">
         <div className="relative flex items-center justify-center">
           <div className="w-10 h-10 rounded-full bg-primary/10 animate-ping absolute" />
           <Loader2 className="w-6 h-6 animate-spin text-primary relative z-10" />

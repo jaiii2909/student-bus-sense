@@ -23,8 +23,8 @@ const NotFound = () => {
         <ThemeToggle />
       </div>
 
-      <div className="w-full max-w-sm border border-border/80 rounded-2xl bg-card shadow-xl p-8 text-center space-y-4 relative z-10">
-        <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto shadow-xs border border-primary/20">
+      <div className="w-full max-w-sm border border-border/80 rounded-xl bg-card shadow-xl p-8 text-center space-y-4 relative z-10">
+        <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto shadow-xs border border-primary/20">
           <Bus className="w-6 h-6" />
         </div>
         <div className="space-y-1">
@@ -36,7 +36,7 @@ const NotFound = () => {
         </div>
         <Button 
           onClick={() => navigate("/")} 
-          className="rounded-xl w-full h-10 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all mt-2"
+          className="w-full h-10 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs transition-all mt-2"
         >
           <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
           Return to Campus Home

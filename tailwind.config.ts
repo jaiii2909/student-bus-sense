@@ -65,6 +65,10 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				}
 			},
+			fontSize: {
+				// eyebrows, badges, micro meta — the smallest size in the scale
+				'2xs': ['0.6875rem', { lineHeight: '1rem' }],
+			},
 			fontFamily: {
 				sans: ['Inter', '"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
 				mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],

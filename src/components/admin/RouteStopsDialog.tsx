@@ -98,7 +98,7 @@ const RouteStopsDialog = ({ route, onClose, onSaved }: RouteStopsDialogProps) =>
           </DialogDescription>
         </DialogHeader>
 
-        <div className="h-[280px] rounded-md overflow-hidden border border-border">
+        <div className="h-[280px] rounded-lg overflow-hidden border border-border">
           <MapView
             center={center}
             zoom={13}

@@ -3,6 +3,7 @@ import axios from "axios";
 import { Megaphone, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { SectionCard } from "@/components/ui/section-card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiErrorMessage } from "@/lib/utils";
@@ -86,11 +87,8 @@ const AnnouncementsPanel = ({ routeNames }: AnnouncementsPanelProps) => {
 
   return (
     <div className="grid lg:grid-cols-2 gap-4 items-start">
-      <form onSubmit={handlePost} className="border border-border rounded-lg bg-card p-4 space-y-3">
-        <div>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">New announcement</h2>
-          <p className="text-[11px] text-muted-foreground">Shown at the top of the student dashboard until it expires</p>
-        </div>
+      <SectionCard title="New announcement" description="Shown at the top of the student dashboard until it expires">
+      <form onSubmit={handlePost} className="p-4 space-y-3">
 
         <div className="space-y-1.5">
           <Label htmlFor="announcement-message">Message</Label>
@@ -100,9 +98,9 @@ const AnnouncementsPanel = ({ routeNames }: AnnouncementsPanelProps) => {
             onChange={(e) => setMessage(e.target.value.slice(0, MAX_LENGTH))}
             rows={3}
             placeholder="e.g. K2 is running 15 minutes late this morning"
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm pointer-coarse:text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm pointer-coarse:text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
-          <p className="text-[11px] text-muted-foreground text-right">{message.length}/{MAX_LENGTH}</p>
+          <p className="text-2xs text-muted-foreground text-right">{message.length}/{MAX_LENGTH}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -140,15 +138,16 @@ const AnnouncementsPanel = ({ routeNames }: AnnouncementsPanelProps) => {
           {isSaving ? "Posting..." : "Post announcement"}
         </Button>
       </form>
+      </SectionCard>
 
-      <div className="border border-border rounded-lg bg-card p-4 space-y-3">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">Active ({items.length})</h2>
+      <SectionCard title={`Active (${items.length})`}>
+      <div className="p-4 space-y-3">
         {items.length === 0 && <p className="text-xs text-muted-foreground py-4 text-center">No active announcements</p>}
         {items.map((a) => (
-          <div key={a.id} className="flex items-start gap-3 p-3 rounded-md border border-border">
+          <div key={a.id} className="flex items-start gap-3 p-3 rounded-lg border border-border/80">
             <div className="flex-1 min-w-0">
               <p className="text-sm break-words">{a.message}</p>
-              <p className="text-[11px] text-muted-foreground mt-1">
+              <p className="text-2xs text-muted-foreground mt-1">
                 {a.route || "All routes"} · until {formatTime(a.expiresAt)}
               </p>
             </div>
@@ -164,6 +163,7 @@ const AnnouncementsPanel = ({ routeNames }: AnnouncementsPanelProps) => {
           </div>
         ))}
       </div>
+      </SectionCard>
     </div>
   );
 };

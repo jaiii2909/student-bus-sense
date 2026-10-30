@@ -67,7 +67,7 @@ const ChangePasswordDialog = ({ endpoint, minLength, onChanged }: ChangePassword
         variant="outline" 
         size="sm" 
         onClick={() => setOpen(true)} 
-        className="h-8 px-3 rounded-lg text-xs font-semibold border-border hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" 
+        className="h-8 px-3 text-xs font-semibold border-border hover:bg-muted transition-colors" 
         title="Change account password"
       >
         <KeyRound className="w-3.5 h-3.5 sm:mr-1.5 text-primary" />
@@ -87,42 +87,42 @@ const ChangePasswordDialog = ({ endpoint, minLength, onChanged }: ChangePassword
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-3.5 pt-2">
             <div className="space-y-1.5">
-              <Label htmlFor="current-password" className="text-xs font-semibold">Current password</Label>
+              <Label htmlFor="current-password">Current password</Label>
               <Input 
                 id="current-password" 
                 type="password" 
                 autoComplete="current-password" 
                 value={currentPassword} 
                 onChange={(e) => setCurrentPassword(e.target.value)} 
-                className="h-10 text-xs rounded-xl border-border"
+                className="h-10 text-xs border-border"
                 required 
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="new-password" className="text-xs font-semibold">New password</Label>
+              <Label htmlFor="new-password">New password</Label>
               <Input 
                 id="new-password" 
                 type="password" 
                 autoComplete="new-password" 
                 value={newPassword} 
                 onChange={(e) => setNewPassword(e.target.value)} 
-                className="h-10 text-xs rounded-xl border-border"
+                className="h-10 text-xs border-border"
                 required 
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="confirm-password" className="text-xs font-semibold">Confirm new password</Label>
+              <Label htmlFor="confirm-password">Confirm new password</Label>
               <Input 
                 id="confirm-password" 
                 type="password" 
                 autoComplete="new-password" 
                 value={confirmPassword} 
                 onChange={(e) => setConfirmPassword(e.target.value)} 
-                className="h-10 text-xs rounded-xl border-border"
+                className="h-10 text-xs border-border"
                 required 
               />
             </div>
-            <Button type="submit" disabled={isSaving} className="w-full h-10 text-xs font-bold rounded-xl mt-2">
+            <Button type="submit" disabled={isSaving} className="w-full h-10 text-xs font-bold mt-2">
               {isSaving ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />

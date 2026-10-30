@@ -251,20 +251,20 @@ const Driver = () => {
       <main className="container mx-auto max-w-md p-4 sm:p-6 flex-1 flex flex-col justify-center space-y-4">
         
         {/* Main In-Cab Control Card */}
-        <div className="border border-border/80 rounded-2xl bg-card shadow-lg overflow-hidden transition-all">
+        <div className="border border-border/80 rounded-xl bg-card shadow-lg overflow-hidden transition-all">
           
           {/* Status HUD Header */}
           <div className={`p-6 sm:p-8 text-center border-b transition-colors ${
             isSharing
               ? "bg-emerald-500/10 dark:bg-emerald-950/40 border-emerald-500/30"
-              : "bg-slate-50 dark:bg-slate-900/60 border-border/80"
+              : "bg-muted/50 border-border/80"
           }`}>
             <div className="flex items-center justify-center gap-2 mb-3">
               <span className="relative flex h-3 w-3">
                 {isSharing && (
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 )}
-                <span className={`relative inline-flex rounded-full h-3 w-3 ${isSharing ? "bg-emerald-500" : "bg-slate-400"}`} />
+                <span className={`relative inline-flex rounded-full h-3 w-3 ${isSharing ? "bg-emerald-500" : "bg-muted-foreground/50"}`} />
               </span>
               <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 {isSharing ? "Broadcasting Live GPS Telemetry" : "Vehicle Stationary / Standby"}
@@ -293,7 +293,7 @@ const Driver = () => {
 
             {/* In-Cab Route Selection */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <Label>
                 Select Transit Route
               </Label>
               <Select
@@ -301,7 +301,7 @@ const Driver = () => {
                 onValueChange={handleRouteChange}
                 disabled={isSharing || isLoadingFleet}
               >
-                <SelectTrigger className="w-full h-11 text-xs font-semibold rounded-xl border-border bg-card">
+                <SelectTrigger className="w-full h-11 text-xs font-semibold border-border bg-card">
                   <SelectValue placeholder={isLoadingFleet ? "Loading routes..." : "Choose route corridor"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -317,11 +317,11 @@ const Driver = () => {
             {/* In-Cab Bus Selection */}
             {availableBuses.length > 0 && (
               <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                <Label>
                   Select Vehicle Number
                 </Label>
                 <Select value={busId} onValueChange={handleBusChange} disabled={isSharing}>
-                  <SelectTrigger className="w-full h-11 text-xs font-semibold rounded-xl border-border bg-card">
+                  <SelectTrigger className="w-full h-11 text-xs font-semibold border-border bg-card">
                     <SelectValue placeholder="Select assigned bus" />
                   </SelectTrigger>
                   <SelectContent>
@@ -337,7 +337,7 @@ const Driver = () => {
 
             {/* Live Telemetry Strip */}
             {isSharing && (
-              <div className="border border-border/80 rounded-xl bg-slate-50 dark:bg-slate-900/60 p-4 space-y-2.5 text-xs shadow-xs">
+              <div className="border border-border/80 rounded-xl bg-muted/50 p-4 space-y-2.5 text-xs shadow-xs">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground flex items-center gap-1.5">
                     <Wifi className="w-3.5 h-3.5 text-accent" /> Mobile Telemetry
@@ -383,7 +383,7 @@ const Driver = () => {
               <Button
                 onClick={startSharingLocation}
                 disabled={!busId}
-                className="w-full h-14 rounded-xl font-bold text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+                className="w-full h-14 font-bold text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all disabled:opacity-50"
               >
                 <Radio className="w-5 h-5 mr-2 animate-pulse" />
                 START LOCATION BROADCAST
@@ -392,14 +392,14 @@ const Driver = () => {
               <Button
                 onClick={stopSharingLocation}
                 variant="destructive"
-                className="w-full h-14 rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all"
+                className="w-full h-14 font-bold text-sm shadow-md hover:shadow-lg transition-all"
               >
                 <StopCircle className="w-5 h-5 mr-2" />
                 STOP SHARING LOCATION
               </Button>
             )}
 
-            <p className="text-[11px] text-center text-muted-foreground leading-relaxed">
+            <p className="text-2xs text-center text-muted-foreground leading-relaxed">
               Mount your phone in a dashboard holder and keep this broadcast active while in transit.
             </p>
           </div>

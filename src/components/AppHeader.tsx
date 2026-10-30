@@ -34,7 +34,7 @@ const AppHeader = ({ title, subtitle, roleBadge, onLogout, children }: AppHeader
             {roleBadge && (
               <Badge 
                 variant="outline" 
-                className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 border ${
+                className={`text-2xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 border ${
                   roleBadge === "Admin"
                     ? "border-indigo-300 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 bg-indigo-50/70 dark:bg-indigo-950/40"
                     : roleBadge === "Driver"
@@ -61,7 +61,7 @@ const AppHeader = ({ title, subtitle, roleBadge, onLogout, children }: AppHeader
             variant="outline" 
             size="sm"
             onClick={onLogout}
-            className="h-8 px-3 rounded-lg text-xs font-semibold border-border hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="h-8 px-3 text-xs font-semibold border-border hover:bg-muted transition-colors"
           >
             <LogOut className="w-3.5 h-3.5 mr-1.5" />
             Sign Out

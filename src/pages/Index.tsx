@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { 
   Bus, 
   MapPin, 
@@ -118,11 +119,11 @@ const Index = () => {
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-base text-foreground tracking-tight">UGI Campus Transit</span>
-                <span className="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full border border-primary/20 bg-primary/10 text-primary">
+                <span className="text-2xs font-bold tracking-wider uppercase px-2 py-0.5 rounded-full border border-primary/20 bg-primary/10 text-primary">
                   Live Dispatch
                 </span>
               </div>
-              <p className="text-[11px] text-muted-foreground hidden sm:block">United Group of Institutions, Prayagraj</p>
+              <p className="text-2xs text-muted-foreground hidden sm:block">United Group of Institutions, Prayagraj</p>
             </div>
           </div>
 
@@ -147,7 +148,7 @@ const Index = () => {
             <Button
               size="sm"
               onClick={() => navigate("/student-login")}
-              className="text-xs font-bold px-4 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
+              className="text-xs font-bold px-4 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
             >
               Student Sign In
             </Button>
@@ -189,7 +190,7 @@ const Index = () => {
                   <Button
                     size="lg"
                     onClick={() => navigate("/student-login")}
-                    className="h-12 px-6 rounded-xl font-bold text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition-all hover:shadow-lg"
+                    className="h-12 px-6 font-bold text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition-all hover:shadow-lg"
                   >
                     Track My Bus
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -198,7 +199,7 @@ const Index = () => {
                     size="lg"
                     variant="outline"
                     onClick={() => navigate("/role-selection")}
-                    className="h-12 px-6 rounded-xl font-semibold text-sm border-border/80 bg-card hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                    className="h-12 px-6 font-semibold text-sm border-border/80 bg-card hover:bg-muted transition-colors"
                   >
                     Driver & Fleet Admin
                   </Button>
@@ -229,10 +230,10 @@ const Index = () => {
 
               {/* Right Column: Interactive Live Corridor Telemetry Mockup */}
               <div className="lg:col-span-5">
-                <div className="border border-border/80 rounded-2xl bg-card shadow-xl overflow-hidden transition-all">
+                <div className="border border-border/80 rounded-xl bg-card shadow-xl overflow-hidden transition-all">
                   
                   {/* Top Bar of Bus Card */}
-                  <div className="p-4 border-b border-border/80 bg-slate-50/80 dark:bg-slate-900/60 flex items-center justify-between">
+                  <div className="p-4 border-b border-border/80 bg-muted/40 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <div className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-extrabold text-sm shadow-xs">
                         {activeCorridor.busNumber}
@@ -241,10 +242,10 @@ const Index = () => {
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-sm text-foreground">Bus {activeCorridor.busNumber} ({activeCorridor.plate})</span>
                         </div>
-                        <p className="text-[11px] text-muted-foreground font-mono">{activeCorridor.name}</p>
+                        <p className="text-2xs text-muted-foreground font-mono">{activeCorridor.name}</p>
                       </div>
                     </div>
-                    <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-[10px] font-bold gap-1.5 px-2.5 py-1 rounded-full">
+                    <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-2xs font-bold gap-1.5 px-2.5 py-1 rounded-full">
                       <span className="relative flex h-1.5 w-1.5">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                         <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
@@ -254,20 +255,14 @@ const Index = () => {
                   </div>
 
                   {/* Corridor Selector Tabs */}
-                  <div className="p-2 bg-slate-100 dark:bg-slate-900/40 border-b border-border/70 flex gap-1.5">
-                    {sampleCorridors.map((c) => (
-                      <button
-                        key={c.id}
-                        onClick={() => setActiveCorridor(c)}
-                        className={`flex-1 py-1.5 px-2 rounded-lg text-[11px] font-bold transition-all ${
-                          activeCorridor.id === c.id
-                            ? "bg-card text-foreground shadow-2xs"
-                            : "text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        Bus {c.busNumber}
-                      </button>
-                    ))}
+                  <div className="p-2 border-b border-border/70">
+                    <SegmentedControl
+                      aria-label="Sample bus"
+                      size="sm"
+                      value={activeCorridor.id}
+                      onChange={(id) => setActiveCorridor(sampleCorridors.find((c) => c.id === id) || sampleCorridors[0])}
+                      options={sampleCorridors.map((c) => ({ value: c.id, label: `Bus ${c.busNumber}` }))}
+                    />
                   </div>
 
                   {/* Timetable / Stops Sequence */}
@@ -285,10 +280,10 @@ const Index = () => {
                                 <Check className="w-2.5 h-2.5" />
                               </div>
                             ) : (
-                              <div className="w-3.5 h-3.5 rounded-full bg-slate-300 dark:bg-slate-700 mt-0.5" />
+                              <div className="w-3.5 h-3.5 rounded-full bg-muted-foreground/30 mt-0.5" />
                             )}
                             {i < activeCorridor.stops.length - 1 && (
-                              <div className="w-0.5 h-7 bg-slate-200 dark:bg-slate-800" />
+                              <div className="w-0.5 h-7 bg-border" />
                             )}
                           </div>
                           <div className="flex-1 flex justify-between items-baseline">
@@ -296,11 +291,11 @@ const Index = () => {
                               <p className={`font-semibold ${stop.status === "current" ? "text-primary font-bold" : "text-foreground"}`}>
                                 {stop.name}
                               </p>
-                              <p className="text-[11px] text-muted-foreground">
+                              <p className="text-2xs text-muted-foreground">
                                 {stop.status === "current" ? `Next stop • Approx. ${activeCorridor.eta}` : stop.status === "passed" ? "Departed on schedule" : "Upcoming stop"}
                               </p>
                             </div>
-                            <span className="font-mono text-muted-foreground tabular-nums text-[11px]">
+                            <span className="font-mono text-muted-foreground tabular-nums text-2xs">
                               {stop.time}
                             </span>
                           </div>
@@ -310,19 +305,19 @@ const Index = () => {
 
                     {/* Operational Telemetry Strip */}
                     <div className="border-t border-border/80 pt-3 grid grid-cols-2 gap-2 text-center text-xs">
-                      <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-border/80">
-                        <span className="text-[10px] uppercase font-bold text-muted-foreground block">In-Cab Speed</span>
+                      <div className="p-2.5 rounded-xl bg-muted/50 border border-border/80">
+                        <span className="text-2xs uppercase font-bold text-muted-foreground block">In-Cab Speed</span>
                         <span className="font-mono text-foreground font-bold tabular-nums text-xs">{activeCorridor.speed}</span>
                       </div>
-                      <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-border/80">
-                        <span className="text-[10px] uppercase font-bold text-muted-foreground block">GPS Telemetry</span>
+                      <div className="p-2.5 rounded-xl bg-muted/50 border border-border/80">
+                        <span className="text-2xs uppercase font-bold text-muted-foreground block">GPS Telemetry</span>
                         <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold tabular-nums text-xs">Synced 4s ago</span>
                       </div>
                     </div>
 
                     <Button 
                       onClick={() => navigate("/student-login")} 
-                      className="w-full text-xs font-bold h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
+                      className="w-full text-xs font-bold h-10 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs"
                     >
                       Open Live Radar Dashboard
                     </Button>
@@ -397,17 +392,17 @@ const Index = () => {
               </div>
 
               <div className="md:col-span-6">
-                <div className="border border-border/80 rounded-2xl p-6 bg-card shadow-md space-y-4">
+                <div className="border border-border/80 rounded-xl p-6 bg-card shadow-md space-y-4">
                   <div className="flex items-center justify-between pb-3 border-b border-border/80">
                     <span className="text-xs font-bold text-foreground">Sample Corridor: Route 03 (Kareli Line)</span>
-                    <span className="text-[10px] font-mono text-muted-foreground">Departed: 07:30 AM</span>
+                    <span className="text-2xs font-mono text-muted-foreground">Departed: 07:30 AM</span>
                   </div>
                   <div className="space-y-2.5 text-xs">
-                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-border/80 flex justify-between items-center">
+                    <div className="p-3 rounded-xl bg-muted/50 border border-border/80 flex justify-between items-center">
                       <span className="font-bold text-foreground">Bus 12 (UP-70-AT-1290)</span>
                       <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">At GTB Nagar (4 stops away)</span>
                     </div>
-                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-border/80 flex justify-between items-center">
+                    <div className="p-3 rounded-xl bg-muted/50 border border-border/80 flex justify-between items-center">
                       <span className="font-bold text-foreground">Bus 15 (UP-70-BT-1504)</span>
                       <span className="text-muted-foreground font-mono">Scheduled 08:00 AM (Depot)</span>
                     </div>
@@ -419,20 +414,20 @@ const Index = () => {
             {/* Row 2: Route Security & Pass Verification */}
             <div className="grid md:grid-cols-12 gap-8 items-center">
               <div className="md:col-span-6 order-2 md:order-1">
-                <div className="border border-border/80 rounded-2xl p-6 bg-card shadow-md space-y-4">
+                <div className="border border-border/80 rounded-xl p-6 bg-card shadow-md space-y-4">
                   <div className="flex items-center justify-between pb-3 border-b border-border/80">
                     <div className="flex items-center gap-2">
                       <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                       <span className="text-xs font-bold text-foreground">Verified Transport Pass</span>
                     </div>
-                    <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-full bg-emerald-500/10">Active: Sem 6</span>
+                    <span className="text-2xs font-mono text-emerald-600 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-full bg-emerald-500/10">Active: Sem 6</span>
                   </div>
                   <div className="space-y-1.5 text-xs">
                     <p className="font-bold text-foreground">Student ID: UGI-2023-CS-104</p>
                     <p className="text-muted-foreground">Authorized Route: <strong className="text-foreground">Route 01 (Civil Lines)</strong></p>
-                    <p className="text-[11px] text-muted-foreground">Fee clearance verified via Academic Accounts Desk.</p>
+                    <p className="text-2xs text-muted-foreground">Fee clearance verified via Academic Accounts Desk.</p>
                   </div>
-                  <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-900 text-[11px] text-muted-foreground leading-relaxed">
+                  <div className="p-3 rounded-xl bg-muted text-2xs text-muted-foreground leading-relaxed">
                     Restricts bus tracking exclusively to registered route pass-holders to prevent route overcrowding and ensure student safety.
                   </div>
                 </div>
@@ -502,22 +497,22 @@ const Index = () => {
               </div>
 
               <div className="md:col-span-6">
-                <div className="border border-border/80 rounded-2xl p-6 bg-card shadow-md space-y-4">
+                <div className="border border-border/80 rounded-xl p-6 bg-card shadow-md space-y-4">
                   <div className="flex items-center justify-between pb-3 border-b border-border/80">
                     <span className="text-xs font-bold text-foreground">Driver In-Cab HUD</span>
-                    <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-full bg-emerald-500/10">Screen Wake-Lock: Active</span>
+                    <span className="text-2xs font-mono text-emerald-600 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-full bg-emerald-500/10">Screen Wake-Lock: Active</span>
                   </div>
                   <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center space-y-1">
                     <p className="text-xs font-extrabold text-emerald-700 dark:text-emerald-300">BROADCASTING ROUTE 01</p>
-                    <p className="text-[11px] text-emerald-600 dark:text-emerald-400">Bus 04 • Next Stop: High Court</p>
+                    <p className="text-2xs text-emerald-600 dark:text-emerald-400">Bus 04 • Next Stop: High Court</p>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-center text-xs">
-                    <div className="p-2.5 border border-border/80 rounded-xl bg-slate-50 dark:bg-slate-900">
-                      <span className="text-[10px] text-muted-foreground block">GPS Fix</span>
+                    <div className="p-2.5 border border-border/80 rounded-xl bg-muted/50">
+                      <span className="text-2xs text-muted-foreground block">GPS Fix</span>
                       <span className="font-bold text-foreground">Strong (±3m)</span>
                     </div>
-                    <div className="p-2.5 border border-border/80 rounded-xl bg-slate-50 dark:bg-slate-900">
-                      <span className="text-[10px] text-muted-foreground block">Transmission Rate</span>
+                    <div className="p-2.5 border border-border/80 rounded-xl bg-muted/50">
+                      <span className="text-2xs text-muted-foreground block">Transmission Rate</span>
                       <span className="font-bold text-foreground font-mono">1 ping / 5s</span>
                     </div>
                   </div>
@@ -529,7 +524,7 @@ const Index = () => {
         </section>
 
         {/* SECTION 4: Role Gateways (Clean 3-Block Grid) */}
-        <section className="py-16 bg-slate-50 dark:bg-slate-900/40 border-t border-border/80">
+        <section className="py-16 bg-muted/40 border-t border-border/80">
           <div className="container mx-auto px-4 max-w-7xl">
             <div className="text-center max-w-md mx-auto mb-10 space-y-1.5">
               <h2 className="text-2xl font-bold text-foreground">Access Portals</h2>
@@ -539,7 +534,7 @@ const Index = () => {
             <div className="grid md:grid-cols-3 gap-6">
               <div 
                 onClick={() => navigate("/student-login")}
-                className="border border-border/80 rounded-2xl p-6 bg-card hover:border-primary/60 hover:shadow-lg transition-all cursor-pointer text-left space-y-3 group"
+                className="border border-border/80 rounded-xl p-6 bg-card hover:border-primary/60 hover:shadow-lg transition-all cursor-pointer text-left space-y-3 group"
               >
                 <div className="flex items-center justify-between">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold">
@@ -559,10 +554,10 @@ const Index = () => {
 
               <div 
                 onClick={() => navigate("/driver-location")}
-                className="border border-border/80 rounded-2xl p-6 bg-card hover:border-primary/60 hover:shadow-lg transition-all cursor-pointer text-left space-y-3 group"
+                className="border border-border/80 rounded-xl p-6 bg-card hover:border-primary/60 hover:shadow-lg transition-all cursor-pointer text-left space-y-3 group"
               >
                 <div className="flex items-center justify-between">
-                  <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-foreground flex items-center justify-center font-bold">
+                  <div className="w-10 h-10 rounded-xl bg-muted text-foreground flex items-center justify-center font-bold">
                     <Navigation className="w-5 h-5 text-primary" />
                   </div>
                   <span className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
@@ -579,10 +574,10 @@ const Index = () => {
 
               <div 
                 onClick={() => navigate("/admin-dashboard")}
-                className="border border-border/80 rounded-2xl p-6 bg-card hover:border-primary/60 hover:shadow-lg transition-all cursor-pointer text-left space-y-3 group"
+                className="border border-border/80 rounded-xl p-6 bg-card hover:border-primary/60 hover:shadow-lg transition-all cursor-pointer text-left space-y-3 group"
               >
                 <div className="flex items-center justify-between">
-                  <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-foreground flex items-center justify-center font-bold">
+                  <div className="w-10 h-10 rounded-xl bg-muted text-foreground flex items-center justify-center font-bold">
                     <ShieldCheck className="w-5 h-5 text-primary" />
                   </div>
                   <span className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
@@ -612,7 +607,7 @@ const Index = () => {
                 United Group of Institutions, Campus Gate 1<br />
                 UPSIDC Industrial Area, Naini, Prayagraj, UP 211010
               </p>
-              <p className="text-[11px] text-muted-foreground">Office Hours: Monday – Saturday, 07:00 AM – 06:00 PM</p>
+              <p className="text-2xs text-muted-foreground">Office Hours: Monday – Saturday, 07:00 AM – 06:00 PM</p>
             </div>
 
             <div className="space-y-2">
@@ -642,7 +637,7 @@ const Index = () => {
 
           <div className="pt-6 border-t border-border/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-muted-foreground">
             <p>© {new Date().getFullYear()} United Group of Institutions. Official Campus Transit Management Platform.</p>
-            <p className="text-[11px] flex items-center gap-1.5">
+            <p className="text-2xs flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
               GPS Dispatch & WebSocket Servers Operational
             </p>

@@ -124,7 +124,7 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
             variant="ghost"
             size="sm"
             onClick={onBack}
-            className="text-muted-foreground hover:text-foreground text-xs font-semibold -ml-2 rounded-lg"
+            className="text-muted-foreground hover:text-foreground text-xs font-semibold -ml-2"
           >
             <ArrowLeft className="w-4 h-4 mr-1.5" />
             Back
@@ -133,9 +133,9 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
         </div>
 
         {/* Auth Card */}
-        <div className="border border-border/80 rounded-2xl bg-card shadow-xl p-7 sm:p-9 space-y-6">
+        <div className="border border-border/80 rounded-xl bg-card shadow-xl p-7 sm:p-9 space-y-6">
           <div className="space-y-2.5 text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/20 bg-primary/5 text-primary text-[10px] font-bold uppercase tracking-wider">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/20 bg-primary/5 text-primary text-2xs font-bold uppercase tracking-wider">
               <IconComponent className="w-3.5 h-3.5" />
               <span>{meta.badge}</span>
             </div>
@@ -150,7 +150,7 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
           <form onSubmit={handleSubmit} className="space-y-4">
             {role === 'student' && (
               <div className="space-y-1.5">
-                <Label htmlFor="studentId" className="text-xs font-semibold text-foreground">
+                <Label htmlFor="studentId">
                   Student Enrollment Number
                 </Label>
                 <div className="relative">
@@ -161,18 +161,18 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
                     value={studentId}
                     onChange={(e) => setStudentId(e.target.value)}
                     placeholder="e.g. UGI-2023-CS-104"
-                    className="pl-10 h-10 rounded-xl border-border text-xs focus-visible:ring-primary"
+                    className="pl-10 h-10 border-border text-xs focus-visible:ring-primary"
                     required
                     autoComplete="username"
                   />
                 </div>
-                <p className="text-[11px] text-muted-foreground">Printed on your physical semester bus pass slip.</p>
+                <p className="text-2xs text-muted-foreground">Printed on your physical semester bus pass slip.</p>
               </div>
             )}
 
             {role === 'admin' && (
               <div className="space-y-1.5">
-                <Label htmlFor="username" className="text-xs font-semibold text-foreground">
+                <Label htmlFor="username">
                   Administrator Username
                 </Label>
                 <div className="relative">
@@ -183,7 +183,7 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="e.g. transport_admin"
-                    className="pl-10 h-10 rounded-xl border-border text-xs focus-visible:ring-primary"
+                    className="pl-10 h-10 border-border text-xs focus-visible:ring-primary"
                     required
                     autoComplete="username"
                   />
@@ -193,7 +193,7 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
 
             {role === 'driver' && (
               <div className="space-y-1.5">
-                <Label htmlFor="driver-username" className="text-xs font-semibold text-foreground">
+                <Label htmlFor="driver-username">
                   Driver Username
                 </Label>
                 <div className="relative">
@@ -204,18 +204,18 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="e.g. ramesh"
-                    className="pl-10 h-10 rounded-xl border-border text-xs focus-visible:ring-primary"
+                    className="pl-10 h-10 border-border text-xs focus-visible:ring-primary"
                     autoComplete="username"
                     autoCapitalize="none"
                   />
                 </div>
-                <p className="text-[11px] text-muted-foreground">Leave empty only if your college still uses one shared driver password.</p>
+                <p className="text-2xs text-muted-foreground">Leave empty only if your college still uses one shared driver password.</p>
               </div>
             )}
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-xs font-semibold text-foreground">
+                <Label htmlFor="password">
                   {role === 'driver' ? 'In-Cab Driver Passkey' : 'Password'}
                 </Label>
               </div>
@@ -227,7 +227,7 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={role === 'driver' ? "Enter assigned driver passkey" : "Enter password"}
-                  className="pl-10 pr-10 h-10 rounded-xl border-border text-xs focus-visible:ring-primary"
+                  className="pl-10 pr-10 h-10 border-border text-xs focus-visible:ring-primary"
                   required
                   autoComplete="current-password"
                 />
@@ -245,7 +245,7 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full h-11 rounded-xl font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs mt-3 transition-all"
+              className="w-full h-11 font-bold text-xs bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs mt-3 transition-all"
             >
               {isLoading ? (
                 <>
@@ -257,13 +257,13 @@ const LoginForm = ({ role, onLogin, onBack }: LoginFormProps) => {
               )}
             </Button>
             {isWakingServer && (
-              <p className="text-[11px] text-muted-foreground text-center animate-pulse" role="status">
+              <p className="text-2xs text-muted-foreground text-center animate-pulse" role="status">
                 Waking up the cloud server, this can take up to a minute...
               </p>
             )}
           </form>
 
-          <div className="pt-4 border-t border-border/80 text-[11px] text-muted-foreground text-center">
+          <div className="pt-4 border-t border-border/80 text-2xs text-muted-foreground text-center">
             Need transport pass clearance? Visit the Transport Desk at Campus Gate 1.
           </div>
         </div>

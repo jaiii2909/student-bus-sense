@@ -3,6 +3,7 @@ import axios from "axios";
 import { Download, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SectionCard } from "@/components/ui/section-card";
 import {
   Table,
   TableBody,
@@ -78,15 +79,11 @@ const TripsPanel = () => {
   };
 
   return (
-    <div className="border border-border rounded-lg bg-card overflow-hidden">
-      <div className="p-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">Trip log</h2>
-          <p className="text-[11px] text-muted-foreground">
-            {trips.length} trip(s) by {busCount} bus(es). A trip runs from the driver's Start to Stop.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+    <SectionCard
+      title="Trip log"
+      description={`${trips.length} trip(s) by ${busCount} bus(es). A trip runs from the driver's Start to Stop.`}
+      actions={
+        <>
           <Input type="date" value={day} onChange={(e) => setDay(e.target.value)} className="h-8 text-xs w-40" aria-label="Day" />
           <Button variant="outline" size="sm" onClick={handleExport} disabled={trips.length === 0} className="h-8 text-xs gap-1" title="Download this day's trips as CSV">
             <Download className="w-3.5 h-3.5" />
@@ -95,8 +92,9 @@ const TripsPanel = () => {
           <Button variant="outline" size="sm" onClick={load} disabled={isLoading} className="h-8 w-8 p-0" aria-label="Refresh trips">
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
           </Button>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       <Table>
         <TableHeader>
@@ -119,12 +117,12 @@ const TripsPanel = () => {
               <TableRow key={trip.id} className="border-border">
                 <TableCell className="text-xs">
                   <span className="font-bold">{trip.busNumber}</span>
-                  <span className="block text-[11px] text-muted-foreground">{trip.route}</span>
+                  <span className="block text-2xs text-muted-foreground">{trip.route}</span>
                 </TableCell>
                 <TableCell className="text-xs">{trip.driverName}</TableCell>
                 <TableCell className="text-xs font-mono tabular-nums">
                   {formatClock(trip.startedAt)} – {trip.endedAt ? formatClock(trip.endedAt) : "now"}
-                  <span className="block text-[11px] text-muted-foreground font-sans">
+                  <span className="block text-2xs text-muted-foreground font-sans">
                     {formatDuration(trip.startedAt, trip.endedAt || new Date().toISOString())}
                   </span>
                 </TableCell>
@@ -140,7 +138,7 @@ const TripsPanel = () => {
           )}
         </TableBody>
       </Table>
-    </div>
+    </SectionCard>
   );
 };
 

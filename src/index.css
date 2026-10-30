@@ -17,6 +17,12 @@
  * - Status Amber: #F59E0B (Signal Delayed)
  * - Status Rose: #EF4444 (Alert / Depot / Inactive)
  * - Divider/Border: #E2E8F0 (Light) / #1E293B (Dark)
+ *
+ * Usage scale (keep screens consistent on mobile and desktop):
+ * - Radius: cards & dialogs rounded-xl · controls (button/input/select) rounded-lg · chips inside them rounded-md · pills rounded-full
+ * - Type:   page titles text-2xl+ · section titles text-sm font-bold · body & labels text-sm · meta/help text-xs · eyebrows/badges text-2xs
+ * - Surfaces: bg-card for cards · bg-muted for tracks, tiles and header bars (with /40–/50) · hover:bg-muted for ghost/outline hover
+ * - Shared blocks: ui/section-card, ui/stat-card, ui/segmented-control, ui/empty-state
  */
 
 @layer base {

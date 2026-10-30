@@ -33,6 +33,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StatCard } from "@/components/ui/stat-card";
+import { SectionCard } from "@/components/ui/section-card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { 
   Plus, 
   Edit2, 
@@ -103,6 +106,9 @@ interface PendingDelete {
 }
 
 const EMPTY_STUDENT = { studentId: "", name: "", password: "" };
+
+const TAB_TRIGGER =
+  "rounded-md text-xs font-bold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -498,62 +504,48 @@ const AdminDashboard = () => {
         
         {/* Short Summary Strip with Strong Hierarchy */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-          {/* Prominent Primary Metric */}
-          <div className="border border-border/80 rounded-xl bg-card p-4 shadow-xs hover:border-primary/40 transition-all">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Active Vehicles</span>
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-2xl font-extrabold text-foreground tabular-nums">{activeBusesCount}</span>
-              <span className="text-xs text-muted-foreground font-medium">/ {buses.length} total buses</span>
-            </div>
-            <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold block mt-1">
-              {activeBusesCount > 0 ? "Operating on campus corridors" : "All vehicles at depot"}
-            </span>
-          </div>
-
-          <div className="border border-border/80 rounded-xl bg-card p-4 shadow-xs hover:border-primary/40 transition-all">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Campus Corridors</span>
-            <div className="text-2xl font-extrabold text-foreground tabular-nums mt-1">{routes.length}</div>
-            <span className="text-[11px] text-muted-foreground block mt-1">Configured transit lines</span>
-          </div>
-
-          <div className="border border-border/80 rounded-xl bg-card p-4 shadow-xs hover:border-primary/40 transition-all">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Enrolled Commuters</span>
-            <div className="text-2xl font-extrabold text-foreground tabular-nums mt-1">{students.length}</div>
-            <span className="text-[11px] text-muted-foreground block mt-1">Verified student passes</span>
-          </div>
-
-          <div className="border border-border/80 rounded-xl bg-card p-4 shadow-xs hover:border-primary/40 transition-all">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Live Telemetry Fixes</span>
-            <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums mt-1">{busesWithLocation.length}</div>
-            <span className="text-[11px] text-muted-foreground block mt-1">Transmitting in-cab signals</span>
-          </div>
+          <StatCard
+            label="Active Vehicles"
+            value={activeBusesCount}
+            unit={`/ ${buses.length} total buses`}
+            hint={activeBusesCount > 0 ? "Operating on campus corridors" : "All vehicles at depot"}
+            hintClassName="font-semibold text-emerald-600 dark:text-emerald-400"
+          />
+          <StatCard label="Campus Corridors" value={routes.length} hint="Configured transit lines" />
+          <StatCard label="Enrolled Commuters" value={students.length} hint="Verified student passes" />
+          <StatCard
+            label="Live Telemetry Fixes"
+            value={busesWithLocation.length}
+            valueClassName="text-emerald-600 dark:text-emerald-400"
+            hint="Transmitting in-cab signals"
+          />
         </div>
 
         {/* Tabbed Views */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <div className="flex items-center justify-between border-b border-border/80 pb-3 flex-wrap gap-2">
-            <TabsList className="bg-slate-100 dark:bg-slate-900 p-1.5 rounded-xl h-11 border border-border/80 max-w-full overflow-x-auto justify-start">
-              <TabsTrigger value="radar" className="rounded-lg text-xs font-bold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs">
+            <TabsList className="bg-muted p-1 rounded-lg h-11 border border-border/80 max-w-full overflow-x-auto justify-start">
+              <TabsTrigger value="radar" className={TAB_TRIGGER}>
                 <Radio className="w-3.5 h-3.5 text-primary" />
                 <span>Fleet Radar</span>
               </TabsTrigger>
-              <TabsTrigger value="buses" className="rounded-lg text-xs font-bold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs">
+              <TabsTrigger value="buses" className={TAB_TRIGGER}>
                 <BusIcon className="w-3.5 h-3.5 text-accent" />
                 <span>Buses ({buses.length})</span>
               </TabsTrigger>
-              <TabsTrigger value="routes" className="rounded-lg text-xs font-bold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs">
+              <TabsTrigger value="routes" className={TAB_TRIGGER}>
                 <RouteIcon className="w-3.5 h-3.5" />
                 <span>Routes ({routes.length})</span>
               </TabsTrigger>
-              <TabsTrigger value="students" className="rounded-lg text-xs font-bold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs">
+              <TabsTrigger value="students" className={TAB_TRIGGER}>
                 <Users className="w-3.5 h-3.5" />
                 <span>Student Directory ({students.length})</span>
               </TabsTrigger>
-              <TabsTrigger value="announcements" className="rounded-lg text-xs font-bold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs">
+              <TabsTrigger value="announcements" className={TAB_TRIGGER}>
                 <Megaphone className="w-3.5 h-3.5" />
                 <span>Announcements</span>
               </TabsTrigger>
-              <TabsTrigger value="drivers" className="rounded-lg text-xs font-bold px-3 py-1.5 gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-xs">
+              <TabsTrigger value="drivers" className={TAB_TRIGGER}>
                 <IdCard className="w-3.5 h-3.5" />
                 <span>Drivers & Trips</span>
               </TabsTrigger>
@@ -564,7 +556,7 @@ const AdminDashboard = () => {
               size="sm"
               onClick={fetchAll}
               disabled={isRefreshing}
-              className="text-xs h-9 rounded-xl border-border gap-1.5 font-semibold hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="text-xs h-9 border-border gap-1.5 font-semibold hover:bg-muted"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-primary" : ""}`} />
               <span>Refresh Telemetry</span>
@@ -573,22 +565,22 @@ const AdminDashboard = () => {
 
           {/* TAB 1: FLEET RADAR MAP */}
           <TabsContent value="radar" className="m-0 focus-visible:ring-0">
-            <div className="border border-border/80 rounded-2xl bg-card overflow-hidden shadow-xs">
-              <div className="p-4 border-b border-border/80 bg-slate-50/70 dark:bg-slate-900/50 flex items-center justify-between">
-                <div>
-                  <h2 className="text-xs font-bold text-foreground">Prayagraj Campus Fleet Radar</h2>
-                  <p className="text-[11px] text-muted-foreground">
-                    {busesWithLocation.length > 0
-                      ? `Displaying ${busesWithLocation.length} active vehicle GPS fixes across university routes`
-                      : "No drivers currently broadcasting GPS signals"}
-                  </p>
-                </div>
-                {busesWithLocation.length > 0 && (
-                  <Badge variant="outline" className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800">
+            <SectionCard
+              icon={Radio}
+              title="Prayagraj Campus Fleet Radar"
+              description={
+                busesWithLocation.length > 0
+                  ? `Displaying ${busesWithLocation.length} active vehicle GPS fixes across university routes`
+                  : "No drivers currently broadcasting GPS signals"
+              }
+              actions={
+                busesWithLocation.length > 0 && (
+                  <Badge variant="outline" className="text-2xs font-mono text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800">
                     {busesWithLocation.length} Live
                   </Badge>
-                )}
-              </div>
+                )
+              }
+            >
               <div className="h-[460px] sm:h-[560px] relative">
                 {busesWithLocation.length > 0 ? (
                   <MapView
@@ -604,38 +596,33 @@ const AdminDashboard = () => {
                     zoom={13}
                   />
                 ) : (
-                  <div className="h-full flex items-center justify-center bg-slate-50/70 dark:bg-slate-900/50 p-6 text-center">
-                    <div className="max-w-xs space-y-2">
-                      <div className="w-10 h-10 rounded-md bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-muted-foreground">
-                        <MapPin className="w-5 h-5" />
-                      </div>
-                      <h3 className="text-sm font-bold text-foreground">Fleet in Depot</h3>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Vehicles will populate this radar as soon as drivers begin morning or evening shifts from the Driver Console.
-                      </p>
-                    </div>
+                  <div className="h-full flex items-center justify-center bg-muted/40 p-6">
+                    <EmptyState
+                      icon={MapPin}
+                      title="Fleet in Depot"
+                      text="Vehicles will populate this radar as soon as drivers begin morning or evening shifts from the Driver Console."
+                      className="border-0 bg-transparent shadow-none"
+                    />
                   </div>
                 )}
               </div>
-            </div>
+            </SectionCard>
           </TabsContent>
 
           {/* TAB 2: BUS VEHICLES */}
           <TabsContent value="buses" className="m-0 focus-visible:ring-0">
-            <div className="border border-border rounded-lg bg-card overflow-hidden">
-              <div className="p-4 border-b border-border bg-slate-50/70 dark:bg-slate-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">Registered Bus Vehicles</h2>
-                  <p className="text-[11px] text-muted-foreground">Manage bus numbers, assigned routes, and operational status</p>
-                </div>
-                <div className="flex items-center gap-2">
+            <SectionCard
+              title="Registered Bus Vehicles"
+              description="Manage bus numbers, assigned routes, and operational status"
+              actions={
+                <>
                   <div className="relative">
                     <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted-foreground" />
                     <Input
                       placeholder="Search bus or route..."
                       value={busSearch}
                       onChange={(e) => setBusSearch(e.target.value)}
-                      className="pl-8 h-8 text-xs w-44 rounded-md border-border"
+                      className="pl-8 h-8 text-xs w-44 border-border"
                     />
                   </div>
                   <Button
@@ -645,13 +632,14 @@ const AdminDashboard = () => {
                       setNewBus({ busNumber: "", route: "" });
                       setOpenBusDialog(true);
                     }}
-                    className="h-8 text-xs font-semibold rounded-md gap-1"
+                    className="h-8 text-xs font-semibold gap-1"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Register Bus
                   </Button>
-                </div>
-              </div>
+                </>
+              }
+            >
               <Table>
                 <TableHeader>
                   <TableRow className="border-border hover:bg-transparent">
@@ -670,7 +658,7 @@ const AdminDashboard = () => {
                     </TableRow>
                   ) : (
                     visibleBuses.map((bus) => (
-                      <TableRow key={bus._id} className="border-border hover:bg-slate-50/60 dark:hover:bg-slate-900/40">
+                      <TableRow key={bus._id} className="border-border hover:bg-muted/40">
                         <TableCell className="font-bold text-xs text-foreground">Bus {bus.busNumber}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{bus.route}</TableCell>
                         <TableCell>
@@ -690,7 +678,7 @@ const AdminDashboard = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEditBus(bus)}
-                            className="h-7 w-7 p-0 rounded text-muted-foreground hover:text-foreground mr-1"
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground mr-1"
                             title="Edit vehicle"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -699,7 +687,7 @@ const AdminDashboard = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteBus(bus)}
-                            className="h-7 w-7 p-0 rounded text-muted-foreground hover:text-destructive"
+                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
                             title="Delete vehicle"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -710,17 +698,15 @@ const AdminDashboard = () => {
                   )}
                 </TableBody>
               </Table>
-            </div>
+            </SectionCard>
           </TabsContent>
 
           {/* TAB 3: TRANSIT CORRIDORS (ROUTES) */}
           <TabsContent value="routes" className="m-0 focus-visible:ring-0">
-            <div className="border border-border rounded-lg bg-card overflow-hidden">
-              <div className="p-4 border-b border-border bg-slate-50/70 dark:bg-slate-900/50 flex items-center justify-between">
-                <div>
-                  <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">Campus Transit Corridors</h2>
-                  <p className="text-[11px] text-muted-foreground">Manage designated university transit lines</p>
-                </div>
+            <SectionCard
+              title="Campus Transit Corridors"
+              description="Manage designated university transit lines"
+              actions={
                 <Button
                   size="sm"
                   onClick={() => {
@@ -728,12 +714,13 @@ const AdminDashboard = () => {
                     setNewRoute({ routeName: "" });
                     setOpenRouteDialog(true);
                   }}
-                  className="h-8 text-xs font-semibold rounded-md gap-1"
+                  className="h-8 text-xs font-semibold gap-1"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   Add Route
                 </Button>
-              </div>
+              }
+            >
               <Table>
                 <TableHeader>
                   <TableRow className="border-border hover:bg-transparent">
@@ -754,7 +741,7 @@ const AdminDashboard = () => {
                     routes.map((route) => {
                       const assignedBuses = buses.filter((b) => b.route === route.routeName);
                       return (
-                        <TableRow key={route._id} className="border-border hover:bg-slate-50/60 dark:hover:bg-slate-900/40">
+                        <TableRow key={route._id} className="border-border hover:bg-muted/40">
                           <TableCell className="font-bold text-xs text-foreground">{route.routeName}</TableCell>
                           <TableCell>
                             <span className="text-xs font-mono text-muted-foreground">
@@ -777,7 +764,7 @@ const AdminDashboard = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleEditRoute(route)}
-                              className="h-7 w-7 p-0 rounded text-muted-foreground hover:text-foreground mr-1"
+                              className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground mr-1"
                               title="Edit route"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
@@ -786,7 +773,7 @@ const AdminDashboard = () => {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleDeleteRoute(route)}
-                              className="h-7 w-7 p-0 rounded text-muted-foreground hover:text-destructive"
+                              className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
                               title="Delete route"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -798,25 +785,23 @@ const AdminDashboard = () => {
                   )}
                 </TableBody>
               </Table>
-            </div>
+            </SectionCard>
           </TabsContent>
 
           {/* TAB 4: STUDENT PASS DIRECTORY */}
           <TabsContent value="students" className="m-0 focus-visible:ring-0">
-            <div className="border border-border rounded-lg bg-card overflow-hidden">
-              <div className="p-4 border-b border-border bg-slate-50/70 dark:bg-slate-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">Student Pass Directory</h2>
-                  <p className="text-[11px] text-muted-foreground">Enroll commuters and assign authorized corridor passes</p>
-                </div>
-                <div className="flex items-center gap-2">
+            <SectionCard
+              title="Student Pass Directory"
+              description="Enroll commuters and assign authorized corridor passes"
+              actions={
+                <>
                   <div className="relative">
                     <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted-foreground" />
                     <Input
                       placeholder="Search ID or name..."
                       value={studentSearch}
                       onChange={(e) => setStudentSearch(e.target.value)}
-                      className="pl-8 h-8 text-xs w-44 rounded-md border-border"
+                      className="pl-8 h-8 text-xs w-44 border-border"
                     />
                   </div>
                   <Button
@@ -824,7 +809,7 @@ const AdminDashboard = () => {
                     variant="outline"
                     onClick={handleExportStudents}
                     disabled={students.length === 0}
-                    className="h-8 text-xs font-semibold rounded-md gap-1"
+                    className="h-8 text-xs font-semibold gap-1"
                     title="Download the student list as CSV (no passwords)"
                   >
                     <Download className="w-3.5 h-3.5" />
@@ -834,16 +819,16 @@ const AdminDashboard = () => {
                   <Button
                     size="sm"
                     onClick={handleNewStudent}
-                    className="h-8 text-xs font-semibold rounded-md gap-1"
+                    className="h-8 text-xs font-semibold gap-1"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Enroll Student
                   </Button>
-                </div>
-              </div>
-
+                </>
+              }
+            >
               {/* Filters */}
-              <div className="px-4 py-2.5 border-b border-border flex flex-wrap items-center gap-2">
+              <div className="px-4 py-2.5 border-b border-border/80 flex flex-wrap items-center gap-2">
                 <Select value={studentRouteFilter} onValueChange={setStudentRouteFilter}>
                   <SelectTrigger className="h-8 w-44 text-xs" aria-label="Filter by route">
                     <SelectValue />
@@ -871,7 +856,7 @@ const AdminDashboard = () => {
                     Clear filters
                   </Button>
                 )}
-                <span className="text-[11px] text-muted-foreground ml-auto">
+                <span className="text-2xs text-muted-foreground ml-auto">
                   Showing {visibleStudents.length} of {students.length}
                 </span>
               </div>
@@ -912,7 +897,7 @@ const AdminDashboard = () => {
                       <TableRow
                         key={student._id}
                         data-state={selectedStudentIds.has(student._id) ? "selected" : undefined}
-                        className="border-border hover:bg-slate-50/60 dark:hover:bg-slate-900/40"
+                        className="border-border hover:bg-muted/40"
                       >
                         <TableCell className="w-10">
                           <Checkbox
@@ -928,9 +913,9 @@ const AdminDashboard = () => {
                           {student.name}
                           {student.accessValidUntil && (
                             new Date(student.accessValidUntil).getTime() < Date.now() ? (
-                              <span className="block text-[10px] font-semibold text-destructive">Pass expired</span>
+                              <span className="block text-2xs font-semibold text-destructive">Pass expired</span>
                             ) : (
-                              <span className="block text-[10px] text-muted-foreground">Valid until {formatPassDate(student.accessValidUntil)}</span>
+                              <span className="block text-2xs text-muted-foreground">Valid until {formatPassDate(student.accessValidUntil)}</span>
                             )
                           )}
                         </TableCell>
@@ -941,13 +926,13 @@ const AdminDashboard = () => {
                                 <Badge 
                                   key={`${student._id}-${r}`} 
                                   variant="outline"
-                                  className="text-[10px] font-semibold px-1.5 py-0 rounded border-border/80 bg-slate-50 dark:bg-slate-900"
+                                  className="text-2xs font-semibold px-1.5 py-0 rounded-md border-border/80 bg-muted/50"
                                 >
                                   {r}
                                 </Badge>
                               ))
                             ) : (
-                              <span className="text-[11px] text-muted-foreground italic">No route pass assigned</span>
+                              <span className="text-2xs text-muted-foreground italic">No route pass assigned</span>
                             )}
                           </div>
                         </TableCell>
@@ -956,7 +941,7 @@ const AdminDashboard = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => handleEditStudent(student)}
-                            className="h-7 text-xs rounded border-border"
+                            className="h-7 text-xs border-border"
                           >
                             Manage Pass
                           </Button>
@@ -964,7 +949,7 @@ const AdminDashboard = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => setResetStudent(student)}
-                            className="h-7 text-xs rounded ml-1"
+                            className="h-7 text-xs ml-1"
                           >
                             Reset Password
                           </Button>
@@ -972,7 +957,7 @@ const AdminDashboard = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteStudent(student)}
-                            className="h-7 w-7 p-0 rounded ml-1 text-stone-500 hover:text-destructive"
+                            className="h-7 w-7 p-0 ml-1 text-stone-500 hover:text-destructive"
                             title="Delete student"
                             aria-label={`Delete ${student.name}`}
                           >
@@ -984,7 +969,7 @@ const AdminDashboard = () => {
                   )}
                 </TableBody>
               </Table>
-            </div>
+            </SectionCard>
           </TabsContent>
 
           {/* TAB 5: ANNOUNCEMENTS */}
@@ -1012,19 +997,19 @@ const AdminDashboard = () => {
           </DialogHeader>
           <div className="space-y-3.5 pt-2">
             <div className="space-y-1">
-              <Label htmlFor="bus-number" className="text-xs font-semibold">Bus Identifier / License Code</Label>
+              <Label htmlFor="bus-number">Bus Identifier / License Code</Label>
               <Input
                 id="bus-number"
                 placeholder="e.g. 04 (UP-70-BT-4412)"
                 value={newBus.busNumber}
                 onChange={(e) => setNewBus({ ...newBus, busNumber: e.target.value })}
-                className="h-9 text-xs rounded-md"
+                className="h-9 text-xs"
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs font-semibold">Assigned Corridor Route</Label>
+              <Label>Assigned Corridor Route</Label>
               <Select value={newBus.route} onValueChange={(route) => setNewBus({ ...newBus, route })}>
-                <SelectTrigger className="h-9 text-xs rounded-md">
+                <SelectTrigger className="h-9 text-xs">
                   <SelectValue placeholder={routes.length ? "Select corridor" : "Create a route first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -1036,7 +1021,7 @@ const AdminDashboard = () => {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={handleAddBus} disabled={isSaving} className="w-full h-9 text-xs rounded-md font-semibold mt-2">
+            <Button onClick={handleAddBus} disabled={isSaving} className="w-full h-9 text-xs font-semibold mt-2">
               {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
               {editingBus ? "Save Vehicle Record" : "Register Bus in Fleet"}
             </Button>
@@ -1057,16 +1042,16 @@ const AdminDashboard = () => {
           </DialogHeader>
           <div className="space-y-3.5 pt-2">
             <div className="space-y-1">
-              <Label htmlFor="route-name" className="text-xs font-semibold">Corridor Route Name</Label>
+              <Label htmlFor="route-name">Corridor Route Name</Label>
               <Input
                 id="route-name"
                 placeholder="e.g. Route 01 - Civil Lines Express"
                 value={newRoute.routeName}
                 onChange={(e) => setNewRoute({ ...newRoute, routeName: e.target.value })}
-                className="h-9 text-xs rounded-md"
+                className="h-9 text-xs"
               />
             </div>
-            <Button onClick={handleAddRoute} disabled={isSaving} className="w-full h-9 text-xs rounded-md font-semibold mt-2">
+            <Button onClick={handleAddRoute} disabled={isSaving} className="w-full h-9 text-xs font-semibold mt-2">
               {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
               {editingRoute ? "Save Corridor Changes" : "Create Transit Corridor"}
             </Button>
@@ -1091,48 +1076,48 @@ const AdminDashboard = () => {
             {!editingStudent && (
               <>
                 <div className="space-y-1">
-                  <Label htmlFor="student-id" className="text-xs font-semibold">Student Enrollment ID</Label>
+                  <Label htmlFor="student-id">Student Enrollment ID</Label>
                   <Input
                     id="student-id"
                     placeholder="e.g. UGI-2023-CS-104"
                     value={newStudent.studentId}
                     onChange={(e) => setNewStudent({ ...newStudent, studentId: e.target.value })}
-                    className="h-9 text-xs rounded-md"
+                    className="h-9 text-xs"
                   />
                 </div>
               </>
             )}
 
             <div className="space-y-1">
-              <Label htmlFor="student-name" className="text-xs font-semibold">Full Legal Name</Label>
+              <Label htmlFor="student-name">Full Legal Name</Label>
               <Input
                 id="student-name"
                 placeholder="e.g. Rajesh Kumar"
                 value={newStudent.name}
                 onChange={(e) => setNewStudent({ ...newStudent, name: e.target.value })}
-                className="h-9 text-xs rounded-md"
+                className="h-9 text-xs"
               />
             </div>
 
             {!editingStudent && (
               <>
                 <div className="space-y-1">
-                  <Label htmlFor="student-pwd" className="text-xs font-semibold">Passkey / Password</Label>
+                  <Label htmlFor="student-pwd">Passkey / Password</Label>
                   <Input
                     id="student-pwd"
                     type="password"
                     placeholder="Set student login password"
                     value={newStudent.password}
                     onChange={(e) => setNewStudent({ ...newStudent, password: e.target.value })}
-                    className="h-9 text-xs rounded-md"
+                    className="h-9 text-xs"
                   />
                 </div>
               </>
             )}
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Authorized Corridor Routes</Label>
-              <div className="border border-border rounded-md p-3 max-h-44 overflow-y-auto space-y-2 bg-slate-50 dark:bg-slate-900/60">
+              <Label>Authorized Corridor Routes</Label>
+              <div className="border border-border/80 rounded-lg p-3 max-h-44 overflow-y-auto space-y-2 bg-muted/50">
                 {routes.length === 0 ? (
                   <p className="text-xs text-muted-foreground">No corridors configured</p>
                 ) : (
@@ -1153,18 +1138,18 @@ const AdminDashboard = () => {
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="student-valid-until" className="text-xs font-semibold">Pass valid until (optional)</Label>
+              <Label htmlFor="student-valid-until">Pass valid until (optional)</Label>
               <Input
                 id="student-valid-until"
                 type="date"
                 value={studentValidUntil}
                 onChange={(e) => setStudentValidUntil(e.target.value)}
-                className="h-9 text-xs rounded-md"
+                className="h-9 text-xs"
               />
-              <p className="text-[11px] text-muted-foreground">After this date the student can't log in. Leave empty for no expiry.</p>
+              <p className="text-2xs text-muted-foreground">After this date the student can't log in. Leave empty for no expiry.</p>
             </div>
 
-            <Button onClick={handleSaveStudent} disabled={isSaving} className="w-full h-9 text-xs rounded-md font-semibold mt-2">
+            <Button onClick={handleSaveStudent} disabled={isSaving} className="w-full h-9 text-xs font-semibold mt-2">
               {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
               {editingStudent ? "Save Corridor Pass" : "Complete Enrollment"}
             </Button>
@@ -1196,8 +1181,8 @@ const AdminDashboard = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="text-xs rounded-md">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="text-xs rounded-md bg-destructive hover:bg-destructive/90 text-white font-semibold">
+            <AlertDialogCancel className="text-xs">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="text-xs bg-destructive hover:bg-destructive/90 text-white font-semibold">
               Confirm Delete
             </AlertDialogAction>
           </AlertDialogFooter>

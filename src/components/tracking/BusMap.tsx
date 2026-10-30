@@ -39,13 +39,13 @@ const Placeholder = ({
   subtext?: string;
   badgeText?: string;
 }) => (
-  <div className="h-full min-h-[420px] flex items-center justify-center bg-slate-50/70 dark:bg-slate-900/40 p-8 text-center relative overflow-hidden">
+  <div className="h-full min-h-[420px] flex items-center justify-center bg-muted/40 p-8 text-center relative overflow-hidden">
     {/* Subtle Background Pattern */}
     <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] dark:bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:16px_16px] opacity-40 pointer-events-none" />
     
     <div className="max-w-sm space-y-4 relative z-10">
       <div className="relative inline-flex items-center justify-center">
-        <div className="w-14 h-14 rounded-2xl bg-primary/10 dark:bg-primary/20 text-primary flex items-center justify-center shadow-sm">
+        <div className="w-14 h-14 rounded-xl bg-primary/10 dark:bg-primary/20 text-primary flex items-center justify-center shadow-sm">
           <Icon className="w-7 h-7" />
         </div>
         <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-accent animate-ping" />
@@ -54,14 +54,14 @@ const Placeholder = ({
 
       <div className="space-y-1.5">
         {badgeText && (
-          <span className="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 mb-1">
+          <span className="inline-block text-2xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-muted text-muted-foreground mb-1">
             {badgeText}
           </span>
         )}
         <h3 className="text-base font-bold text-foreground">{title}</h3>
         <p className="text-xs text-muted-foreground leading-relaxed">{text}</p>
         {subtext && (
-          <p className="text-[11px] text-muted-foreground/80 font-mono pt-1">{subtext}</p>
+          <p className="text-2xs text-muted-foreground/80 font-mono pt-1">{subtext}</p>
         )}
       </div>
     </div>
@@ -175,7 +175,7 @@ const BusMap = ({ bus, nowMs, stops = [], myStop = null }: BusMapProps) => {
           variant="secondary"
           onClick={handleCenterOnBus}
           title="Center on Bus"
-          className="h-9 w-9 rounded-lg bg-card/90 backdrop-blur border border-border shadow-md hover:bg-card text-foreground"
+          className="h-9 w-9 bg-card/90 backdrop-blur border border-border shadow-md hover:bg-card text-foreground"
         >
           <Crosshair className="w-4 h-4 text-primary" />
         </Button>
@@ -185,7 +185,7 @@ const BusMap = ({ bus, nowMs, stops = [], myStop = null }: BusMapProps) => {
             variant="secondary"
             onClick={handleFitRouteBounds}
             title="Fit Route Network"
-            className="h-9 w-9 rounded-lg bg-card/90 backdrop-blur border border-border shadow-md hover:bg-card text-foreground"
+            className="h-9 w-9 bg-card/90 backdrop-blur border border-border shadow-md hover:bg-card text-foreground"
           >
             <Layers className="w-4 h-4 text-accent" />
           </Button>
@@ -208,14 +208,14 @@ const BusMap = ({ bus, nowMs, stops = [], myStop = null }: BusMapProps) => {
                   <span className="text-xs text-muted-foreground font-medium">• {bus.route}</span>
                 </div>
                 <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1 font-mono text-[11px]">
+                  <span className="flex items-center gap-1 font-mono text-2xs">
                     <Clock className="w-3 h-3 text-muted-foreground" />
                     {formatLastUpdated(bus.updatedAt, nowMs)}
                   </span>
                   {bus.speedKmh !== undefined && bus.speedKmh !== null && (
                     <>
                       <span>•</span>
-                      <span className="flex items-center gap-1 font-mono text-[11px] text-foreground font-semibold">
+                      <span className="flex items-center gap-1 font-mono text-2xs text-foreground font-semibold">
                         <Gauge className="w-3 h-3 text-accent" />
                         {Math.round(bus.speedKmh)} km/h
                       </span>
@@ -225,7 +225,7 @@ const BusMap = ({ bus, nowMs, stops = [], myStop = null }: BusMapProps) => {
               </div>
             </div>
 
-            <Badge className={`${badge.className} gap-1.5 px-2.5 py-1 text-[11px] font-bold shrink-0 rounded-full shadow-sm`}>
+            <Badge className={`${badge.className} gap-1.5 px-2.5 py-1 text-2xs font-bold shrink-0 rounded-full shadow-sm`}>
               <span className="relative flex h-2 w-2">
                 {badge.pingClass && (
                   <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${badge.pingClass}`} />
@@ -252,14 +252,14 @@ const BusMap = ({ bus, nowMs, stops = [], myStop = null }: BusMapProps) => {
           )}
 
           {/* Micro Map Legend Bar */}
-          <div className="pt-2 border-t border-border/70 flex items-center justify-between text-[11px] text-muted-foreground">
+          <div className="pt-2 border-t border-border/70 flex items-center justify-between text-2xs text-muted-foreground">
             <div className="flex items-center gap-3">
               <span className="inline-flex items-center gap-1">
                 <span className="w-2.5 h-2.5 rounded-full bg-primary border border-white inline-block shadow-xs" />
                 Live Bus
               </span>
               <span className="inline-flex items-center gap-1">
-                <span className="w-2.5 h-2.5 rounded-full bg-white border border-slate-700 inline-block text-[7px] text-center font-bold" />
+                <span className="w-2.5 h-2.5 rounded-full bg-white border border-slate-700 inline-block" />
                 Stops
               </span>
               {myStop && (
@@ -272,7 +272,7 @@ const BusMap = ({ bus, nowMs, stops = [], myStop = null }: BusMapProps) => {
 
             <button
               onClick={handleCenterOnBus}
-              className="text-[11px] text-primary hover:underline font-semibold flex items-center gap-1"
+              className="text-2xs text-primary hover:underline font-semibold flex items-center gap-1"
             >
               <Navigation className="w-3 h-3" />
               Focus Bus

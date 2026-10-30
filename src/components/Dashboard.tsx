@@ -3,6 +3,7 @@ import axios from "axios";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   MapPin, 
@@ -22,9 +23,12 @@ import {
   Gauge,
   Wifi,
   Sparkles,
-  type LucideIcon,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { EmptyState } from "@/components/ui/empty-state";
+import { StatCard } from "@/components/ui/stat-card";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { SectionCard } from "@/components/ui/section-card";
 import AppHeader from "./AppHeader";
 import ChangePasswordDialog from "./ChangePasswordDialog";
 import AnnouncementBanner, { Announcement } from "./AnnouncementBanner";
@@ -73,29 +77,6 @@ const writeStored = (key: string, value: string | null) => {
     // ignore
   }
 };
-
-const EmptyState = ({
-  icon: Icon,
-  title,
-  text,
-  actionButton,
-}: {
-  icon: LucideIcon;
-  title: string;
-  text: string;
-  actionButton?: React.ReactNode;
-}) => (
-  <div className="text-center p-8 border border-border/80 bg-card rounded-xl space-y-3 shadow-xs">
-    <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center mx-auto text-primary">
-      <Icon className="w-6 h-6" />
-    </div>
-    <div className="space-y-1">
-      <h3 className="text-sm font-bold text-foreground">{title}</h3>
-      <p className="text-xs text-muted-foreground max-w-xs mx-auto leading-relaxed">{text}</p>
-    </div>
-    {actionButton && <div className="pt-2">{actionButton}</div>}
-  </div>
-);
 
 const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => {
   const [selectedBus, setSelectedBusState] = useState<string | null>(() => readStored("selectedBus"));
@@ -383,7 +364,7 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
           icon={Search}
           title="No Matching Vehicles"
           text="No buses match your current search or filter criteria. Try resetting the filter."
-          actionButton={
+          action={
             <Button
               variant="outline"
               size="sm"
@@ -425,7 +406,7 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
               className={`p-3.5 rounded-xl border transition-all cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 isSelected
                   ? "bg-primary/5 dark:bg-primary/10 border-primary ring-1 ring-primary/80 shadow-md"
-                  : "bg-card border-border/80 hover:border-slate-400 dark:hover:border-slate-700 shadow-xs hover:shadow-sm"
+                  : "bg-card border-border/80 hover:border-muted-foreground/40 shadow-xs hover:shadow-sm"
               } ${bus.status === "inactive" ? "opacity-70" : ""}`}
             >
               {/* Header: Bus ID, Route, and Status Badge */}
@@ -435,7 +416,7 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
                     className={`w-8 h-8 rounded-lg flex items-center justify-center font-extrabold text-xs transition-colors ${
                       isSelected
                         ? "bg-primary text-primary-foreground shadow-xs"
-                        : "bg-slate-100 dark:bg-slate-800 text-foreground"
+                        : "bg-muted text-foreground"
                     }`}
                   >
                     {bus.number}
@@ -444,18 +425,18 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
                     <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
                       <span>Bus {bus.number}</span>
                       {isSelected && (
-                        <span className="text-[10px] text-primary font-bold px-1.5 py-px rounded-full bg-primary/10">
+                        <span className="text-2xs text-primary font-bold px-1.5 py-px rounded-full bg-primary/10">
                           Active
                         </span>
                       )}
                     </h4>
-                    <p className="text-[11px] text-muted-foreground truncate max-w-[140px] sm:max-w-[180px]">
+                    <p className="text-2xs text-muted-foreground truncate max-w-[140px] sm:max-w-[180px]">
                       {bus.route}
                     </p>
                   </div>
                 </div>
 
-                <Badge className={`${badge.className} text-[10px] font-bold gap-1 px-2 py-0.5 rounded-full shrink-0`}>
+                <Badge className={`${badge.className} text-2xs font-bold gap-1 px-2 py-0.5 rounded-full shrink-0`}>
                   <span className="relative flex h-1.5 w-1.5">
                     {badge.pingClass && (
                       <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${badge.pingClass}`} />
@@ -468,14 +449,14 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
 
               {/* ETA Highlight Strip if available */}
               {eta && (
-                <div className="mb-2 py-1 px-2 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[11px] font-semibold flex items-center justify-between">
+                <div className="mb-2 py-1 px-2 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-2xs font-semibold flex items-center justify-between">
                   <span>Approach ETA</span>
                   <span className="font-mono font-bold">{eta}</span>
                 </div>
               )}
 
               {/* Bottom Telemetry Strip */}
-              <div className="pt-2 border-t border-border/70 flex items-center justify-between text-[11px] text-muted-foreground">
+              <div className="pt-2 border-t border-border/70 flex items-center justify-between text-2xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Clock className="w-3 h-3 text-muted-foreground" />
                   {bus.status === "inactive"
@@ -484,16 +465,16 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
                 </span>
 
                 {bus.speedKmh !== undefined && bus.speedKmh !== null && locationState === "live" ? (
-                  <span className="font-mono text-[11px] text-accent font-semibold flex items-center gap-1">
+                  <span className="font-mono text-2xs text-accent font-semibold flex items-center gap-1">
                     <Gauge className="w-3 h-3" />
                     {Math.round(bus.speedKmh)} km/h
                   </span>
                 ) : isSelected ? (
-                  <span className="text-primary font-bold text-[10px] flex items-center gap-1">
+                  <span className="text-primary font-bold text-2xs flex items-center gap-1">
                     <Check className="w-3 h-3" /> Tracking on Map
                   </span>
                 ) : (
-                  <span className="text-muted-foreground text-[10px] flex items-center gap-0.5">
+                  <span className="text-muted-foreground text-2xs flex items-center gap-0.5">
                     Tap to track <ChevronRight className="w-3 h-3" />
                   </span>
                 )}
@@ -529,83 +510,48 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
 
         {/* Mobility Telemetry Metric Strip */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          <div className="border border-border/80 rounded-xl bg-card p-3.5 shadow-xs transition-all hover:border-primary/40">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-              Corridor Fleet Status
-            </span>
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-2xl font-extrabold text-foreground tabular-nums">
-                {activeBusesCount}
-              </span>
-              <span className="text-xs text-muted-foreground font-medium">
-                Active / {allRouteBuses.length} Scheduled
-              </span>
-            </div>
-          </div>
+          <StatCard label="Corridor Fleet Status" value={activeBusesCount} unit={`Active / ${allRouteBuses.length} Scheduled`} />
 
-          <div className="border border-border/80 rounded-xl bg-card p-3.5 shadow-xs transition-all hover:border-primary/40">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-              Live Satellite GPS
-            </span>
-            <div className="flex items-center gap-2 mt-1.5">
-              <span className="relative flex h-2.5 w-2.5">
+          <StatCard label="Live Satellite GPS">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5 shrink-0">
                 {liveBusesCount > 0 && (
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 )}
-                <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${liveBusesCount > 0 ? "bg-emerald-500" : "bg-slate-400"}`} />
+                <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${liveBusesCount > 0 ? "bg-emerald-500" : "bg-muted-foreground/50"}`} />
               </span>
-              <span className="text-xs font-bold text-foreground">
+              <span className="truncate text-xs font-bold text-foreground">
                 {liveBusesCount > 0 ? `${liveBusesCount} Vehicle(s) Live` : "No live GPS signal"}
               </span>
             </div>
-          </div>
+          </StatCard>
 
-          <div className="border border-border/80 rounded-xl bg-card p-3.5 shadow-xs transition-all hover:border-primary/40">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-              Authorized Pass
-            </span>
-            <div className="flex items-center gap-1.5 mt-1.5 text-xs font-bold text-foreground truncate">
-              <RouteIcon className="w-4 h-4 text-primary shrink-0" />
+          <StatCard label="Authorized Pass">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+              <RouteIcon className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
               <span className="truncate">{selectedRoute || `${authorizedRoutes.length} Route(s) Verified`}</span>
             </div>
-          </div>
+          </StatCard>
 
-          <div className="border border-border/80 rounded-xl bg-card p-3.5 shadow-xs transition-all hover:border-primary/40">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-              Telemetry Server
-            </span>
-            <div className="flex items-center gap-1.5 mt-1.5 text-xs font-bold text-foreground">
-              <Wifi className={`w-3.5 h-3.5 ${socketConnected ? "text-emerald-500" : "text-amber-500"}`} />
-              <span>{socketConnected ? "Live Socket Synced" : "Polling Gateway (15s)"}</span>
+          <StatCard label="Telemetry Server">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+              <Wifi className={`w-3.5 h-3.5 shrink-0 ${socketConnected ? "text-emerald-500" : "text-amber-500"}`} aria-hidden="true" />
+              <span className="truncate">{socketConnected ? "Live Socket Synced" : "Polling Gateway (15s)"}</span>
             </div>
-          </div>
+          </StatCard>
         </div>
 
         {/* Mobile View Toggle Switcher */}
-        <div className="lg:hidden flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-border">
-          <button
-            onClick={() => setMobileView("map")}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
-              mobileView === "map"
-                ? "bg-card text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <MapPin className="w-3.5 h-3.5 text-primary" />
-            <span>Interactive Map</span>
-          </button>
-          <button
-            onClick={() => setMobileView("list")}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
-              mobileView === "list"
-                ? "bg-card text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <BusIcon className="w-3.5 h-3.5 text-accent" />
-            <span>Vehicles ({filteredBuses.length})</span>
-          </button>
-        </div>
+        <SegmentedControl
+          aria-label="Show map or vehicle list"
+          className="lg:hidden"
+          value={mobileView}
+          onChange={setMobileView}
+          options={[
+            { value: "map", label: "Interactive Map", icon: MapPin },
+            { value: "list", label: `Vehicles (${filteredBuses.length})`, icon: BusIcon },
+          ]}
+        />
 
         {/* Master Split Grid: Sidebar & Map Display */}
         <div className="grid lg:grid-cols-12 gap-6 items-start">
@@ -614,28 +560,27 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
           <div className={`lg:col-span-4 space-y-4 ${mobileView === "map" ? "hidden lg:block" : "block"}`}>
             
             {/* Route & Stop Selection Card */}
-            <div className="border border-border/80 rounded-xl bg-card p-4 space-y-3.5 shadow-xs">
-              <div className="flex items-center justify-between pb-2 border-b border-border/70">
-                <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-foreground">Transit Corridors</h3>
-                  <p className="text-[11px] text-muted-foreground">Select your verified route</p>
-                </div>
+            <SectionCard
+              title="Transit Corridors"
+              description="Select your verified route"
+              actions={
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={fetchAuthorizedBuses}
                   disabled={isRefreshing}
-                  className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
                   title="Refresh bus telemetry"
+                  aria-label="Refresh bus telemetry"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-primary" : ""}`} />
                 </Button>
-              </div>
-
+              }
+            >
               {authorizedRoutes.length > 0 && (
-                <div className="space-y-2.5">
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-muted-foreground">Corridor Route</label>
+                <div className="space-y-3 p-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="route-select">Corridor Route</Label>
                     <Select
                       value={selectedRoute || ""}
                       onValueChange={(val) => {
@@ -643,7 +588,7 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
                         setSelectedBus(null);
                       }}
                     >
-                      <SelectTrigger className="w-full h-10 rounded-lg border-border text-xs font-semibold">
+                      <SelectTrigger id="route-select" className="w-full h-10 border-border text-xs font-semibold">
                         <SelectValue placeholder="Choose route corridor..." />
                       </SelectTrigger>
                       <SelectContent>
@@ -657,10 +602,10 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
                   </div>
 
                   {selectedRoute && routeStops.length > 0 && (
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-semibold text-muted-foreground">Your Destination Stop</label>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="stop-select">Your Destination Stop</Label>
                       <Select value={myStop?.name || ""} onValueChange={handleSelectStop}>
-                        <SelectTrigger className="w-full h-10 rounded-lg border-border text-xs" aria-label="My stop">
+                        <SelectTrigger id="stop-select" className="w-full h-10 border-border text-xs">
                           <SelectValue placeholder="Choose your stop for ETA..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -680,7 +625,7 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
                       size="sm"
                       onClick={handleToggleNearAlert}
                       aria-pressed={nearAlertOn}
-                      className={`w-full h-9 text-xs font-semibold gap-2 rounded-lg transition-all ${
+                      className={`w-full h-9 text-xs font-semibold gap-2 transition-all ${
                         nearAlertOn ? "bg-primary text-primary-foreground" : "border-border"
                       }`}
                     >
@@ -690,16 +635,16 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
                   )}
                 </div>
               )}
-            </div>
+            </SectionCard>
 
             {/* Vehicle Directory & Search Filter */}
             <div className="space-y-2.5">
               <div className="flex items-center justify-between px-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                <span className="text-2xs font-bold uppercase tracking-wider text-muted-foreground">
                   Corridor Vehicles
                 </span>
                 {allRouteBuses.length > 0 && (
-                  <span className="text-[10px] text-muted-foreground font-mono">
+                  <span className="text-2xs text-muted-foreground font-mono">
                     {allRouteBuses.length} scheduled
                   </span>
                 )}
@@ -715,36 +660,21 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
                       placeholder="Search bus number..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8 h-9 text-xs rounded-lg border-border bg-card"
+                      className="pl-8 h-9 text-xs border-border bg-card"
                     />
                   </div>
 
-                  <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900 rounded-lg text-xs">
-                    <button
-                      onClick={() => setStatusFilter("all")}
-                      className={`flex-1 py-1 text-[11px] font-semibold rounded-md transition-colors ${
-                        statusFilter === "all" ? "bg-card text-foreground shadow-2xs" : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      All ({allRouteBuses.length})
-                    </button>
-                    <button
-                      onClick={() => setStatusFilter("active")}
-                      className={`flex-1 py-1 text-[11px] font-semibold rounded-md transition-colors ${
-                        statusFilter === "active" ? "bg-card text-foreground shadow-2xs" : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      Active ({activeBusesCount})
-                    </button>
-                    <button
-                      onClick={() => setStatusFilter("live")}
-                      className={`flex-1 py-1 text-[11px] font-semibold rounded-md transition-colors ${
-                        statusFilter === "live" ? "bg-card text-foreground shadow-2xs" : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      Live GPS ({liveBusesCount})
-                    </button>
-                  </div>
+                  <SegmentedControl
+                    aria-label="Filter vehicles by status"
+                    size="sm"
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    options={[
+                      { value: "all", label: `All (${allRouteBuses.length})` },
+                      { value: "active", label: `Active (${activeBusesCount})` },
+                      { value: "live", label: `Live GPS (${liveBusesCount})` },
+                    ]}
+                  />
                 </div>
               )}
 
@@ -758,34 +688,22 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
             className={`lg:col-span-8 ${mobileView === "list" ? "hidden lg:block" : "block"}`}
             ref={mapRef}
           >
-            <div className="border border-border/80 rounded-2xl bg-card overflow-hidden shadow-sm">
-              {/* Map Canvas Header Bar */}
-              <div className="p-4 border-b border-border/80 bg-slate-50/70 dark:bg-slate-900/50 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-xs border border-primary/20">
-                    <MapPin className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-bold text-foreground">
-                      {trackedBus ? `Live Telemetry: Bus ${trackedBus.number}` : "Campus Route Network"}
-                    </h2>
-                    <p className="text-xs text-muted-foreground">
-                      {trackedBus
-                        ? `${trackedBus.route} • ${LOCATION_BADGE[getLocationState(trackedBus, nowMs)].label}`
-                        : "Select an active vehicle to stream real-time GPS telemetry"}
-                    </p>
-                  </div>
-                </div>
-
-                {trackedBus && (
-                  <div className="hidden sm:flex items-center gap-2">
-                    <span className="text-xs font-mono tabular-nums text-muted-foreground px-2.5 py-1 rounded-md bg-card border border-border/70">
-                      {formatLastUpdated(trackedBus.updatedAt, nowMs)}
-                    </span>
-                  </div>
-                )}
-              </div>
-
+            <SectionCard
+              icon={MapPin}
+              title={trackedBus ? `Live Telemetry: Bus ${trackedBus.number}` : "Campus Route Network"}
+              description={
+                trackedBus
+                  ? `${trackedBus.route} • ${LOCATION_BADGE[getLocationState(trackedBus, nowMs)].label}`
+                  : "Select an active vehicle to stream real-time GPS telemetry"
+              }
+              actions={
+                trackedBus && (
+                  <span className="hidden sm:inline-block text-xs font-mono tabular-nums text-muted-foreground px-2.5 py-1 rounded-md bg-card border border-border/70">
+                    {formatLastUpdated(trackedBus.updatedAt, nowMs)}
+                  </span>
+                )
+              }
+            >
               {/* Map Canvas Container */}
               <div className="h-[520px] sm:h-[620px] relative">
                 <BusMap
@@ -795,7 +713,7 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
                   myStop={myStop}
                 />
               </div>
-            </div>
+            </SectionCard>
           </div>
 
         </div>

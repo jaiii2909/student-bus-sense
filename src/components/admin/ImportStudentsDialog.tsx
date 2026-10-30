@@ -104,7 +104,7 @@ const ImportStudentsDialog = ({ onImported }: ImportStudentsDialogProps) => {
 
   return (
     <>
-      <Button size="sm" variant="outline" onClick={() => setOpen(true)} className="h-8 text-xs font-semibold rounded-md gap-1">
+      <Button size="sm" variant="outline" onClick={() => setOpen(true)} className="h-8 text-xs font-semibold gap-1">
         <Upload className="w-3.5 h-3.5" />
         Import CSV
       </Button>
@@ -119,7 +119,7 @@ const ImportStudentsDialog = ({ onImported }: ImportStudentsDialogProps) => {
             </DialogDescription>
           </DialogHeader>
 
-          <pre className="text-[11px] bg-slate-50 dark:bg-slate-900/60 border border-border/80 rounded-xl p-3 overflow-x-auto font-mono">
+          <pre className="text-2xs bg-muted/50 border border-border/80 rounded-xl p-3 overflow-x-auto font-mono">
 {`studentId,name,password,routes
 UGI-2024-CS-001,Asha Verma,asha2024,Kareli
 UGI-2024-CS-002,"Khan, Imran",imran2024,Kareli;Dhoomanganj`}
@@ -133,7 +133,7 @@ UGI-2024-CS-002,"Khan, Imran",imran2024,Kareli;Dhoomanganj`}
           <div className="space-y-1.5">
             <Label htmlFor="import-valid-until">Pass valid until (optional)</Label>
             <Input id="import-valid-until" type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} className="text-xs" />
-            <p className="text-[11px] text-muted-foreground">Applies to every imported student. Leave empty for no expiry.</p>
+            <p className="text-2xs text-muted-foreground">Applies to every imported student. Leave empty for no expiry.</p>
           </div>
 
           {fileError && <p className="text-xs text-destructive" role="alert">{fileError}</p>}
@@ -141,7 +141,7 @@ UGI-2024-CS-002,"Khan, Imran",imran2024,Kareli;Dhoomanganj`}
           {rows.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-semibold">{rows.length} student(s) found. First few:</p>
-              <div className="border border-border rounded-md divide-y divide-border text-xs">
+              <div className="border border-border/80 rounded-lg divide-y divide-border text-xs">
                 {rows.slice(0, 5).map((r) => (
                   <div key={r.row} className="px-3 py-1.5 flex justify-between gap-2">
                     <span className="font-mono">{r.studentId || "(no ID)"}</span>
@@ -162,7 +162,7 @@ UGI-2024-CS-002,"Khan, Imran",imran2024,Kareli;Dhoomanganj`}
                 {result.added} added, {result.skipped.length} skipped.
               </p>
               {result.skipped.length > 0 && (
-                <div className="border border-border rounded-md divide-y divide-border max-h-48 overflow-y-auto">
+                <div className="border border-border/80 rounded-lg divide-y divide-border max-h-48 overflow-y-auto">
                   {result.skipped.map((s) => (
                     <div key={s.row} className="px-3 py-1.5">
                       Row {s.row}{s.studentId ? ` (${s.studentId})` : ""}: {s.reason}

@@ -31,7 +31,7 @@ const RoleSelection = () => {
 
         {/* Section Header */}
         <div className="space-y-2 text-center max-w-lg mx-auto">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/10 text-primary font-bold mb-2 shadow-xs border border-primary/20">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-primary font-bold mb-2 shadow-xs border border-primary/20">
             <Bus className="w-6 h-6" />
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
@@ -48,7 +48,7 @@ const RoleSelection = () => {
           {/* Card 1: Student Commuter */}
           <div 
             onClick={() => navigate("/student-login")}
-            className="border border-border/80 rounded-2xl p-6 bg-card hover:border-primary/60 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between space-y-6 group relative overflow-hidden"
+            className="border border-border/80 rounded-xl p-6 bg-card hover:border-primary/60 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between space-y-6 group relative overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-full pointer-events-none transition-all group-hover:scale-110" />
             
@@ -57,7 +57,7 @@ const RoleSelection = () => {
                 <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold shadow-2xs border border-primary/20">
                   <Users className="w-6 h-6" />
                 </div>
-                <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider rounded-full border-primary/30 bg-primary/5 text-primary">
+                <Badge variant="outline" className="text-2xs uppercase font-bold tracking-wider rounded-full border-primary/30 bg-primary/5 text-primary">
                   Pass Required
                 </Badge>
               </div>
@@ -93,7 +93,7 @@ const RoleSelection = () => {
               </ul>
             </div>
 
-            <Button className="w-full text-xs font-bold h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs group-hover:shadow-md transition-all">
+            <Button className="w-full text-xs font-bold h-10 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xs group-hover:shadow-md transition-all">
               Sign In as Student
               <ArrowRight className="w-3.5 h-3.5 ml-1.5 group-hover:translate-x-1 transition-transform" />
             </Button>
@@ -102,16 +102,16 @@ const RoleSelection = () => {
           {/* Card 2: Transport Driver */}
           <div 
             onClick={() => navigate("/driver-location")}
-            className="border border-border/80 rounded-2xl p-6 bg-card hover:border-primary/60 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between space-y-6 group relative overflow-hidden"
+            className="border border-border/80 rounded-xl p-6 bg-card hover:border-primary/60 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between space-y-6 group relative overflow-hidden"
           >
             <div className="absolute top-0 right-0 w-24 h-24 bg-accent/5 rounded-bl-full pointer-events-none transition-all group-hover:scale-110" />
 
             <div className="space-y-4 relative z-10">
               <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 text-foreground flex items-center justify-center font-bold shadow-2xs border border-border">
+                <div className="w-12 h-12 rounded-xl bg-muted text-foreground flex items-center justify-center font-bold shadow-2xs border border-border">
                   <Navigation className="w-6 h-6 text-primary" />
                 </div>
-                <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider rounded-full border-border bg-slate-100/50 dark:bg-slate-800/50 text-muted-foreground">
+                <Badge variant="outline" className="text-2xs uppercase font-bold tracking-wider rounded-full border-border bg-muted/50 text-muted-foreground">
                   In-Cab Mobile
                 </Badge>
               </div>
@@ -147,7 +147,7 @@ const RoleSelection = () => {
               </ul>
             </div>
 
-            <Button variant="outline" className="w-full text-xs font-semibold h-10 rounded-xl border-border hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+            <Button variant="outline" className="w-full text-xs font-semibold h-10 border-border hover:bg-muted transition-colors">
               Open Driver Console
               <ArrowRight className="w-3.5 h-3.5 ml-1.5 group-hover:translate-x-1 transition-transform" />
             </Button>
@@ -156,16 +156,16 @@ const RoleSelection = () => {
           {/* Card 3: Fleet Supervisor / Admin */}
           <div 
             onClick={() => navigate("/admin-dashboard")}
-            className="border border-border/80 rounded-2xl p-6 bg-card hover:border-primary/60 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between space-y-6 group relative overflow-hidden"
+            className="border border-border/80 rounded-xl p-6 bg-card hover:border-primary/60 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between space-y-6 group relative overflow-hidden"
           >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-slate-200/20 dark:bg-slate-800/20 rounded-bl-full pointer-events-none transition-all group-hover:scale-110" />
+            <div className="absolute top-0 right-0 w-24 h-24 bg-muted/40 rounded-bl-full pointer-events-none transition-all group-hover:scale-110" />
 
             <div className="space-y-4 relative z-10">
               <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 text-foreground flex items-center justify-center font-bold shadow-2xs border border-border">
+                <div className="w-12 h-12 rounded-xl bg-muted text-foreground flex items-center justify-center font-bold shadow-2xs border border-border">
                   <ShieldCheck className="w-6 h-6 text-primary" />
                 </div>
-                <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider rounded-full border-border bg-slate-100/50 dark:bg-slate-800/50 text-muted-foreground">
+                <Badge variant="outline" className="text-2xs uppercase font-bold tracking-wider rounded-full border-border bg-muted/50 text-muted-foreground">
                   Staff Only
                 </Badge>
               </div>
@@ -201,7 +201,7 @@ const RoleSelection = () => {
               </ul>
             </div>
 
-            <Button variant="outline" className="w-full text-xs font-semibold h-10 rounded-xl border-border hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+            <Button variant="outline" className="w-full text-xs font-semibold h-10 border-border hover:bg-muted transition-colors">
               Enter Admin Portal
               <ArrowRight className="w-3.5 h-3.5 ml-1.5 group-hover:translate-x-1 transition-transform" />
             </Button>
