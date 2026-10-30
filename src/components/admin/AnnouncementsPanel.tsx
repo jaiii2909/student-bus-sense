@@ -100,7 +100,7 @@ const AnnouncementsPanel = ({ routeNames }: AnnouncementsPanelProps) => {
             onChange={(e) => setMessage(e.target.value.slice(0, MAX_LENGTH))}
             rows={3}
             placeholder="e.g. K2 is running 15 minutes late this morning"
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm pointer-coarse:text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
           <p className="text-[11px] text-muted-foreground text-right">{message.length}/{MAX_LENGTH}</p>
         </div>

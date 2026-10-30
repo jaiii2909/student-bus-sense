@@ -110,7 +110,7 @@ const ImportStudentsDialog = ({ onImported }: ImportStudentsDialogProps) => {
       </Button>
 
       <Dialog open={open} onOpenChange={(value) => { setOpen(value); if (!value) reset(); }}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Import students from CSV</DialogTitle>
             <DialogDescription>

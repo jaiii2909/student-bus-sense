@@ -40,7 +40,7 @@ const AnnouncementBanner = ({ announcements, nowMs, onDismiss }: AnnouncementBan
           <div className="flex-1 min-w-0">
             <p className="text-xs sm:text-sm font-semibold break-words">{a.message}</p>
             <div className="flex items-center gap-2 text-[11px] opacity-80 mt-1">
-              <span className="font-bold px-1.5 py-0.2 rounded-full bg-amber-500/20 text-[10px]">
+              <span className="font-bold px-1.5 py-px rounded-full bg-amber-500/20 text-[10px]">
                 {a.route || "All Campus Routes"}
               </span>
               <span>·</span>

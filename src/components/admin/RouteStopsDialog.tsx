@@ -90,7 +90,7 @@ const RouteStopsDialog = ({ route, onClose, onSaved }: RouteStopsDialogProps) =>
 
   return (
     <Dialog open={!!route} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Stops for {route?.routeName}</DialogTitle>
           <DialogDescription>

@@ -75,7 +75,7 @@ const ChangePasswordDialog = ({ endpoint, minLength, onChanged }: ChangePassword
       </Button>
 
       <Dialog open={open} onOpenChange={(value) => { setOpen(value); if (!value) reset(); }}>
-        <DialogContent className="max-w-sm rounded-2xl p-6">
+        <DialogContent className="max-w-sm">
           <DialogHeader className="space-y-1">
             <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-1">
               <Lock className="w-4 h-4" />

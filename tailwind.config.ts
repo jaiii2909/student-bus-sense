@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss";
 import animate from "tailwindcss-animate";
+import plugin from "tailwindcss/plugin";
 
 export default {
 	darkMode: ["class"],
@@ -75,6 +76,9 @@ export default {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			boxShadow: {
+				// Tailwind v4 names used across the app; v3.4 doesn't ship them
+				'2xs': '0 1px 1px 0 rgba(15, 23, 42, 0.04)',
+				xs: '0 1px 2px 0 rgba(15, 23, 42, 0.06)',
 				'saas-subtle': '0 1px 3px 0 rgba(15, 23, 42, 0.04)',
 				'saas-card': '0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.03)',
 				'saas-card-hover': '0 10px 30px -4px rgba(15, 23, 42, 0.09), 0 4px 10px -2px rgba(15, 23, 42, 0.04)',
@@ -120,5 +124,11 @@ export default {
 			}
 		}
 	},
-	plugins: [animate],
+	plugins: [
+		animate,
+		// touch screens (phones, tablets) — v3.4 has no built-in pointer variant
+		plugin(({ addVariant }) => {
+			addVariant('pointer-coarse', '@media (pointer: coarse)');
+		}),
+	],
 } satisfies Config;

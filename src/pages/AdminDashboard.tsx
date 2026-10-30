@@ -1003,7 +1003,7 @@ const AdminDashboard = () => {
 
       {/* BUS MODAL */}
       <Dialog open={openBusDialog} onOpenChange={(open) => !open && handleCloseDialogs()}>
-        <DialogContent className="sm:max-w-md rounded-lg">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-base font-bold">{editingBus ? "Edit Vehicle" : "Register Campus Bus"}</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
@@ -1046,7 +1046,7 @@ const AdminDashboard = () => {
 
       {/* ROUTE MODAL */}
       <Dialog open={openRouteDialog} onOpenChange={(open) => !open && handleCloseDialogs()}>
-        <DialogContent className="sm:max-w-md rounded-lg">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-base font-bold">{editingRoute ? "Edit Corridor" : "New Transit Corridor"}</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
@@ -1076,7 +1076,7 @@ const AdminDashboard = () => {
 
       {/* STUDENT PASS MODAL */}
       <Dialog open={openStudentDialog} onOpenChange={(open) => !open && handleCloseDialogs()}>
-        <DialogContent className="sm:max-w-md rounded-lg">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-base font-bold">
               {editingStudent ? `Corridor Pass: ${editingStudent.name}` : "Enroll Commuter"}
@@ -1188,7 +1188,7 @@ const AdminDashboard = () => {
 
       {/* CONFIRM DELETE DIALOG */}
       <AlertDialog open={!!pendingDelete} onOpenChange={(open) => !open && setPendingDelete(null)}>
-        <AlertDialogContent className="rounded-lg">
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="text-base font-bold">{pendingDelete?.title}</AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-muted-foreground">

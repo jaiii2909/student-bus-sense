@@ -444,7 +444,7 @@ const Dashboard = ({ studentData, onLogout, onTokenChange }: DashboardProps) => 
                     <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
                       <span>Bus {bus.number}</span>
                       {isSelected && (
-                        <span className="text-[10px] text-primary font-bold px-1.5 py-0.2 rounded-full bg-primary/10">
+                        <span className="text-[10px] text-primary font-bold px-1.5 py-px rounded-full bg-primary/10">
                           Active
                         </span>
                       )}

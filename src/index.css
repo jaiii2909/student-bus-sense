@@ -110,6 +110,26 @@
     @apply border-border;
   }
 
+  /* native scrollbars, date pickers and form controls follow the theme */
+  :root {
+    color-scheme: light;
+  }
+  .dark {
+    color-scheme: dark;
+  }
+
+  html {
+    /* soft branded tap flash instead of the default grey box */
+    -webkit-tap-highlight-color: hsl(var(--primary) / 0.12);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* no 300ms double-tap-zoom delay on controls */
+  a, button, input, select, textarea, label, summary, [role="button"], [role="tab"] {
+    touch-action: manipulation;
+  }
+
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
@@ -201,6 +221,35 @@
   }
   .animate-bus-pulse {
     animation: transit-pulse 2.2s ease-in-out infinite;
+  }
+}
+
+/* Reduced motion: stop looping pings/pulses/bounces and shorten transitions.
+   Spinners keep turning so loading still reads as loading. */
+@media (prefers-reduced-motion: reduce) {
+  *:not(.animate-spin),
+  *:not(.animate-spin)::before,
+  *:not(.animate-spin)::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Notch / home-indicator padding for full-bleed layouts (installed PWA) */
+@layer utilities {
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pl-safe {
+    padding-left: env(safe-area-inset-left);
+  }
+  .pr-safe {
+    padding-right: env(safe-area-inset-right);
   }
 }
 
